@@ -1,0 +1,18 @@
+.not__found{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 2.5rem;
+
+  img {
+    width: 512px;
+  }
+
+  p {
+    font-size: 36px;
+    font-weight: bold;
+    margin: 0;
+    padding: 0;
+  }
+}

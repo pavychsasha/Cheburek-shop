@@ -1,0 +1,50 @@
+.container {
+  display: flex;
+  align-items: center;
+  padding: 8px 4px;
+  width: 300px;
+  height: 24px;
+
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+
+  @media (max-width: 1360px) {
+    display: none
+  }
+
+  input {
+    padding: 4px 0;
+    font-size: 16px;
+    flex: 1;
+    background-color: transparent;
+    border: none;
+
+
+    &:focus {
+      outline: none;
+    }
+
+    &::placeholder {
+      color: rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  svg {
+    margin-right: 8px;
+    font-size: 16px;
+    color: rgba(0, 0, 0, 0.4);
+  }
+
+  &:hover {
+    border-color: rgba(0, 0, 0, 0.5);
+  }
+
+  &:focus-within {
+    border-color: rgba(0, 0, 0, 0.7);
+  }
+}
+
+
+
+

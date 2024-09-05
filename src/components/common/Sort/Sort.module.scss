@@ -1,0 +1,40 @@
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  @media (max-width: 1360px) {
+    margin-top: 24px;
+  }
+
+  span {
+    font-size: 16px;
+    color: #333;
+    font-weight: 500;
+  }
+
+  select {
+    padding: 8px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    background-color: white;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    outline: none;
+
+    &:hover {
+      border-color: rgba(0, 0, 0, 0.6);
+    }
+
+    &:focus {
+      border-color: rgba(0, 0, 0, 0.7);
+    }
+
+    option {
+      background-color: white;
+      color: #333;
+    }
+  }
+}

@@ -1,0 +1,81 @@
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 1360px) {
+    flex-direction: row;
+    justify-content: space-evenly;
+  }
+
+  .link {
+    text-decoration: none;
+  }
+
+  .logo__and__name {
+    display: flex;
+    align-content: center;
+    flex-direction: row;
+
+    .logo {
+      width: 72px;
+      height: 72px;
+      margin-right: 8px;
+    }
+
+    .name__and__slogan {
+      display: flex;
+      align-content: center;
+      justify-content: space-evenly;
+      flex-direction: column;
+
+
+
+      h1{
+        font-size: 32px;
+        color: #000;
+        margin: 0;
+        padding: 0;
+        
+        @media (max-width: 768px) {
+          font-size: 20px;
+        }
+      }
+
+      p {
+        font-size: 20px;
+        color: rgba(0, 0, 0, 0.7);
+        margin: 0;
+        padding: 0;
+
+        @media (max-width: 768px) {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+
+  .btn {
+    a {
+      padding: 8px 8px;
+      text-decoration: none;
+      color: white;
+      background-color: #d56550;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+
+      .delim {
+        margin-left: 8px;
+      }
+
+      svg {
+        margin-left: 8px;
+        margin-right: 4px;
+      }
+    }
+  }
+}
+

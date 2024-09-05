@@ -1,0 +1,108 @@
+[
+  {
+    "id": 0,
+    "imageUrl": "https://i.imgur.com/RKUO3jK.png",
+    "name": "Чебурек із куркою",
+    "category": 1,
+    "price": 55
+  },
+  {
+    "id": 1,
+    "imageUrl": "https://i.imgur.com/RKUO3jK.png",
+    "name": "Чебурек із м'ясом",
+    "category": 1,
+    "price": 55
+  },
+  {
+    "id": 2,
+    "imageUrl": "https://i.imgur.com/RKUO3jK.png",
+    "name": "Чебурек із куркою та сиром",
+    "category": 1,
+    "price": 60
+  },
+
+  {
+    "id": 3,
+    "imageUrl": "https://i.imgur.com/RKUO3jK.png",
+    "name": "Чебурек із м'ясом та сиром",
+    "category": 1,
+    "price": 60
+  },
+  {
+    "id": 4,
+    "imageUrl": "https://i.imgur.com/RKUO3jK.png",
+    "name": "Чебурек із куркою, сиром та грибами",
+    "category": 1,
+    "price": 65
+  },
+  {
+    "id": 5,
+    "imageUrl": "https://i.imgur.com/RKUO3jK.png",
+    "name": "Чебурек із м'ясом, сиром та грибами",
+    "category": 1,
+    "price": 65
+  },
+  {
+    "id": 6,
+    "imageUrl": "https://i.imgur.com/gcIZ0Es.png",
+    "name": "Пиріжок з картоплею",
+    "category": 2,
+    "price": 20
+  },
+  {
+    "id": 7,
+    "imageUrl": "https://i.imgur.com/gcIZ0Es.png",
+    "name": "Пиріжок з картоплею та грибами",
+    "category": 2,
+    "price": 25
+  },
+  {
+    "id": 8,
+    "imageUrl": "https://i.imgur.com/gcIZ0Es.png",
+    "name": "Пиріжок з капустою",
+    "category": 2,
+    "price": 18
+  },
+  {
+    "id": 9,
+    "imageUrl": "https://i.imgur.com/gcIZ0Es.png",
+    "name": "Пиріжок з сиром та зеленню",
+    "category": 2,
+    "price": 20
+  },
+  {
+    "id": 10,
+    "imageUrl": "https://i.imgur.com/I8VYekg.png",
+    "name": "Картопля фрі",
+    "category": 4,
+    "price": 20
+  },
+  {
+    "id": 11,
+    "imageUrl": "https://i.imgur.com/UAYLcz3.png",
+    "name": "Нагетси",
+    "category": 4,
+    "price": 25
+  },
+  {
+    "id": 12,
+    "imageUrl": "https://i.imgur.com/ym0F0Lg.png",
+    "name": "Кока-кола 0.5л",
+    "category": 3,
+    "price": 30
+  },
+  {
+    "id": 13,
+    "imageUrl": "https://i.imgur.com/k7hdmXp.png",
+    "name": "Фанта 0.5л",
+    "category": 3,
+    "price": 30
+  },
+  {
+    "id": 14,
+    "imageUrl": "https://i.imgur.com/l7RFgRd.png",
+    "name": "Спрайт 0.5л",
+    "category": 3,
+    "price": 30
+  }
+]
