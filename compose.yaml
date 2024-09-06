@@ -1,0 +1,34 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:16.3-alpine3.20
+    env_file:
+      - path: ./back-end/.env
+        required: true
+    ports:
+      - "5432:5432"
+    # restart: always
+
+  web:
+    build: ./back-end
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: ./back-end/.env
+        required: true
+    depends_on:
+      - postgres
+
+  react:
+    build: ./front-end
+    container_name: react-container
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./front-end/src/:/app/src/
+    stdin_open: true
+    tty: true
+
+# volumes:
+#   backend
+#   postgres

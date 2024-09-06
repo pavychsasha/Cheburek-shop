@@ -1,14 +1,12 @@
-FROM node:20-alpine3.19
+FROM node:20-bullseye
 
 WORKDIR /app
-RUN apk add --no-cache python3 make g++
 
 COPY package.json .
-
-RUN npm install
+RUN npm i
 
 COPY . .
 
-EXPOSE 3000
+EXPOSE 5173
 
-CMD [ "npm", "start" ]
+CMD ["npm", "run", "dev"]
