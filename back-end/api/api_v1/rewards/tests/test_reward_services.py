@@ -1,6 +1,6 @@
 import pytest
-from api_v1.rewards.schemas import RewardCreate, RewardUpdate
-from api_v1.rewards.services import (
+from api.rewards.schemas import RewardCreate, RewardUpdate
+from api.rewards.services import (
     create_reward,
     get_rewards,
     get_reward,

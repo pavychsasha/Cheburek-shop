@@ -1,6 +1,6 @@
 from sqlalchemy import delete, select
 from sqlalchemy.orm import joinedload
-from api_v1.orders.schemas import OrderCreate
+from api.orders.schemas import OrderCreate
 from core.models import Order, OrderProductAssociation
 
 

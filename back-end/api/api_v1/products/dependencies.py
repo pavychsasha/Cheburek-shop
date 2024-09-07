@@ -11,7 +11,7 @@ from . import services
 
 async def product_by_id(
     product_id: Annotated[uuid.UUID, Path],
-    session: AsyncSession = Depends(db_helper.scoped_session_dependency),
+    session: AsyncSession = Depends(db_helper.session_dependency),
 ) -> Product:
     product = await services.get_product(session=session, product_id=product_id)
     if product is not None:

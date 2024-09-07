@@ -1,7 +1,7 @@
 from datetime import datetime
 import uuid
 
-from core.models.order_association import OrderProductAssociation
+# from core.models.order_association import OrderProductAssociation
 from sqlalchemy import func
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
@@ -20,7 +20,6 @@ class Product(Base):
     price: Mapped[float]
     category: Mapped[str]
     stock_quantity: Mapped[int]
-    points: Mapped[int]
     created_at: Mapped[datetime] = mapped_column(
         default=func.now(),
         server_default=func.now(),
@@ -29,10 +28,6 @@ class Product(Base):
         default=func.now(),
         server_default=func.now(),
         onupdate=func.now(),
-    )
-
-    orders: Mapped[list[OrderProductAssociation]] = relationship(
-        back_populates="product"
     )
 
     def __str__(self) -> str:

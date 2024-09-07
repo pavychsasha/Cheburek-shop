@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
-from api_v1.products.schemas import ProductCreate, ProductUpdate
-from api_v1.products.services import (
+from api.products.schemas import ProductCreate, ProductUpdate
+from api.products.services import (
     create_product,
     get_products,
     get_product,

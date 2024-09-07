@@ -153,3 +153,5 @@ alembic/versions/
 
 # Secrets
 certs/
+
+.DS_Store

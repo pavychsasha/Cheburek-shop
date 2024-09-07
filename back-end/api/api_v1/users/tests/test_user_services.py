@@ -1,6 +1,6 @@
 import pytest
-from api_v1.users.schemas import UserCreate, UserPartialUpdate
-from api_v1.users.services import (
+from api.users.schemas import UserCreate, UserPartialUpdate
+from api.users.services import (
     create_user,
     get_users,
     get_user_by_user_id,

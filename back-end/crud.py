@@ -1,9 +1,9 @@
 import asyncio
 
-from api_v1.orders.services import create_order
-from api_v1.orders.services import delete_order
-from api_v1.orders.services import create_order_product
-from api_v1.users.services import (
+from api.orders.services import create_order
+from api.orders.services import delete_order
+from api.orders.services import create_order_product
+from api.users.services import (
     create_user,
     get_user_by_user_id,
     update_user,
@@ -21,7 +21,7 @@ from core.models import (
     OrderProductAssociation,
 )
 
-from api_v1.products.services import create_product
+from api.products.services import create_product
 
 
 async def main():

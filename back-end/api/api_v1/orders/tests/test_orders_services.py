@@ -1,6 +1,6 @@
 import pytest
-from api_v1.orders.schemas import OrderCreate
-from api_v1.orders.services import create_order, get_order, delete_order
+from api.orders.schemas import OrderCreate
+from api.orders.services import create_order, get_order, delete_order
 
 
 @pytest.mark.asyncio
