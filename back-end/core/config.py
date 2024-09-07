@@ -15,6 +15,7 @@ class ApiV1Prefix(BaseModel):
     prefix: str = "/v1"
     auth: str = "/auth"
     users: str = "/users"
+    products: str = "/products"
     messages: str = "/messages"
 
 
@@ -27,7 +28,7 @@ class ApiPrefix(BaseModel):
         # api/v1/auth/login
         parts = (self.prefix, self.v1.prefix, self.v1.auth, "/login")
         path = "".join(parts)
-        # return path[1:]
+
         return path.removeprefix("/")
 
 

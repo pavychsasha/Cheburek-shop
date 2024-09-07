@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import uuid
 import logging
 from typing import TYPE_CHECKING, Optional
 
@@ -7,11 +9,11 @@ from core.config import settings
 from fastapi import Depends
 from fastapi_users import BaseUserManager, UUIDIDMixin
 
+from core.models.user import User
+
 
 if TYPE_CHECKING:
-    import uuid
     from fastapi import Request
-    from core.models.user import User
 
 
 log = logging.getLogger(__name__)
