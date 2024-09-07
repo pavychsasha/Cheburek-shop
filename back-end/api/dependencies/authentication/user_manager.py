@@ -2,11 +2,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Optional
 
+from api.dependencies.authentication.users import get_users_db
 from core.config import settings
 from fastapi import Depends
 from fastapi_users import BaseUserManager, UUIDIDMixin
 
-from api.dependencies.users import get_users_db
 
 if TYPE_CHECKING:
     import uuid
