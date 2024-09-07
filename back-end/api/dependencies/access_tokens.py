@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
 
-async def get_acess_tokens_db(
+async def get_access_tokens_db(
     session: Annotated[
         "AsyncSession",
         Depends(db_helper.session_dependency),
