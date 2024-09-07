@@ -128,11 +128,6 @@ dmypy.json
 # profiling data
 .prof
 
-# Alembic
-alembic.ini
-alembic/*.ini
-alembic/versions/
-
 # FastAPI
 *.db
 *.json
