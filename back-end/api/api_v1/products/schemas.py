@@ -11,7 +11,6 @@ class ProductBase(BaseModel):
     price: float = Field(..., gt=0)
     category: Optional[str] = Field(None, max_length=50)
     stock_quantity: Optional[int] = Field(default=0, ge=0)
-    points: Optional[int] = Field(default=0, ge=0)
 
     @field_validator("category")
     def no_whitespace(cls, v):
