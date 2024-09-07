@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.models import db_helper
 from . import services
 from .dependencies import product_by_id
-from .schemas import Product, ProductCreate, ProductUpdate
+from .schemas import Product, ProductCreate, ProductUpdate, ProductPartialUpdate
 
 router = APIRouter(tags=["Products"])
 
@@ -65,7 +65,7 @@ async def update_product(
     status_code=status.HTTP_200_OK,
 )
 async def update_product_partial(
-    product_update,
+    product_update: ProductPartialUpdate,
     product: Product = Depends(product_by_id),
     session: AsyncSession = Depends(db_helper.session_dependency),
 ):
