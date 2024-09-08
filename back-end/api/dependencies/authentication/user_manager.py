@@ -28,7 +28,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         user: User,
         request: Optional[Request] = None,
     ):
-        log.info(
+        log.warning(
             "User %r has registered.",
             user.id,
         )
@@ -39,7 +39,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         token: str,
         request: Optional[Request] = None,
     ):
-        log.info(
+        log.warning(
             "User %r has forgot their password. Reset token: %r",
             user.id,
             token,
@@ -51,7 +51,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         token: str,
         request: Optional[Request] = None,
     ):
-        log.info(
+        log.warning(
             "Verification requested for user %r. Verification token: %r",
             user.id,
             token,

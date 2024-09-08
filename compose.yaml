@@ -5,10 +5,13 @@ services:
     env_file:
       - path: ./back-end/.env
         required: true
+    environment:
+      POSTGRES_DB: cheburek_db
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
   fastapi:
     build: ./back-end
     ports:
@@ -16,8 +19,6 @@ services:
     env_file:
       - path: ./back-end/.env
         required: true
-    environment:
-      - POSTGRES_HOST=postgres
     depends_on:
       - postgres
 
