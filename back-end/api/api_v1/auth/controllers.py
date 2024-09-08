@@ -1,7 +1,7 @@
 from core.schemas.user import UserCreate, UserRead
 from fastapi import APIRouter
 from api.dependencies.authentication.fastapi_users import fastapi_users
-from api.dependencies.authentication.backend import auth_backend
+from api.dependencies.authentication import auth_backend
 
 router = APIRouter(
     tags=["Auth"],
@@ -26,4 +26,9 @@ router.include_router(
 # /verify
 router.include_router(
     router=fastapi_users.get_verify_router(UserRead),
+)
+
+
+router.include_router(
+    router=fastapi_users.get_reset_password_router(),
 )

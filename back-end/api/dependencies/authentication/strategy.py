@@ -5,10 +5,10 @@ import uuid
 from fastapi import Depends
 
 from core.config import settings
-from api.dependencies.authentication.access_tokens import get_access_tokens_db
+from api.dependencies.authentication import get_access_tokens_db
 
 from core.models import AccessToken
-from fastapi_users.authentication.strategy.db import (
+from fastapi_users.authentication.db import (
     AccessTokenDatabase,
     DatabaseStrategy,
 )

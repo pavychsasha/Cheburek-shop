@@ -4,7 +4,7 @@ import uuid
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from api.dependencies.authentication.users import get_users_db
+from api.dependencies.authentication import get_users_db
 from core.config import settings
 from fastapi import Depends
 from fastapi_users import BaseUserManager, UUIDIDMixin

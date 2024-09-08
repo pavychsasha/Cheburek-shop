@@ -19,6 +19,8 @@ services:
     env_file:
       - path: ./back-end/.env
         required: true
+    volumes:
+      - ./back-end:/backend
     depends_on:
       - postgres
 
@@ -34,3 +36,4 @@ services:
 
 volumes:
   pgdata:
+  back-end:

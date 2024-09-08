@@ -1,7 +1,6 @@
 from datetime import datetime
 import uuid
 
-# from core.models.order_association import OrderProductAssociation
 from sqlalchemy import func
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
@@ -29,6 +28,7 @@ class Product(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+    image_url: Mapped[str]
 
     def __str__(self) -> str:
         return f"Product<(product_id='{self.product_id!s}', name={self.name!r})>"

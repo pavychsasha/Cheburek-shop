@@ -15,3 +15,6 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     @classmethod
     def get_db(cls, session: "AsyncSession"):
         return SQLAlchemyUserDatabase(session, User)
+
+    def __str__(self) -> str:
+        return f"User<(user_id='{self.id!s}')>"

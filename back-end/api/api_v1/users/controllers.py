@@ -1,7 +1,7 @@
 from core.schemas.user import UserRead, UserUpdate
 from fastapi import APIRouter
 from api.dependencies.authentication.fastapi_users import fastapi_users
-from api.dependencies.authentication.backend import auth_backend
+from api.dependencies.authentication import auth_backend
 
 router = APIRouter(
     tags=["Users"],
