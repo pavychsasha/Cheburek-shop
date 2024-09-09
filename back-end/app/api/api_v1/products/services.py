@@ -35,8 +35,11 @@ async def search_products(
 
     query = select(Product)
 
+    if name:
+        query = query.where(Product.name.ilike(f"%{name}%"))
+
     if category:
-        query = query.where(Product.category.ilike(f"%{name}%"))
+        query = query.where(Product.category == category)
 
     if sort_by in ["name", "price"]:
         if order == "desc":
