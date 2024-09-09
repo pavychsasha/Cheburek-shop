@@ -22,7 +22,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)
 
 origins = [
-    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://react-container:5173",
 ]
 
 app.add_middleware(
