@@ -7,10 +7,10 @@ import styles from './Home.module.scss'
 import Sort from "../../common/Sort/Sort";
 import {useSelector, useDispatch} from "react-redux";
 import {RootState} from '../../../redux/store'
-import {setCategoryId, setSort} from "../../../redux/slices/filterSlice";
+import {setCategory, setSort} from "../../../redux/slices/filterSlice";
 
 const Home = () => {
-    const categoryId = useSelector((state: RootState) => state.filter.categoryId);
+    const category = useSelector((state: RootState) => state.filter.category);
     const sort = useSelector((state: RootState) => state.filter.sort);
     const searchValue = useSelector((state: RootState) => state.filter.searchValue);
 
@@ -21,13 +21,17 @@ const Home = () => {
 
     const categories = ['Все', 'Чебуреки', 'Пиріжки', 'Напої', 'Інше'];
 
-    const baseUrl = 'https://66cdd0b68ca9aa6c8ccbbb89.mockapi.io'
-    const categoryParam: number | string = categoryId !== 0 ? categoryId : '';
+    const categoryParam = category !== 'Все' ? category : '';
+    const baseUrl = 'http://localhost:8000/api/v1'
     const sortBy = sort.sortType;
     const orderBy = sort.sortOrder;
 
-    const onChangeCategory = (id: number) => {
-        dispatch(setCategoryId(id));
+    const additionalParams = `?name=${searchValue}&category=${categoryParam}&sort_by=${sortBy}&order=${orderBy}`;
+
+    console.log(additionalParams);
+
+    const onChangeCategory = (newCategory: string) => {
+        dispatch(setCategory(newCategory));
     }
 
     const onChangeSort = (sort: object) => {
@@ -36,24 +40,26 @@ const Home = () => {
 
     React.useEffect(() => {
         setIsLoading(true);
-        axios.get(`${baseUrl}/items?category=${categoryParam}&sortBy=${sortBy}&order=${orderBy}&name=${searchValue}`)
+        axios.get(`${baseUrl}/products/search/${additionalParams}`)
             .then((res) => {
                 setItems(res.data);
                 setIsLoading(false);
             });
-    }, [categoryId, sort, searchValue]);
+    }, [category, sort, searchValue]);
 
 
     return (
         <>
             <nav>
-                <Categories value={categoryId}
-                            onChangeCategory={(i) => onChangeCategory(i)}
+                <Categories value={category}
+                            onChangeCategory={(newValue) => onChangeCategory(newValue)}
                             categories={categories}/>
+            </nav>
+            <div className={styles.sort}>
+                <h2 className={styles.category__title}>{category}</h2>
                 <Sort value={sort}
                       onChangeSort={(sort) => onChangeSort(sort)}/>
-            </nav>
-            <h2>{categories[categoryId]}</h2>
+            </div>
             <main className={styles.grid__wrapper}>
                 {isLoading ? [...new Array(8)].map((_, index) => <Skeleton key={index}/>)
                     : items.map(food => <Card food={food}/>)}

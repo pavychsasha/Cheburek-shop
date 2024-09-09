@@ -12,22 +12,4 @@
   @media (max-width: 500px) {
     padding: 2rem 1rem;
   }
-
-  nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-direction: row;
-    margin-bottom: 1.5rem;
-
-    @media (max-width: 1360px) {
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-
-    @media (max-width: 768px) {
-      display: none;
-    }
-  }
 }

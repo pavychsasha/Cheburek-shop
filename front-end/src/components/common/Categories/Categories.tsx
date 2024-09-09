@@ -2,15 +2,15 @@ import styles from './Categories.module.scss';
 import React from "react";
 
 interface ICategoriesProps {
-    value: number;
-    onChangeCategory: (index: number) => void;
+    value: string;
+    onChangeCategory: (index: string) => void;
     categories: string[];
 }
 
 const Categories: React.FC<ICategoriesProps> = ({value, onChangeCategory, categories}) => {
 
-    function handleOnClickCategory(index: number) {
-        onChangeCategory(index);
+    function handleOnClickCategory(newValue: string) {
+        onChangeCategory(newValue);
     }
 
     return (
@@ -19,8 +19,8 @@ const Categories: React.FC<ICategoriesProps> = ({value, onChangeCategory, catego
                 categories.map((category, index) => (
                     <li
                         key={index}
-                        onClick={() => handleOnClickCategory(index)}
-                        className={value === index ? styles.active : ''}
+                        onClick={() => handleOnClickCategory(categories[index])}
+                        className={value === categories[index] ? styles.active : ''}
                     >
                         {category}
                     </li>

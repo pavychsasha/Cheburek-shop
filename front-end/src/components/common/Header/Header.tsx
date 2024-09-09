@@ -9,7 +9,7 @@ import {RootState} from '../../../redux/store.ts'
 import {setSearchValue} from "../../../redux/slices/filterSlice.ts";
 
 
-let Header = () => {
+const Header = () => {
     const searchValue = useSelector((state: RootState) => state.filter.searchValue);
 
     const dispatch = useDispatch();

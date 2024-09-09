@@ -1,13 +1,14 @@
 .filter {
   display: flex;
+  width: fit-content ;
   align-items: center;
-  gap: 10px;
   
   @media (max-width: 1360px) {
     margin-top: 24px;
   }
 
   span {
+    margin-right: 1rem;
     font-size: 16px;
     color: #333;
     font-weight: 500;

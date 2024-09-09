@@ -20,7 +20,7 @@ let Card = (props: any) => {
     return (
         <div className={styles.wrapper}>
             <div className={styles.card}>
-                <img src={props.food.imageUrl}
+                <img src={props.food.image_src}
                      alt="Чебурек"/>
                 <h3>{props.food.name}</h3>
                 <div className={styles.bottom}>

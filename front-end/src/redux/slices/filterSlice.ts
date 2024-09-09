@@ -7,13 +7,13 @@ interface SortType {
 }
 
 interface FilterState {
-    categoryId: number;
+    category: string;
     sort: SortType;
     searchValue: string;
 }
 
 const initialState: FilterState = {
-    categoryId: 0,
+    category: 'Все',
     sort: {
         name: 'алфавітом',
         sortType: 'name',
@@ -27,8 +27,8 @@ const filterSlice = createSlice({
     name: 'filters',
     initialState,
     reducers: {
-        setCategoryId(state, action) {
-            state.categoryId = action.payload;
+        setCategory(state, action) {
+            state.category = action.payload;
         },
         setSort(state, action) {
             state.sort = action.payload;
@@ -40,7 +40,7 @@ const filterSlice = createSlice({
 });
 
 export const {
-    setCategoryId,
+    setCategory,
     setSort,
     setSearchValue
 } = filterSlice.actions;
