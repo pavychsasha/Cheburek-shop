@@ -1,5 +1,3 @@
-# Dockerfile
-
 # The builder image, used to build the virtual environment
 FROM python:3.12.3-alpine3.20 as builder
 
@@ -28,8 +26,13 @@ FROM python:3.12.3-alpine3.20 as runtime
 ENV VIRTUAL_ENV=/backend/.venv \
     PATH="/backend/.venv/bin:$PATH"
 
-# Copy virtual environment and application code from builder
-COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+WORKDIR /backend
+
+# Copy only necessary files from builder
+COPY --from=builder /backend/.venv /backend/.venv
 COPY . .
 
-ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Set the working directory to where the app folder is located
+WORKDIR /backend
+
+ENTRYPOINT ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

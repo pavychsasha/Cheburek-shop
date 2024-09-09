@@ -5,10 +5,12 @@ services:
     env_file:
       - path: ./back-end/.env
         required: true
-    environment:
-      POSTGRES_DB: cheburek_db
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: cheburek_db
+
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -19,8 +21,14 @@ services:
     env_file:
       - path: ./back-end/.env
         required: true
+    environment:
+      POSTGRES_HOST: postgres
     volumes:
-      - ./back-end:/backend
+      - ./back-end/app:/backend/app
+      - ./back-end/alembic:/backend/alembic
+      - ./back-end/pyproject.toml:/backend/pyproject.toml
+      - ./back-end/poetry.lock:/backend/poetry.lock
+      - ./back-end/alembic.ini:/backend/alembic.ini
     depends_on:
       - postgres
 
@@ -36,4 +44,3 @@ services:
 
 volumes:
   pgdata:
-  back-end:
