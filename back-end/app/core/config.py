@@ -1,3 +1,5 @@
+from re import L
+from urllib.parse import quote_plus
 from pydantic import BaseModel
 from pydantic import PostgresDsn
 from pydantic_settings import (
@@ -49,6 +51,25 @@ class DatabaseConfig(BaseModel):
     }
 
 
+class MongoDatabaseCollections(BaseModel):
+    carts: str = "carts"
+
+
+class MongoDatabaseConfig(BaseModel):
+    username: str
+    password: str
+    host: str = "mongo"
+    database_name: str = "cheburek_mongo_db"
+    collections: MongoDatabaseCollections = MongoDatabaseCollections()
+
+    @property
+    def url(self) -> str:
+        username = quote_plus(self.username)
+        password = quote_plus(self.password)
+        mongo_db_uri = f"mongodb://{username}:{password}@{self.host}:27017/{self.database_name}?authSource=admin"
+        return mongo_db_uri
+
+
 class AccessToken(BaseModel):
     lifetime_seconds: int = 3600
     reset_password_token_secret: str
@@ -66,6 +87,7 @@ class Settings(BaseSettings):
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig
     access_token: AccessToken
+    mongo_db: MongoDatabaseConfig
 
 
 settings = Settings()  # type: ignore

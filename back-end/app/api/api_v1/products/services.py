@@ -44,6 +44,8 @@ async def search_products(
     if sort_by in ["name", "price"]:
         if order == "desc":
             query = query.order_by(desc(getattr(Product, sort_by)))
+        elif order == "asc":
+            query = query.order_by(asc(getattr(Product, sort_by)))
 
     if not query_only:
         result = await session.execute(query)

@@ -18,6 +18,7 @@ python-multipart = "^0.0.9"
 cryptography = "^42.0.7"
 asyncpg = "^0.29.0"
 fastapi-users = {extras = ["sqlalchemy"], version = "^13.0.0"}
+motor = "^3.5.1"
 
 
 [tool.poetry.group.dev.dependencies]

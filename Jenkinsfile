@@ -44,18 +44,6 @@ pipeline {
                 echo 'Reporting....'
             }
         }
-    }
-
-    // the post section is a special collection of stages
-    // that are run after all other stages have completed
-    post {
-
-        // the always stage will always be run
-        always {
-
-            // the always stage can contain build steps like other stages
-            // a "steps{...}" section is not needed.
-            echo "This step will run after all other steps have finished.  It will always run, even in the status of the build is not SUCCESS"
         }
     }
 }
