@@ -87,7 +87,7 @@ class Settings(BaseSettings):
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig
     access_token: AccessToken
-    # mongo_db: MongoDatabaseConfig
+    mongo_db: MongoDatabaseConfig
 
 
 settings = Settings()  # type: ignore
