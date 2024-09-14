@@ -8,10 +8,12 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
 )
 
+from motor.motor_asyncio import AsyncIOMotorClient
+
 from app.core.config import settings
 
 
-class DatabaseHelper:
+class SQLDatabaseHelper:
     def __init__(
         self,
         url: str,
@@ -43,10 +45,47 @@ class DatabaseHelper:
             await session.close()
 
 
-db_helper = DatabaseHelper(
+class MongoDbHelper:
+    def __init__(self, db_url: str, db_name: str):
+        self.db_url = db_url
+        self.db_name = db_name
+        self.client = None
+        self.db = None
+
+    async def connect(self):
+        """Starts the MongoDB client and connects to the database."""
+        self.client = AsyncIOMotorClient(
+            self.db_url,
+            uuidRepresentation="standard",
+        )
+        self.db = self.client[self.db_name]
+        print("MongoDB connected.")
+
+    async def close(self):
+        """Closes the MongoDB connection."""
+        if self.client:
+            await self.client.close()  # type: ignore
+            print("MongoDB connection closed.")
+
+    async def mongo_session_dependency(self):
+        """Dependency that provides a MongoDB connection session."""
+        if self.db is None:  # type: ignore
+            await self.connect()
+        try:
+            yield self.db
+        finally:
+            pass
+
+
+sql_db_helper = SQLDatabaseHelper(
     url=str(settings.db.url),
     echo=settings.db.echo,
     echo_pool=settings.db.echo_pool,
     pool_size=settings.db.pool_size,
     max_overflow=settings.db.max_overflow,
+)
+
+mongo_db_helper = MongoDbHelper(
+    db_url=settings.mongo_db.url,
+    db_name=settings.mongo_db.database_name,
 )

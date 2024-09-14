@@ -18,7 +18,7 @@ class ApiV1Prefix(BaseModel):
     auth: str = "/auth"
     users: str = "/users"
     products: str = "/products"
-    messages: str = "/messages"
+    cart: str = "/cart"
 
 
 class ApiPrefix(BaseModel):
@@ -62,18 +62,27 @@ class MongoDatabaseConfig(BaseModel):
     database_name: str = "cheburek_mongo_db"
     collections: MongoDatabaseCollections = MongoDatabaseCollections()
 
+    # @property
+    # def url(self) -> str:
+    #     username = quote_plus(self.username)
+    #     password = quote_plus(self.password)
+    #     mongo_db_uri = (
+    #         f"mongodb://{username}:{password}@{self.host}:27017/{self.database_name}"
+    #     )
+    #     return mongo_db_uri
     @property
     def url(self) -> str:
-        username = quote_plus(self.username)
-        password = quote_plus(self.password)
-        mongo_db_uri = f"mongodb://{username}:{password}@{self.host}:27017/{self.database_name}?authSource=admin"
-        return mongo_db_uri
+        return f"mongodb://{self.host}:27017"
 
 
 class AccessToken(BaseModel):
     lifetime_seconds: int = 3600
     reset_password_token_secret: str
     verification_token_secret: str
+
+
+class Session(BaseModel):
+    secret_key: str
 
 
 class Settings(BaseSettings):
@@ -87,7 +96,8 @@ class Settings(BaseSettings):
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig
     access_token: AccessToken
-    # mongo_db: MongoDatabaseConfig
+    mongo_db: MongoDatabaseConfig
+    session: Session
 
 
 settings = Settings()  # type: ignore

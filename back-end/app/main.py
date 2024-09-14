@@ -3,11 +3,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 import uvicorn
 
 from app.core.config import settings
-from app.core.models import db_helper
+from app.core.models import sql_db_helper, mongo_db_helper
 from app.api import router as router_v1
 
 
@@ -16,7 +17,8 @@ async def lifespan(app: FastAPI):
     # startup
     yield
     # shutdown
-    await db_helper.dispose()
+    await sql_db_helper.dispose()
+    await mongo_db_helper.close()
 
 
 app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)
@@ -30,6 +32,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(SessionMiddleware, secret_key=settings.session.secret_key)
 
 app.include_router(router=router_v1, prefix=settings.api.prefix)
 
