@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, status, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.models import db_helper
+from app.core.models import sql_db_helper
 from . import services
 from .dependencies import product_by_id
 from .schemas import Product, ProductCreate, ProductUpdate, ProductPartialUpdate
@@ -17,7 +17,7 @@ router = APIRouter(tags=["Products"])
     status_code=status.HTTP_200_OK,
 )
 async def get_products(
-    session: AsyncSession = Depends(db_helper.session_dependency),
+    session: AsyncSession = Depends(sql_db_helper.session_dependency),
 ):
     return await services.get_products(session=session)
 
@@ -28,7 +28,7 @@ async def get_product_by_query(
     category: Annotated[str | None, Query(max_length=30)] = None,
     sort_by: Annotated[str | None, Query(max_length=30)] = None,
     order: Annotated[str | None, Query(max_length=30)] = None,
-    session: AsyncSession = Depends(db_helper.session_dependency),
+    session: AsyncSession = Depends(sql_db_helper.session_dependency),
 ):
     return await services.search_products(
         session=session,
@@ -46,7 +46,7 @@ async def get_product_by_query(
 )
 async def create_product(
     product_in: ProductCreate,
-    session: AsyncSession = Depends(db_helper.session_dependency),
+    session: AsyncSession = Depends(sql_db_helper.session_dependency),
 ):
     return await services.create_product(session=session, product_in=product_in)
 
@@ -69,7 +69,7 @@ async def get_product(
 async def update_product(
     product_update: ProductUpdate,
     product: Product = Depends(product_by_id),
-    session: AsyncSession = Depends(db_helper.session_dependency),
+    session: AsyncSession = Depends(sql_db_helper.session_dependency),
 ):
     return await services.update_product(
         session=session,
@@ -85,7 +85,7 @@ async def update_product(
 async def update_product_partial(
     product_update: ProductPartialUpdate,
     product: Product = Depends(product_by_id),
-    session: AsyncSession = Depends(db_helper.session_dependency),
+    session: AsyncSession = Depends(sql_db_helper.session_dependency),
 ):
     return await services.update_product(
         session=session,
@@ -101,6 +101,6 @@ async def update_product_partial(
 )
 async def delete_product(
     product_id: uuid.UUID,
-    session: AsyncSession = Depends(db_helper.session_dependency),
+    session: AsyncSession = Depends(sql_db_helper.session_dependency),
 ) -> None:
     await services.delete_product(session=session, product_id=product_id)

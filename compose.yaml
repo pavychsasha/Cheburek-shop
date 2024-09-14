@@ -46,15 +46,17 @@ services:
       - fastapi
 
   mongo:
-    image: mongo:6.0
+    image: mongo:latest
     container_name: mongo
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
-    env_file:
-    - path: ./back-end/.env
-      required: true
+    # environment:
+    #   - MONGO_INITDB_ROOT_USERNAME=your_username  # Set root username
+    #   - MONGO_INITDB_ROOT_PASSWORD=your_password  # Set root password
+    #   - MONGO_INITDB_DATABASE=admin               # Set authentication database
+    
 
 volumes:
   pgdata:

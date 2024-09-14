@@ -8,7 +8,7 @@ from app.api.dependencies.authentication.user_manager import (
     get_user_manager,
 )
 from app.api.dependencies.authentication.users import get_users_db
-from app.core.models import db_helper, User
+from app.core.models import sql_db_helper, User
 
 
 get_users_db_context = contextlib.asynccontextmanager(get_users_db)
@@ -48,7 +48,7 @@ async def create_superuser(
         is_verified=is_verified,
     )
 
-    async with db_helper.session_factory() as session:
+    async with sql_db_helper.session_factory() as session:
         async with get_users_db_context(session) as user_db:
             async with get_user_manager_context(user_db) as user_manager:
                 user = await create_user(
