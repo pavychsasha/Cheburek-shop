@@ -1,3 +1,8 @@
+<<<<<<< Updated upstream
+=======
+# Dockerfile
+
+>>>>>>> Stashed changes
 # The builder image, used to build the virtual environment
 FROM python:3.12.3-alpine3.20 as builder
 
@@ -26,6 +31,7 @@ FROM python:3.12.3-alpine3.20 as runtime
 ENV VIRTUAL_ENV=/backend/.venv \
     PATH="/backend/.venv/bin:$PATH"
 
+<<<<<<< Updated upstream
 WORKDIR /backend
 
 # Copy only necessary files from builder
@@ -36,3 +42,10 @@ COPY . .
 WORKDIR /backend
 
 ENTRYPOINT ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+=======
+# Copy virtual environment and application code from builder
+COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY . .
+
+ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+>>>>>>> Stashed changes

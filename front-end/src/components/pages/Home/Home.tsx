@@ -21,15 +21,6 @@ const Home = () => {
 
     const categories = ['Все', 'Чебуреки', 'Пиріжки', 'Напої', 'Інше'];
 
-    const categoryParam = category !== 'Все' ? category : '';
-    const baseUrl = 'http://localhost:8000/api/v1'
-    const sortBy = sort.sortType;
-    const orderBy = sort.sortOrder;
-
-    const additionalParams = `?name=${searchValue}&category=${categoryParam}&sort_by=${sortBy}&order=${orderBy}`;
-
-    console.log(additionalParams);
-
     const onChangeCategory = (newCategory: string) => {
         dispatch(setCategory(newCategory));
     }
@@ -38,13 +29,24 @@ const Home = () => {
         dispatch(setSort(sort));
     }
 
-    React.useEffect(() => {
+    const fetchItems = async () => {
         setIsLoading(true);
-        axios.get(`${baseUrl}/products/search/${additionalParams}`)
-            .then((res) => {
-                setItems(res.data);
-                setIsLoading(false);
-            });
+
+        const categoryParam = category !== 'Все' ? category : '';
+        const baseUrl = 'http://localhost:8000/api/v1'
+        const sortBy = sort.sortType;
+        const orderBy = sort.sortOrder;
+        const additionalParams = `?name=${searchValue}&category=${categoryParam}&sort_by=${sortBy}&order=${orderBy}`;
+
+        const res = await axios.get(`${baseUrl}/products/search/${additionalParams}`)
+        setItems(res.data);
+        setIsLoading(false);
+
+        window.scrollTo(0, 0);
+    }
+
+    React.useEffect( () => {
+        fetchItems();
     }, [category, sort, searchValue]);
 
 

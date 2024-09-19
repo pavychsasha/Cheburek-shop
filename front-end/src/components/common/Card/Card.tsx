@@ -1,21 +1,32 @@
 import styles from './Card.module.scss'
-//import cheburek from '../../../assets/cheburek.png'
 import {FaMinus, FaPlus} from "react-icons/fa";
-import {useState} from "react";
+import {addItem, removeItem} from "../../../redux/slices/cartSLice.ts";
+import {useDispatch, useSelector} from "react-redux";
+import {RootState} from "../../../redux/store.ts";
 
+const Card = (props: any) => {
+    const cartItem = useSelector((state: RootState) =>
+        state.cart.items.find((item) => item.id === props.food.product_id))
 
-let Card = (props: any) => {
-    const [countOfGood, setCountOfGood] = useState(0)
+    const dispatch = useDispatch();
+
+    const itemCount = cartItem ? cartItem.count : 0;
 
     function handleClickPlus() {
-        setCountOfGood(countOfGood + 1);
+        console.log("Clicked add");
+        const newItem = {
+            id: props.food.product_id,
+            imageUrl: props.food.image_src,
+            name: props.food.name,
+            price: props.food.price,
+            count: 0
+        }
+        dispatch(addItem(newItem));
     }
 
     function handleClickMinus() {
-        setCountOfGood(countOfGood - 1);
+        dispatch(removeItem(props.food.product_id));
     }
-
-    console.log(props.food.imageUrl);
 
     return (
         <div className={styles.wrapper}>
@@ -24,11 +35,11 @@ let Card = (props: any) => {
                      alt="Чебурек"/>
                 <h3>{props.food.name}</h3>
                 <div className={styles.bottom}>
-                    <p>ціна: {props.food.price}</p>
-                    <div className={styles.button} onClick={countOfGood === 0 ? handleClickPlus : undefined}>
-                        {countOfGood !== 0 && <FaMinus onClick={handleClickMinus}/>}
-                        <p>{countOfGood === 0 ? 'Добавити' : <span>{countOfGood}</span>}</p>
-                        <FaPlus onClick={handleClickPlus}/>
+                    <p>ціна: {props.food.price}₴</p>
+                    <div className={styles.button} onClick={itemCount === 0 ? handleClickPlus : undefined}>
+                        {itemCount !== 0 && <FaMinus onClick={handleClickMinus}/>}
+                        <p>{itemCount === 0 ? 'Добавити' : <span>{itemCount}</span>}</p>
+                        {itemCount !== 0 && <FaPlus onClick={handleClickPlus}/>}
                     </div>
                 </div>
             </div>

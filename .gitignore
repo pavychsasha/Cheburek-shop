@@ -128,6 +128,14 @@ dmypy.json
 # profiling data
 .prof
 
+<<<<<<< Updated upstream
+=======
+# Alembic
+alembic.ini
+alembic/*.ini
+alembic/versions/
+
+>>>>>>> Stashed changes
 # FastAPI
 *.db
 *.json

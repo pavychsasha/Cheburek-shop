@@ -7,6 +7,7 @@ services:
         required: true
     ports:
       - "5432:5432"
+<<<<<<< Updated upstream
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_DB: cheburek_db
@@ -14,6 +15,10 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+=======
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+>>>>>>> Stashed changes
   fastapi:
     build: ./back-end
     ports:
@@ -22,6 +27,7 @@ services:
       - path: ./back-end/.env
         required: true
     environment:
+<<<<<<< Updated upstream
       POSTGRES_HOST: postgres
     volumes:
       - ./back-end/app:/backend/app
@@ -32,6 +38,11 @@ services:
     depends_on:
       - postgres
       - mongo
+=======
+      - POSTGRES_HOST=postgres
+    depends_on:
+      - postgres
+>>>>>>> Stashed changes
 
   react:
     build: ./front-end
@@ -42,6 +53,7 @@ services:
       - ./front-end/src/:/app/src/
     stdin_open: true
     tty: true
+<<<<<<< Updated upstream
     depends_on:
       - fastapi
 
@@ -61,3 +73,8 @@ services:
 volumes:
   pgdata:
   mongo-data:
+=======
+
+volumes:
+  pgdata:
+>>>>>>> Stashed changes

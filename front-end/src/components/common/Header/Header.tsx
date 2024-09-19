@@ -11,6 +11,7 @@ import {setSearchValue} from "../../../redux/slices/filterSlice.ts";
 
 const Header = () => {
     const searchValue = useSelector((state: RootState) => state.filter.searchValue);
+    const {totalPrice, totalCount} = useSelector((state: RootState) => state.cart)
 
     const dispatch = useDispatch();
 
@@ -33,10 +34,10 @@ const Header = () => {
                        onChangeSearch={onChangeSearch}/>
             <div className={styles.btn}>
                 <NavLink to="/cart">
-                    <span>700 ₴</span>
+                    <span>{totalPrice} ₴</span>
                     <span className={styles.delim}>|</span>
                     <CiShoppingCart/>
-                    <span>14</span>
+                    <span>{totalCount}</span>
                 </NavLink>
             </div>
         </header>)

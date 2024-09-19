@@ -1027,6 +1027,7 @@ files = [
 ]
 
 [[package]]
+<<<<<<< Updated upstream
 name = "motor"
 version = "3.5.1"
 description = "Non-blocking MongoDB driver for Tornado or asyncio"
@@ -1051,6 +1052,8 @@ test = ["aiohttp (!=3.8.6)", "mockupdb", "pymongo[encryption] (>=4.5,<5)", "pyte
 zstd = ["pymongo[zstd] (>=4.5,<5)"]
 
 [[package]]
+=======
+>>>>>>> Stashed changes
 name = "mypy-extensions"
 version = "1.0.0"
 description = "Type system extensions for programs checked with the mypy type checker."
@@ -1448,6 +1451,7 @@ docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
 tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
+<<<<<<< Updated upstream
 name = "pymongo"
 version = "4.8.0"
 description = "Python driver for MongoDB <http://www.mongodb.org>"
@@ -1520,6 +1524,8 @@ test = ["pytest (>=7)"]
 zstd = ["zstandard"]
 
 [[package]]
+=======
+>>>>>>> Stashed changes
 name = "pytest"
 version = "8.3.2"
 description = "pytest: simple powerful testing with Python"
@@ -2171,4 +2177,8 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
+<<<<<<< Updated upstream
 content-hash = "0a1d46236e5a55bdf3be019469a5af60b11b11a0deeb4a190e75e11204ac85c9"
+=======
+content-hash = "1b1fc25930817c7a32c91e984dc251ff904927c963a49ea795b9fd0435db70b2"
+>>>>>>> Stashed changes
