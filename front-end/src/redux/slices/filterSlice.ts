@@ -1,24 +1,23 @@
 import {createSlice} from "@reduxjs/toolkit";
 
-interface SortType {
+interface ISortType {
     name: string;
     sortType: string;
     sortOrder: string;
 }
 
-interface FilterState {
+interface IFilterState {
     category: string;
-    sort: SortType;
+    sort: ISortType;
     searchValue: string;
 }
 
-const initialState: FilterState = {
+const initialState: IFilterState = {
     category: 'Все',
     sort: {
         name: 'алфавітом',
         sortType: 'name',
         sortOrder: 'asc'
-
     },
     searchValue: ''
 };

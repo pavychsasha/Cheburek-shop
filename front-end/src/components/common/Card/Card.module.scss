@@ -54,6 +54,7 @@
         background-color: #d56550;
         cursor: pointer;
         text-align: center;
+        transition: background-color 0.3s;
 
         &:active {
           margin-top: 4px;
