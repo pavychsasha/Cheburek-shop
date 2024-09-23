@@ -48,8 +48,13 @@ $font-size-small: 14px;
     }
   }
 
+  a {
+    text-decoration: none;
+  }
+
   .forgot__password {
     margin: 1rem 0;
+    text-decoration: none;
     color: $primary-color;
     cursor: pointer;
     font-size: $font-size-small;

@@ -2,6 +2,9 @@ import styles from '../Auth.module.scss';
 import {SubmitHandler, useForm} from 'react-hook-form';
 import InputField from '../../../common/InputField/InputField.tsx';
 import useSubmitForm from '../../../../hooks/useSubmitForm.ts';
+import {setIsAuth} from "../../../../redux/slices/authSlice.ts";
+import {NavLink, useNavigate} from "react-router-dom";
+import {useDispatch} from "react-redux";
 
 interface IFormRegister {
     email: string;
@@ -14,18 +17,32 @@ const Register = () => {
     const {
         register,
         handleSubmit,
+        setError,
         formState: {errors, isSubmitting},
         getValues,
     } = useForm<IFormRegister>({mode: 'onChange'});
 
+    const navigate = useNavigate();
+
     const {submitForm} = useSubmitForm('http://localhost:8000/api/v1/auth/register');
+    const dispatch = useDispatch();
 
     const onSubmit: SubmitHandler<IFormRegister> = async (data) => {
-        await submitForm({
+        const {data: responseData, error} = await submitForm({
             email: data.email,
             password: data.password,
             username: data.username
         });
+
+        if (responseData) {
+            dispatch(setIsAuth(true));
+            navigate('/');
+        } else if (error) {
+            setError('rePassword', {
+                type: 'manual',
+                message: error.message || 'Користувач із такими даними вже існує',
+            });
+        }
     };
 
     return (
@@ -86,7 +103,7 @@ const Register = () => {
                         {isSubmitting ? 'Виконується реєстрація' : 'Зареєструватися'}
                     </button>
                 </form>
-                <p className={styles.forgot__password}>Вже зареєстровані?</p>
+                <NavLink to={'/login'}><p className={styles.forgot__password}>Вже зареєстровані?</p></NavLink>
             </div>
         </main>
     );
