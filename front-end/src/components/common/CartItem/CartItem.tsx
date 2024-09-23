@@ -2,16 +2,17 @@ import styles from './CartItem.module.scss'
 import {ImCross} from "react-icons/im";
 import {useDispatch} from "react-redux";
 import {addItem, deleteItem, removeItem} from "../../../redux/slices/cartSLice.ts";
+import React from "react";
 
 interface ICartItemProps {
     id: number;
     name: string;
-    imageUrl: string;
+    imageSrc: string;
     count: number;
     price: number;
 }
 
-const CartItem: React.FC<ICartItemProps> = ({id, name, imageUrl, count, price}) => {
+const CartItem: React.FC<ICartItemProps> = ({id, name, imageSrc, count, price}) => {
 
     const dispatch = useDispatch();
 
@@ -33,7 +34,7 @@ const CartItem: React.FC<ICartItemProps> = ({id, name, imageUrl, count, price}) 
     return (
         <div className={styles.cart__item}>
             <div className={styles.info}>
-                <img src={imageUrl} alt=""/>
+                <img src={imageSrc} alt=""/>
                 <h3>{name}</h3>
             </div>
             <p>{price * count}₴</p>

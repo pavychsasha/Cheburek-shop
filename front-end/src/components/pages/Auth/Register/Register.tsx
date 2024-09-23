@@ -53,7 +53,7 @@ const Register = () => {
                         register={register('username', {
                             required: `Це поле є обов'язковим`,
                             pattern: {
-                                value: /^[A-Z0-9._%+-]{3,8}$/i,
+                                value: /^[A-Z0-9._%+-]{3,16}$/i,
                                 message: 'Некоректно введене ім`я користувача',
                             },
                         })}

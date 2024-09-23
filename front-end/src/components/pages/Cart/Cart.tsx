@@ -39,7 +39,13 @@ const Cart = () => {
             </div>
             <div className={styles.items}>
                 {
-                    items.map((item) => <CartItem key={item.id} {...item}/>)
+                    items.map((item) =>
+                        <CartItem key={item.id}
+                                  id={item.id}
+                                  name={item.name}
+                                  price={item.price}
+                                  count={item.count}
+                                  imageSrc={item.imageSrc}/>)
                 }
             </div>
             <div className={styles.bottom}>

@@ -4,7 +4,7 @@ interface IItem {
     id: number;
     name: string;
     price: number;
-    imageUrl: string;
+    imageSrc: string;
     count: number;
 }
 

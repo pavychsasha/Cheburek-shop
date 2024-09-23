@@ -1,9 +1,5 @@
 import {createSlice} from "@reduxjs/toolkit";
-
-interface IAuth {
-    isAuthorized: boolean;
-    bearerToken: string;
-}
+import {IAuth} from "../../types/auth.ts";
 
 const initialState: IAuth = {
     isAuthorized: true,
