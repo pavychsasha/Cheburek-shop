@@ -41,7 +41,7 @@ const itemsSlice = createSlice({
             })
             .addCase(fetchItems.fulfilled, (state, action) => {
                 state.status = 'success';
-                setItems(action.payload);
+                state.items = action.payload;
             })
             .addCase(fetchItems.rejected, (state) => {
                 state.status = 'error';

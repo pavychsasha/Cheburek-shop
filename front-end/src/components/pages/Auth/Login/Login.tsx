@@ -16,7 +16,7 @@ const Login = () => {
     const {
         register,
         handleSubmit,
-        setError, // Додаємо setError
+        setError,
         formState: {errors, isSubmitting},
     } = useForm<IFormLogin>({mode: 'onChange'});
 
