@@ -24,6 +24,7 @@ class ApiV1Prefix(BaseModel):
 class ApiPrefix(BaseModel):
     prefix: str = "/api"
     v1: ApiV1Prefix = ApiV1Prefix()
+    cookie_http_only: bool = True
 
     @property
     def bearer_token_url(self) -> str:
