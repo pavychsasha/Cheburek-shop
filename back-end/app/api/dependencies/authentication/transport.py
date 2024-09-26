@@ -9,4 +9,5 @@ bearer_transport = BearerTransport(
 cookie_transport = CookieTransport(
     cookie_httponly=settings.api.cookie_http_only,
     cookie_name="userauth",
+    cookie_samesite="none",
 )
