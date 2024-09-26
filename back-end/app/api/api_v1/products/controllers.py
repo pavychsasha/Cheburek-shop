@@ -6,7 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.models import sql_db_helper
 from . import services
 from .dependencies import product_by_id
-from .schemas import Product, ProductCreate, ProductUpdate, ProductPartialUpdate
+from .schemas import (
+    Product,
+    ProductCreate,
+    ProductUpdate,
+    ProductPartialUpdate,
+    ProductBulkCreate,
+)
 
 router = APIRouter(tags=["Products"])
 
@@ -49,6 +55,21 @@ async def create_product(
     session: AsyncSession = Depends(sql_db_helper.session_dependency),
 ):
     return await services.create_product(session=session, product_in=product_in)
+
+
+@router.post(
+    "/bulk_product_create/",
+    response_model=ProductBulkCreate,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_bulk_product(
+    products_in: ProductBulkCreate,
+    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+):
+    return await services.bulk_create_product(
+        session=session,
+        products_in=products_in,
+    )
 
 
 @router.get(

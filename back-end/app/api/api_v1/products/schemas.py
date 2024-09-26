@@ -1,7 +1,7 @@
 import re
 from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 import uuid
 
 
@@ -22,6 +22,13 @@ class ProductBase(BaseModel):
 
 class ProductCreate(ProductBase):
     pass
+
+
+class ProductBulkCreate(BaseModel):
+    products: List[ProductCreate]
+
+    class ConfigDict:
+        orm_mode = True
 
 
 class ProductUpdate(ProductBase):
