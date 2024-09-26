@@ -1,4 +1,4 @@
-from telnetlib import STATUS
+import uuid
 from fastapi import APIRouter, Depends, status
 from typing import Annotated
 
@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from app.core.models import mongo_db_helper
-from app.api.api_v1.cart.schemas import CartItem, CartUpdate, Cart
+from app.api.api_v1.cart.schemas import CartItem, CartUpdate
 from app.api.api_v1.cart.services import CartService
 from app.api.api_v1.cart.dependencies import mongo_cart
 
@@ -67,19 +67,17 @@ async def add_item_to_cart(
         JSONResponse: A message confirming the addition of the item to the cart.
     """
     # Use the CartService class method to add the item to the cart
-    updated_cart = await CartService.add_item_to_cart(session, cart, item)
-
-    # Save the updated cart in MongoDB
-    await session["carts"].update_one(
-        {"_id": cart["_id"]}, {"$set": {"items": updated_cart["items"]}}
-    )
+    await CartService.add_item_to_cart(session, cart, item)
 
     return {"message": "Item added to cart"}
 
 
 # Get the cart item count
 @router.get("/item-count", status_code=status.HTTP_200_OK)
-async def get_cart_item_count(cart=Depends(mongo_cart)):
+async def get_cart_item_count(
+    session=Depends(mongo_db_helper.mongo_session_dependency),
+    cart=Depends(mongo_cart),
+):
     """
     Retrieve the total number of items in the current cart.
 
@@ -89,7 +87,10 @@ async def get_cart_item_count(cart=Depends(mongo_cart)):
     Returns:
         JSONResponse: The total number of items in the cart.
     """
-    total_items = sum(item["quantity"] for item in cart["items"])
+    total_items = await CartService.get_items_count(
+        session=session,
+        cart=cart,
+    )
     return {"total_items": total_items}
 
 
@@ -115,12 +116,38 @@ async def update_cart(
         JSONResponse: The updated cart after the changes.
     """
     cart_update_dict = cart_update.model_dump()
+    cart_update_dict["_id"] = cart["_id"]
 
     # Save the updated cart to MongoDB
-    await session["carts"].update_one(
-        {"_id": cart["_id"]},
-        {
-            "$set": {"items": cart_update_dict["items"]},
-        },
+    await CartService.update_cart(
+        session=session,
+        updated_cart=cart_update_dict,
     )
-    return JSONResponse(content=custom_jsonable_encoder(cart))
+
+    return JSONResponse(content=custom_jsonable_encoder(cart_update))
+
+
+# Get the cart item count
+@router.delete("/delete", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product_from_cart(
+    product_id: uuid.UUID,
+    session=Depends(mongo_db_helper.mongo_session_dependency),
+    cart=Depends(mongo_cart),
+):
+    await CartService.delete_product_from_cart(
+        session=session,
+        cart=cart,
+        product_id=product_id,
+    )
+
+
+# Get the cart item count
+@router.delete("/delete_cart", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_cart(
+    session=Depends(mongo_db_helper.mongo_session_dependency),
+    cart=Depends(mongo_cart),
+):
+    await CartService.delete_cart_items(
+        session=session,
+        cart=cart,
+    )

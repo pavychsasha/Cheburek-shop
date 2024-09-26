@@ -2,7 +2,6 @@ from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi import Request
 import uuid
-from datetime import datetime
 
 
 class CartService:
@@ -32,6 +31,19 @@ class CartService:
         return session_cart
 
     @classmethod
+    async def update_cart(
+        cls,
+        session: AsyncIOMotorClient,
+        updated_cart,
+    ):
+        await session["carts"].update_one(
+            {"_id": updated_cart["_id"]},
+            {
+                "$set": {"items": updated_cart["items"]},
+            },
+        )
+
+    @classmethod
     async def add_item_to_cart(
         cls,
         session: AsyncIOMotorClient,
@@ -46,4 +58,41 @@ class CartService:
         else:
             cart["items"].append(item.dict())
 
+        await cls.update_cart(session=session, updated_cart=cart)
         return cart
+
+    @classmethod
+    async def delete_product_from_cart(
+        cls,
+        cart,
+        session: AsyncIOMotorClient,
+        product_id: uuid.UUID,
+    ):
+        await session["carts"].update_one(
+            {"_id": cart["_id"]},
+            {"$pull": {"items": {"product_id": product_id}}},
+        )
+
+    @classmethod
+    async def delete_cart_items(
+        cls,
+        session: AsyncIOMotorClient,
+        cart,
+    ):
+        await session["carts"].delete_many({"_id": cart["_id"]})
+
+    @classmethod
+    async def get_items_count(
+        cls,
+        session: AsyncIOMotorClient,
+        cart,
+    ):
+        pipeline = [
+            {"$match": {"_id": cart["_id"]}},  # Match the document by _id
+            {"$unwind": "$items"},  # Unwind the items array
+            {
+                "$group": {"_id": None, "total_quantity": {"$sum": "$items.quantity"}}
+            },  # Sum the quantity
+        ]
+        result = await session["carts"].aggregate(pipeline).to_list(length=None)
+        return result[0]["total_quantity"] if result else 0
