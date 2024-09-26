@@ -14,7 +14,7 @@ const Searchbar: React.FC<ISearchProps> = ({ onChangeSearch }) => {
     const updateSearchValue = React.useCallback(
         debounce((value: string) => {
             onChangeSearch(value);
-        }, 250),
+        }, 350),
         [onChangeSearch]
     );
 
