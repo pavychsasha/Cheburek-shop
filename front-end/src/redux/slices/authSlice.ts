@@ -3,7 +3,7 @@ import {IAuth} from "../../types/auth.ts";
 
 const initialState: IAuth = {
     isAuthorized: true,
-    bearerToken: "",
+    bearerToken: localStorage.getItem("bearerToken") ?? '',
 }
 
 const authSlice = createSlice({
@@ -11,7 +11,8 @@ const authSlice = createSlice({
     initialState,
     reducers: {
         setIsAuth(state, action){
-            state.bearerToken = action.payload;
+            //const {isAuthorized, bearerToken} = action.payload;
+            //localStorage.setItem('bearerToken', bearerToken);
             state.isAuthorized = action.payload;
         }
     }

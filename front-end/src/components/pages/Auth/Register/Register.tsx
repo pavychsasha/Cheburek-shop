@@ -28,13 +28,13 @@ const Register = () => {
     const dispatch = useDispatch();
 
     const onSubmit: SubmitHandler<IFormRegister> = async (data) => {
-        const {data: responseData, error} = await submitForm({
+        const {res: response, error} = await submitForm({
             email: data.email,
             password: data.password,
             username: data.username
         });
 
-        if (responseData) {
+        if (response && response.status === 200) {
             dispatch(setIsAuth(true));
             navigate('/');
         } else if (error) {

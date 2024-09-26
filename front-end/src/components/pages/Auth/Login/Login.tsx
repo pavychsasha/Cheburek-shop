@@ -5,7 +5,8 @@ import useSubmitForm from '../../../../hooks/useSubmitForm.ts';
 import {setIsAuth} from "../../../../redux/slices/authSlice.ts";
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../../../../redux/store.ts";
-import {useNavigate} from 'react-router-dom'
+import {useNavigate} from 'react-router-dom';
+import axios from 'axios';
 
 interface IFormLogin {
     username: string;
@@ -27,7 +28,7 @@ const Login = () => {
     const dispatch = useDispatch();
 
     const onSubmit: SubmitHandler<IFormLogin> = async (data) => {
-        const {data: responseData, error} = await submitForm({
+        const {res: response, error} = await submitForm({
             grant_type: '',
             username: data.username,
             password: data.password,
@@ -36,7 +37,7 @@ const Login = () => {
             client_secret: '',
         });
 
-        if (responseData) {
+        if (response && response.status === 204) {
             dispatch(setIsAuth(true));
             navigate('/');
         } else if (error) {
@@ -47,6 +48,14 @@ const Login = () => {
         }
     };
 
+    axios.get('http://localhost:8000/api/v1/users/me', {
+        withCredentials: true,
+    }).then(res => {
+        if(res.data) {
+            dispatch(setIsAuth(true));
+            navigate('/');
+        }
+    });
 
     console.log(isAuthorized);
 

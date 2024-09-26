@@ -11,14 +11,14 @@ const useSubmitForm = (url: string) => {
                 },
             });
             console.log('Response:', response.data);
-            return {data: response.data, error: null};
+            return {res: response, error: null};
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
                 console.error('Error response data:', error.response.data);
-                return {data: null, error: error.response.data};
+                return {res: null, error: error.response.data};
             } else {
                 console.error('Error message:', error);
-                return {data: null, error: 'Проблема із запитом'};
+                return {res: null, error: 'Проблема із запитом'};
             }
         }
     };
