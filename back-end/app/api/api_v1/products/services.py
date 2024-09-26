@@ -7,7 +7,12 @@ from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.models import Product
 
-from .schemas import ProductCreate, ProductUpdate, ProductPartialUpdate
+from .schemas import (
+    ProductCreate,
+    ProductUpdate,
+    ProductPartialUpdate,
+    ProductBulkCreate,
+)
 
 
 async def get_products(session: AsyncSession) -> list[Product]:
@@ -66,6 +71,19 @@ async def create_product(session: AsyncSession, product_in: ProductCreate) -> Pr
     session.add(product)
     await session.commit()
     return product
+
+
+async def bulk_create_product(
+    session: AsyncSession,
+    products_in: ProductBulkCreate,
+) -> ProductBulkCreate:
+    products = [
+        Product(**product_in.model_dump()) for product_in in products_in.products
+    ]
+
+    session.add_all(products)
+    await session.commit()
+    return products_in
 
 
 async def update_product(
