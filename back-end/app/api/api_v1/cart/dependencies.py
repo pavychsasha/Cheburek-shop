@@ -1,22 +1,27 @@
-from typing import Annotated, Optional
+from math import prod
+from typing import Annotated
 import uuid
 
-from app.core.models.user import User
-from fastapi import Depends, Request
-from motor.motor_asyncio import AsyncIOMotorClient
+from fastapi import Depends, Path, Request
 
-from app.core.models import mongo_db_helper
-from app.api.dependencies.authentication.fastapi_users import current_user
 from app.api.api_v1.cart.services import CartService
 
 
+async def session_id(request: Request) -> uuid.UUID:
+    session_id: uuid.UUID | str | None = request.session.get("session_id")
+
+    # If no session_id exists, create one
+    if not session_id:
+        session_id = uuid.uuid4()
+        request.session["session_id"] = session_id
+
+    if isinstance(session_id, str):
+        session_id = uuid.UUID(session_id)
+    return session_id
+
+
 async def mongo_cart(
-    request: Request,
-    session: Annotated[
-        AsyncIOMotorClient, Depends(mongo_db_helper.mongo_session_dependency)
-    ],
-    current_user: Annotated[User, Depends(current_user)],
+    session_id: Annotated[uuid.UUID, Depends(session_id)],
 ):
     # Use the CartService class method to retrieve the cart
-    user_id: Optional[uuid.UUID] = current_user.id if current_user else None
-    return await CartService.get_cart(session, request, user_id=user_id)
+    return await CartService.get_cart(session_id=session_id)
