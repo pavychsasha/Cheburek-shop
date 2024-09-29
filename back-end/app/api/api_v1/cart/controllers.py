@@ -1,14 +1,13 @@
-from math import prod
 from typing import Annotated
 import uuid
-from app.core.models.cart import Cart
 from fastapi import APIRouter, Depends, status
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models import sql_db_helper
+from app.core.models.cart import Cart
 
-from app.api.api_v1.cart.schemas import CartItemModel
+from app.api.api_v1.cart.schemas import CartModel, CartItemModel
 from app.api.api_v1.cart.services import CartService
 from app.api.api_v1.cart.dependencies import mongo_cart
 
@@ -19,10 +18,7 @@ router = APIRouter(
 
 
 # Get the cart
-@router.get(
-    "/",
-    status_code=status.HTTP_200_OK,
-)
+@router.get("/", status_code=status.HTTP_200_OK, response_model=CartModel)
 async def get_cart(cart: Annotated[Cart, Depends(mongo_cart)]):
     """
     Retrieve the current cart for the user or session.
@@ -75,7 +71,7 @@ async def delete_cart_items(
 
 
 @router.delete("/product/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_cart_items(
+async def delete_cart_item(
     product_id: uuid.UUID,
     cart: Annotated[Cart, Depends(mongo_cart)],
 ):

@@ -5,4 +5,14 @@ from pydantic import BaseModel, Field
 
 class CartItemModel(BaseModel):
     product_id: uuid.UUID
+    name: str
+    price: float
     count: int
+    img_src: str
+    total_price: float
+
+
+class CartModel(BaseModel):
+    items: List[Optional[CartItemModel]] = []
+    total_count: int = 0
+    total_price: float = 0
