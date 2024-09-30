@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel
 from typing import Optional
 from fastapi import HTTPException, status
@@ -10,3 +11,12 @@ class ProductNameDuplicationError(HTTPException):
             status_code=400, detail=f"Product with name '{name}' already exists."
         )
         self.name = name
+
+
+class ProductNotFound(HTTPException):
+    def __init__(self, product_id: uuid.UUID):
+        # Customize the error message and response code here
+        super().__init__(
+            status_code=400, detail=f"Product with id '{product_id}' was not found."
+        )
+        self.product_id = product_id

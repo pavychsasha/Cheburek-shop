@@ -1,5 +1,4 @@
-from asyncio import current_task
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -9,8 +8,10 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from motor.motor_asyncio import AsyncIOMotorClient
+from beanie import Document, Indexed, init_beanie
 
 from app.core.config import settings
+from app.core.models.cart import all_document_models
 
 
 class SQLDatabaseHelper:
@@ -47,10 +48,9 @@ class SQLDatabaseHelper:
 
 class MongoDbHelper:
     def __init__(self, db_url: str, db_name: str):
-        self.db_url = db_url
-        self.db_name = db_name
-        self.client = None
-        self.db = None
+        self.db_url: str = db_url
+        self.db_name: str = db_name
+        self.client: Optional[AsyncIOMotorClient] = None
 
     async def connect(self):
         """Starts the MongoDB client and connects to the database."""
@@ -58,23 +58,10 @@ class MongoDbHelper:
             self.db_url,
             uuidRepresentation="standard",
         )
-        self.db = self.client[self.db_name]
+        await init_beanie(
+            database=self.client.db_name, document_models=all_document_models  # type: ignore
+        )
         print("MongoDB connected.")
-
-    async def close(self):
-        """Closes the MongoDB connection."""
-        if self.client:
-            await self.client.close()  # type: ignore
-            print("MongoDB connection closed.")
-
-    async def mongo_session_dependency(self):
-        """Dependency that provides a MongoDB connection session."""
-        if self.db is None:  # type: ignore
-            await self.connect()
-        try:
-            yield self.db
-        finally:
-            pass
 
 
 sql_db_helper = SQLDatabaseHelper(

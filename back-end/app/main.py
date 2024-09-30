@@ -14,11 +14,11 @@ from app.api import router as router_v1
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await mongo_db_helper.connect()
     # startup
     yield
     # shutdown
     await sql_db_helper.dispose()
-    await mongo_db_helper.close()
 
 
 app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)

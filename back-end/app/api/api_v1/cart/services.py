@@ -1,98 +1,98 @@
-from typing import Optional
-from motor.motor_asyncio import AsyncIOMotorClient
-from fastapi import Request
+from itertools import product
 import uuid
+
+
+from beanie import WriteRules
+from beanie.operators import Set
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from motor.motor_asyncio import AsyncIOMotorClient
+
+from app.core.exceptions import ProductNotFound
+
+from app.api.api_v1.cart.schemas import CartItemModel
+from app.core.models import Cart, CartItem, Product
+from app.api.api_v1.products.services import get_product
 
 
 class CartService:
     @classmethod
-    async def get_cart(
-        cls,
-        session: AsyncIOMotorClient,
-        request: Request,
-        user_id: Optional[uuid.UUID] = None,
-    ):
-        session_id = request.session.get("session_id")
+    async def get_cart(cls, session_id: uuid.UUID) -> Cart:
 
-        # If no session_id exists, create one
-        if not session_id:
-            session_id = str(uuid.uuid4())
-            request.session["session_id"] = session_id
+        cart = await Cart.find_one(
+            Cart.session_id == session_id,
+            fetch_links=True,
+        )
+        if cart is None:
+            cart = Cart(session_id=session_id, items=[], total_count=0, total_price=0)
+            await cart.save(link_rule=WriteRules.WRITE)
 
-        # Retrieve the cart based on the session_id
-        session_cart = await session["carts"].find_one({"session_id": session_id})
-
-        # If no cart exists, create a new empty cart for the session
-        if not session_cart:
-            new_cart = {"session_id": session_id, "items": []}
-            await session["carts"].insert_one(new_cart)
-            return new_cart
-
-        return session_cart
+        return cart
 
     @classmethod
-    async def update_cart(
+    async def find_product_in_cart(
         cls,
-        session: AsyncIOMotorClient,
-        updated_cart,
-    ):
-        await session["carts"].update_one(
-            {"_id": updated_cart["_id"]},
-            {
-                "$set": {"items": updated_cart["items"]},
-            },
-        )
+        cart: Cart,
+        product_id: uuid.UUID,
+    ) -> CartItem | None:
+        for item in cart.items:
+            if item.product_id == product_id:
+                return item  # type: ignore
 
     @classmethod
     async def add_item_to_cart(
         cls,
-        session: AsyncIOMotorClient,
-        cart,
-        item,
+        cart: Cart,
+        cart_item_model: CartItemModel,
+        sql_session: AsyncSession,
     ):
-        # Add or update the item in the cart
-        for cart_item in cart["items"]:
-            if cart_item["product_id"] == item.product_id:
-                cart_item["quantity"] += item.quantity
-                break
-        else:
-            cart["items"].append(item.dict())
+        cart_product_id: uuid.UUID = cart_item_model.product_id
 
-        await cls.update_cart(session=session, updated_cart=cart)
-        return cart
+        existing_product_in_cart = await cls.find_product_in_cart(cart, cart_product_id)
+        if existing_product_in_cart:
+            existing_product_in_cart.count += cart_item_model.count
+            existing_product_in_cart.total_price += (
+                cart_item_model.count * existing_product_in_cart.price
+            )
+        else:
+            product_from_db: Product | None = await get_product(
+                session=sql_session, product_id=cart_product_id
+            )
+
+            if not product_from_db:
+                raise ProductNotFound(product_id=cart_product_id)
+
+            new_item = CartItem(
+                product_id=cart_product_id,
+                count=cart_item_model.count,
+                name=product_from_db.name,
+                price=product_from_db.price,
+                img_src=product_from_db.image_src,
+                total_price=cart_item_model.count * product_from_db.price,
+            )
+
+            cart.items.append(new_item)
+        # Update the cart's total count and total price
+        cart.total_count = sum(item.count for item in cart.items)
+        cart.total_price = sum(item.total_price for item in cart.items)
+
+        await cart.save(link_rule=WriteRules.WRITE)
 
     @classmethod
     async def delete_product_from_cart(
         cls,
         cart,
-        session: AsyncIOMotorClient,
         product_id: uuid.UUID,
     ):
-        await session["carts"].update_one(
-            {"_id": cart["_id"]},
-            {"$pull": {"items": {"product_id": product_id}}},
-        )
+        product: CartItem = await cls.find_product_in_cart(cart, product_id=product_id)
+        cart.total_count -= product.count
+        cart.total_price -= product.total_price
+        await product.delete()
+        await cart.save()
 
     @classmethod
     async def delete_cart_items(
         cls,
-        session: AsyncIOMotorClient,
         cart,
     ):
-        await session["carts"].delete_many({"_id": cart["_id"]})
-
-    @classmethod
-    async def get_items_count(
-        cls,
-        session: AsyncIOMotorClient,
-        cart,
-    ):
-        pipeline = [
-            {"$match": {"_id": cart["_id"]}},  # Match the document by _id
-            {"$unwind": "$items"},  # Unwind the items array
-            {
-                "$group": {"_id": None, "total_quantity": {"$sum": "$items.quantity"}}
-            },  # Sum the quantity
-        ]
-        result = await session["carts"].aggregate(pipeline).to_list(length=None)
-        return result[0]["total_quantity"] if result else 0
+        await cart.delete()
