@@ -6,6 +6,7 @@ const useSubmitForm = (url: string) => {
     const submitForm = async (data: Record<string, any>) => {
         try {
             const response = await axios.post(url, data, {
+                withCredentials: true,
                 headers: {
                     'Content-Type': contentTypeHeader,
                 },

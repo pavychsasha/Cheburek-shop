@@ -24,23 +24,40 @@ const Register = () => {
 
     const navigate = useNavigate();
 
-    const {submitForm} = useSubmitForm('http://localhost:8000/api/v1/auth/register');
+    const {submitForm: submitRegisterForm} = useSubmitForm('http://localhost:8000/api/v1/auth/register');
+    const {submitForm: submitLoginForm} = useSubmitForm('http://localhost:8000/api/v1/auth/login');
+
     const dispatch = useDispatch();
 
     const onSubmit: SubmitHandler<IFormRegister> = async (data) => {
-        const {res: response, error} = await submitForm({
+        const {res: regResponse, error: regError} = await submitRegisterForm({
             email: data.email,
             password: data.password,
             username: data.username
         });
 
-        if (response && response.status === 200) {
-            dispatch(setIsAuth(true));
-            navigate('/');
-        } else if (error) {
+        if (regResponse && regResponse.status === 201) {
+            const {res: logResponse, error: logError} = await submitLoginForm({
+                grant_type: '',
+                username: data.email,
+                password: data.password,
+                scope: '',
+                client_id: '',
+                client_secret: '',
+            });
+            if (logResponse && logResponse.status === 204) {
+                dispatch(setIsAuth(true));
+                navigate('/');
+            } else if (logError) {
+                setError('rePassword', {
+                    type: 'manual',
+                    message: logError.message || 'Не вдалось увійти після реєстрації',
+                });
+            }
+        } else if (regError) {
             setError('rePassword', {
                 type: 'manual',
-                message: error.message || 'Користувач із такими даними вже існує',
+                message: regError.message || 'Користувач із такими даними вже існує',
             });
         }
     };

@@ -1,10 +1,10 @@
+import {useEffect} from 'react';
 import styles from '../Auth.module.scss';
 import {SubmitHandler, useForm} from 'react-hook-form';
 import InputField from '../../../common/InputField/InputField.tsx';
 import useSubmitForm from '../../../../hooks/useSubmitForm.ts';
 import {setIsAuth} from "../../../../redux/slices/authSlice.ts";
-import {useDispatch, useSelector} from "react-redux";
-import {RootState} from "../../../../redux/store.ts";
+import {useDispatch} from "react-redux";
 import {useNavigate} from 'react-router-dom';
 import axios from 'axios';
 
@@ -22,9 +22,7 @@ const Login = () => {
     } = useForm<IFormLogin>({mode: 'onChange'});
 
     const navigate = useNavigate();
-
     const {submitForm} = useSubmitForm('http://localhost:8000/api/v1/auth/login');
-    const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized);
     const dispatch = useDispatch();
 
     const onSubmit: SubmitHandler<IFormLogin> = async (data) => {
@@ -48,16 +46,16 @@ const Login = () => {
         }
     };
 
-    axios.get('http://localhost:8000/api/v1/users/me', {
-        withCredentials: true,
-    }).then(res => {
-        if(res.data) {
-            dispatch(setIsAuth(true));
-            navigate('/');
-        }
-    });
-
-    console.log(isAuthorized);
+    useEffect(() => {
+        axios.get('http://localhost:8000/api/v1/users/me', {
+            withCredentials: true,
+        }).then(res => {
+            if (res.data) {
+                dispatch(setIsAuth(true));
+                navigate('/');
+            }
+        })
+    }, [dispatch, navigate]);
 
     return (
         <main className={styles.container}>
@@ -66,13 +64,13 @@ const Login = () => {
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <InputField
                         label="Електронна пошта"
-                        type="email"
-                        placeholder="Введіть вашу електронну пошту"
+                        type="text"
+                        placeholder="Введіть ваше ім'я користувача"
                         register={register('username', {
                             required: `Це поле є обов'язковим`,
                             pattern: {
-                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
-                                message: 'Некоректно введена пошта',
+                                value: /^[a-zA-Z0-9@._-]{3,16}$/,
+                                message: `Некоректно введенне ім'я користувача`,
                             },
                         })}
                         error={errors.username}
