@@ -1,4 +1,3 @@
-from itertools import product
 import uuid
 
 
@@ -6,11 +5,9 @@ from beanie import WriteRules
 from beanie.operators import Set
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from motor.motor_asyncio import AsyncIOMotorClient
-
 from app.core.exceptions import ProductNotFound
 
-from app.api.api_v1.cart.schemas import CartItemModel
+from app.api.api_v1.cart.schemas import CartItemModel, CartItemModify
 from app.core.models import Cart, CartItem, Product
 from app.api.api_v1.products.services import get_product
 
@@ -77,6 +74,34 @@ class CartService:
         cart.total_price = sum(item.total_price for item in cart.items)
 
         await cart.save(link_rule=WriteRules.WRITE)
+
+    @classmethod
+    async def substitute_product_from_cart(
+        cls,
+        cart: Cart,
+        substract_product: CartItemModify,
+    ):
+        product: CartItem | None = await cls.find_product_in_cart(
+            cart,
+            product_id=substract_product.product_id,
+        )
+        if product:
+            if product.count <= substract_product.count:
+                return await cls.delete_product_from_cart(
+                    cart=cart,
+                    product_id=substract_product.product_id,
+                )
+
+            sub_count = substract_product.count
+            sub_total_price = sub_count * product.price
+
+            product.count -= sub_count
+            product.total_price -= sub_total_price
+            cart.total_count -= sub_count
+            cart.total_price -= sub_total_price
+
+            await product.save()
+            await cart.save()
 
     @classmethod
     async def delete_product_from_cart(

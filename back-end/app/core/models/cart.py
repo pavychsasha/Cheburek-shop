@@ -7,10 +7,10 @@ from beanie import BackLink, Document, Link
 class CartItem(Document):
     product_id: uuid.UUID
     name: str
-    price: float
-    count: int
+    price: float = Field(..., ge=0)
+    count: int = Field(..., ge=0)
     img_src: str
-    total_price: float
+    total_price: float = Field(..., ge=0)
 
     class Settings:
         name = "cart_items"
@@ -19,8 +19,8 @@ class CartItem(Document):
 class Cart(Document):
     session_id: uuid.UUID
     items: List[Link[CartItem]] = []
-    total_count: int = 0
-    total_price: float = 0
+    total_count: int = Field(default=0, ge=0)
+    total_price: float = Field(default=0, ge=0)
 
     class Settings:
         name = "carts"

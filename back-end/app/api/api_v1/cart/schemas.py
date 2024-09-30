@@ -12,6 +12,11 @@ class CartItemModel(BaseModel):
     total_price: float
 
 
+class CartItemModify(BaseModel):
+    product_id: uuid.UUID
+    count: int
+
+
 class CartModel(BaseModel):
     items: List[Optional[CartItemModel]] = []
     total_count: int = 0

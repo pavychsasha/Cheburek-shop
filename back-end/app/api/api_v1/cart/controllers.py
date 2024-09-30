@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.models import sql_db_helper
 from app.core.models.cart import Cart
 
-from app.api.api_v1.cart.schemas import CartModel, CartItemModel
+from app.api.api_v1.cart.schemas import CartModel, CartItemModify
 from app.api.api_v1.cart.services import CartService
 from app.api.api_v1.cart.dependencies import mongo_cart
 
@@ -34,9 +34,9 @@ async def get_cart(cart: Annotated[Cart, Depends(mongo_cart)]):
 
 
 # Add item to cart
-@router.post("/add", status_code=status.HTTP_204_NO_CONTENT)
+@router.patch("/add", status_code=status.HTTP_204_NO_CONTENT)
 async def add_item_to_cart(
-    item: CartItemModel,
+    item: CartItemModify,
     cart: Annotated[Cart, Depends(mongo_cart)],
     session: AsyncSession = Depends(sql_db_helper.session_dependency),
 ):
@@ -60,6 +60,33 @@ async def add_item_to_cart(
         cart=cart,
         cart_item_model=item,
         sql_session=session,
+    )
+
+
+@router.patch("/substitute_product")
+async def substitute_item_to_cart(
+    product: CartItemModify,
+    cart: Annotated[Cart, Depends(mongo_cart)],
+):
+    """
+    Add an item to the current cart.
+
+    This function allows adding an item to the cart for the current session or user.
+    If the item already exists in the cart, its quantity will be updated. If not, the
+    item will be added to the list of items in the cart.
+
+    Args:
+        item (CartItem): The item to be added to the cart.
+        cart: The current cart of the session/user.
+        session: The MongoDB session for accessing the database.
+
+    Returns:
+        JSONResponse: A message confirming the addition of the item to the cart.
+    """
+    # Use the CartService class method to add the item to the cart
+    await CartService.substitute_product_from_cart(
+        cart=cart,
+        substract_product=product,
     )
 
 
