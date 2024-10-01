@@ -1,10 +1,17 @@
 from math import prod
-from typing import Annotated
+from typing import Annotated, Optional
 import uuid
+
+from app.core.models.user import User
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi import Depends, Path, Request
 
 from app.api.api_v1.cart.services import CartService
+from app.core.models import sql_db_helper
+from app.api.dependencies.authentication.fastapi_users import (
+    current_user_id,
+)
 
 
 async def session_id(request: Request) -> uuid.UUID:
@@ -22,6 +29,10 @@ async def session_id(request: Request) -> uuid.UUID:
 
 async def mongo_cart(
     session_id: Annotated[uuid.UUID, Depends(session_id)],
+    user_id: Annotated[Optional[uuid.UUID], Depends(current_user_id)],
+    sql_session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
 ):
     # Use the CartService class method to retrieve the cart
-    return await CartService.get_cart(session_id=session_id)
+    return await CartService.get_cart(
+        sql_session=sql_session, session_id=session_id, user_id=user_id
+    )

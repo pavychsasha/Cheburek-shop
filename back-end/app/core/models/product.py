@@ -1,7 +1,6 @@
 from datetime import datetime
 import uuid
 
-# from app.core.models.order_association import OrderProductAssociation
 from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column
 

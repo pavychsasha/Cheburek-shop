@@ -28,6 +28,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         user: User,
         request: Optional[Request] = None,
     ):
+        # TODO: add cart user-session merge logic
         log.warning(
             "User %r has registered.",
             user.id,

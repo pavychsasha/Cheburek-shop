@@ -1,8 +1,8 @@
+from typing import Optional
 import uuid
 
 
-from beanie import WriteRules
-from beanie.operators import Set
+from beanie import DeleteRules, WriteRules
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ProductNotFound
@@ -13,18 +13,89 @@ from app.api.api_v1.products.services import get_product
 
 
 class CartService:
-    @classmethod
-    async def get_cart(cls, session_id: uuid.UUID) -> Cart:
 
-        cart = await Cart.find_one(
-            Cart.session_id == session_id,
-            fetch_links=True,
-        )
-        if cart is None:
+    @classmethod
+    async def merge_carts(
+        cls,
+        sql_session: AsyncSession,
+        session_cart: Cart,
+        user_cart: Cart,
+    ):
+
+        for item in session_cart.items:
+            item: CartItemModel
+            await cls.add_item_to_cart(
+                cart=user_cart,
+                cart_item_model=item,
+                sql_session=sql_session,
+            )
+        await user_cart.save()
+        await session_cart.delete(link_rule=DeleteRules.DELETE_LINKS)
+        return user_cart
+
+    @classmethod
+    async def get_session_cart(
+        cls,
+        session_id: Optional[uuid.UUID] = None,
+    ) -> Optional[Cart]:
+        if session_id:
+            return await Cart.find_one(
+                Cart.session_id == session_id,
+                fetch_links=True,
+            )
+
+    @classmethod
+    async def get_users_cart(
+        cls,
+        user_id: Optional[uuid.UUID] = None,
+    ) -> Optional[Cart]:
+        if user_id:
+            return await Cart.find_one(
+                Cart.user_id == user_id,
+                fetch_links=True,
+            )
+
+    @classmethod
+    async def get_cart(
+        cls,
+        sql_session: AsyncSession,
+        session_id: uuid.UUID,
+        user_id: Optional[uuid.UUID] = None,
+    ) -> Cart:
+
+        session_cart: Optional[Cart] = await cls.get_session_cart(session_id=session_id)
+
+        if not session_cart:
+            # trying to find user cart first
+            if user_id:
+                user_cart = await cls.get_users_cart(user_id)
+                if user_cart is not None:
+                    return user_cart
+
             cart = Cart(session_id=session_id, items=[], total_count=0, total_price=0)
             await cart.save(link_rule=WriteRules.WRITE)
+            return cart
 
-        return cart
+        elif session_cart and not user_id:
+            return session_cart
+        else:
+            user_cart = await cls.get_users_cart(user_id)
+            if user_cart:
+                return await cls.merge_carts(
+                    session_cart=session_cart,
+                    user_cart=user_cart,
+                    sql_session=sql_session,
+                )
+
+            user_cart = Cart(
+                user_id=user_id,
+                items=session_cart.items,
+                total_count=session_cart.total_count,
+                total_price=session_cart.total_price,
+            )
+            await user_cart.save()
+            await cls.delete_cart_items(cart=session_cart)
+            return user_cart
 
     @classmethod
     async def find_product_in_cart(
@@ -33,6 +104,7 @@ class CartService:
         product_id: uuid.UUID,
     ) -> CartItem | None:
         for item in cart.items:
+            item: CartItemModel
             if item.product_id == product_id:
                 return item  # type: ignore
 
@@ -68,10 +140,11 @@ class CartService:
                 total_price=cart_item_model.count * product_from_db.price,
             )
 
-            cart.items.append(new_item)
+            cart.items.append(new_item)  # type: ignore
+
         # Update the cart's total count and total price
-        cart.total_count = sum(item.count for item in cart.items)
-        cart.total_price = sum(item.total_price for item in cart.items)
+        cart.total_count = sum(item.count for item in cart.items)  # type: ignore
+        cart.total_price = sum(item.total_price for item in cart.items)  # type: ignore
 
         await cart.save(link_rule=WriteRules.WRITE)
 
@@ -109,15 +182,18 @@ class CartService:
         cart,
         product_id: uuid.UUID,
     ):
-        product: CartItem = await cls.find_product_in_cart(cart, product_id=product_id)
-        cart.total_count -= product.count
-        cart.total_price -= product.total_price
-        await product.delete()
-        await cart.save()
+        product: Optional[CartItem] = await cls.find_product_in_cart(
+            cart, product_id=product_id
+        )
+        if product:
+            cart.total_count -= product.count
+            cart.total_price -= product.total_price
+            await product.delete()
+            await cart.save()
 
     @classmethod
     async def delete_cart_items(
         cls,
-        cart,
+        cart: CartItem,
     ):
         await cart.delete()
