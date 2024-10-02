@@ -1,5 +1,7 @@
 from typing import AsyncGenerator, Optional
 
+
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     create_async_engine,
@@ -38,12 +40,22 @@ class SQLDatabaseHelper:
         )
 
     async def dispose(self) -> None:
-        await self.engine.dispose()
+        """Dispose the SQL engine."""
+        try:
+            await self.engine.dispose()
+        except SQLAlchemyError as e:
+            print(f"Error disposing SQL engine: {e}")
 
     async def session_dependency(self) -> AsyncGenerator[AsyncSession, None]:
+        """Generate sessions for dependency injection in FastAPI."""
         async with self.session_factory() as session:
-            yield session
-            await session.close()
+            try:
+                yield session
+            except SQLAlchemyError as e:
+                print(f"Session rollback due to error: {e}")
+                raise  # Re-raise the exception to avoid hiding errors
+            finally:
+                await session.close()
 
 
 class MongoDbHelper:
@@ -58,10 +70,20 @@ class MongoDbHelper:
             self.db_url,
             uuidRepresentation="standard",
         )
-        await init_beanie(
-            database=self.client.db_name, document_models=all_document_models  # type: ignore
-        )
-        print("MongoDB connected.")
+        try:
+            # Initialize Beanie with the correct database
+            await init_beanie(
+                database=self.client[self.db_name], document_models=all_document_models  # type: ignore
+            )
+            print(f"MongoDB connected to {self.db_name}.")
+        except Exception as e:
+            print(f"Error initializing MongoDB: {e}")
+
+    async def dispose(self):
+        """Closes the MongoDB client."""
+        if self.client:
+            self.client.close()
+            print(f"MongoDB connection to {self.db_name} closed.")
 
 
 sql_db_helper = SQLDatabaseHelper(

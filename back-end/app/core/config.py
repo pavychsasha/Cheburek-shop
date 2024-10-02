@@ -1,7 +1,5 @@
-from re import L
-from urllib.parse import quote_plus
+from typing import Optional
 from pydantic import BaseModel
-from pydantic import PostgresDsn
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
@@ -38,6 +36,7 @@ class ApiPrefix(BaseModel):
 class DatabaseConfig(BaseModel):
     # url: PostgresDsn
     url: str
+    test_url: str = "postgresql+asyncpg://postgres:postgres@postgres:5432/test_db"
     echo: bool = False
     echo_pool: bool = False
     pool_size: int = 50
@@ -57,23 +56,20 @@ class MongoDatabaseCollections(BaseModel):
 
 
 class MongoDatabaseConfig(BaseModel):
-    username: str
-    password: str
+    # username: str
+    # password: str
     host: str = "mongo"
     database_name: str = "cheburek_mongo_db"
+    test_database_name: str = "test_cheburek_mongo_db"
+    url: str = f"mongodb://{host}:27017/{database_name}"
     collections: MongoDatabaseCollections = MongoDatabaseCollections()
 
-    # @property
-    # def url(self) -> str:
-    #     username = quote_plus(self.username)
-    #     password = quote_plus(self.password)
-    #     mongo_db_uri = (
-    #         f"mongodb://{username}:{password}@{self.host}:27017/{self.database_name}"
-    #     )
-    #     return mongo_db_uri
     @property
-    def url(self) -> str:
-        return f"mongodb://{self.host}:27017"
+    def test_url(self) -> str:
+        # username = quote_plus(self.username)
+        # password = quote_plus(self.password)
+        mongo_db_uri = f"mongodb://{self.host}:27017/{self.test_database_name}"
+        return mongo_db_uri
 
 
 class AccessToken(BaseModel):
