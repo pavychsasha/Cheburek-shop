@@ -52,11 +52,6 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
-    # environment:
-    #   - MONGO_INITDB_ROOT_USERNAME=your_username  # Set root username
-    #   - MONGO_INITDB_ROOT_PASSWORD=your_password  # Set root password
-    #   - MONGO_INITDB_DATABASE=admin               # Set authentication database
-    
 
 volumes:
   pgdata:

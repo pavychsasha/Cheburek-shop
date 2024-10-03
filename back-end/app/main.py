@@ -18,6 +18,7 @@ async def lifespan(app: FastAPI):
     # startup
     yield
     # shutdown
+    await mongo_db_helper.dispose()
     await sql_db_helper.dispose()
 
 
