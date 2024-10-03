@@ -5,7 +5,7 @@ import uuid
 from beanie import DeleteRules, WriteRules
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ProductNotFound
+from app.core.exceptions import ProductNotFoundError
 
 from app.api.api_v1.cart.schemas import CartItemModel, CartItemModify
 from app.core.models import Cart, CartItem, Product

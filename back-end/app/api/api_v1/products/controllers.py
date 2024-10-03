@@ -88,14 +88,14 @@ async def get_product(
     status_code=status.HTTP_200_OK,
 )
 async def update_product(
+    product_id: uuid.UUID,
     product_update: ProductUpdate,
-    product: Product = Depends(product_by_id),
     session: AsyncSession = Depends(sql_db_helper.session_dependency),
 ):
     return await services.update_product(
-        session=session,
-        product=product,  # type: ignore
+        product_id=product_id,
         product_update=product_update,
+        session=session,
     )
 
 
@@ -104,13 +104,13 @@ async def update_product(
     status_code=status.HTTP_200_OK,
 )
 async def update_product_partial(
+    product_id: uuid.UUID,
     product_update: ProductPartialUpdate,
-    product: Product = Depends(product_by_id),
     session: AsyncSession = Depends(sql_db_helper.session_dependency),
 ):
     return await services.update_product(
         session=session,
-        product=product,  # type: ignore
+        product_id=product_id,  # type: ignore
         product_update=product_update,
         partial=True,
     )
