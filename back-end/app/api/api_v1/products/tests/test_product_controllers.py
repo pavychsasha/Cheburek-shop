@@ -1,4 +1,6 @@
 import json
+from typing import assert_type
+from app.core.models import product
 from httpx import AsyncClient
 import pytest
 from app.core.config import settings
@@ -299,3 +301,38 @@ async def test_bulk_create_and_search(client: AsyncClient):
     assert len(products) == 2
     assert products[0]["name"] == "Bulk Product 1"
     assert products[1]["name"] == "Bulk Product 2"
+
+
+@pytest.mark.asyncio
+async def test_search_deleted_product(client: AsyncClient):
+    """Test the POST /products endpoint to create a product."""
+
+    # Define a product payload
+    product_data = {
+        "name": "Test Product",
+        "description": "A test product description",
+        "price": 9.99,
+        "category": "Cheburek",
+        "stock_quantity": 25,
+        "image_src": "sme_img_src",
+    }
+
+    # Send a POST request to create a product
+    response = await client.post("/api/v1/products/", json=product_data)
+
+    # Check that the response is CREATED (201)
+    assert response.status_code == 201
+
+    # Check that the returned product matches the input
+    created_product = response.json()
+    product_id = created_product["product_id"]
+    assert created_product["name"] == "Test Product"
+    assert created_product["description"] == "A test product description"
+    assert created_product["price"] == 9.99
+    assert created_product["category"] == "Cheburek"
+
+    response = await client.delete(f"/api/v1/products/{product_id}/")
+    assert response.status_code == 204
+
+    response = await client.get("/api/v1/products/search/", params={"name": "Test"})
+    assert len(response.json()) == 0
