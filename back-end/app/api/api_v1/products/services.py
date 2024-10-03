@@ -31,13 +31,7 @@ async def get_products(
     session: AsyncSession, limit: int = 10, offset: int = 0
 ) -> list[Product]:
     """Fetch products with pagination."""
-    stmt = (
-        select(Product)
-        .where(Product.deleted_at.is_(None))
-        .order_by(Product.product_id)
-        .limit(limit)
-        .offset(offset)
-    )
+    stmt = select(Product).order_by(Product.product_id).limit(limit).offset(offset)
     result = await session.execute(stmt)
     return result.scalars().all()  # type: ignore
 
@@ -52,7 +46,7 @@ async def get_product(
         product_id = validate_uuid(product_id)
 
     product = await session.get(Product, product_id)
-    if not product or product.deleted_at is not None:
+    if not product:
         raise ProductNotFoundError(product_id)
     return product
 
@@ -77,7 +71,7 @@ async def search_products(
         raise InvalidSortFieldError(f"'{sort_by}' is not a valid field for sorting.")
 
     # Construct the query
-    query = select(Product).where(Product.deleted_at.is_(None))
+    query = select(Product)
 
     if name:
         query = query.where(Product.name.ilike(f"%{name}%"))

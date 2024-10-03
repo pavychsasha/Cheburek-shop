@@ -30,9 +30,6 @@ class Product(Base):
         onupdate=func.now(),
     )
 
-    # Optional soft delete field
-    deleted_at: Mapped[datetime | None] = mapped_column(default=None, nullable=True)
-
     __table_args__ = (
         Index("ix_product_category", "category"),
         Index("ix_product_price", "price"),
