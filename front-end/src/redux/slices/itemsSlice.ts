@@ -5,9 +5,11 @@ import {IItemsState} from "../../types/state.ts";
 
 const baseUrl = 'http://localhost:8000/api/v1';
 
-export const fetchItems = createAsyncThunk('items/fetchItemsStatus',
 
+export const fetchItems = createAsyncThunk('items/fetchItemsStatus',
     async (params: IParams) => {
+
+        //Setting parameters for get request /products/search
         const {
             sortBy,
             orderBy,
@@ -33,6 +35,8 @@ const itemsSlice = createSlice({
             state.items = action.payload;
         }
     },
+
+    //Checking for status of fetching
     extraReducers: (builder) => {
         builder
             .addCase(fetchItems.pending, (state) => {

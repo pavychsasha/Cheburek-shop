@@ -11,15 +11,19 @@ import {fetchItems} from "../../../redux/slices/itemsSlice.ts";
 import {IParams} from "../../../types/api.ts";
 
 const Home = () => {
+
+    //Getting variables from state with selectors
     const category = useSelector((state: RootState) => state.filter.category);
     const sort = useSelector((state: RootState) => state.filter.sort);
     const searchValue = useSelector((state: RootState) => state.filter.searchValue);
     const {items, status} = useSelector((state: RootState) => state.items);
 
     const dispatch = useDispatch();
-    
+
+    //List of categories
     const categories = ['Все', 'Чебуреки', 'Пиріжки', 'Напої', 'Інше'];
 
+    //Handlers for setting filtration
     const onChangeCategory = (newCategory: string) => {
         dispatch(setCategory(newCategory));
     }
@@ -28,6 +32,7 @@ const Home = () => {
         dispatch(setSort(sort));
     }
 
+    //Getting products with fetchItems function
     const getItems = async () => {
         const categoryParam = category !== 'Все' ? category : '';
         const sortBy = sort.sortType;
@@ -39,6 +44,8 @@ const Home = () => {
             orderBy,
             searchValue,
         }
+
+        //Fetching items from db using API
         dispatch(fetchItems(params));
 
         window.scrollTo(0, 0);
@@ -62,6 +69,8 @@ const Home = () => {
                       onChangeSort={(sort) => onChangeSort(sort)}/>
             </div>
             <main className={styles.grid__wrapper}>
+
+                {/*Checking for loading status*/}
                 {status === 'loading' ? [...new Array(8)].map((_, index) => <Skeleton key={index}/>)
                     : items.map(item =>
                         <Card
