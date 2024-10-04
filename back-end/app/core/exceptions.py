@@ -17,6 +17,16 @@ class ProductNotFoundError(HTTPException):
         # Using status code 404 (Not Found) for missing resources
         super().__init__(
             status_code=404,
+            detail=f"Product with id '{product_id}' was not found in the cart.",
+        )
+        self.product_id = product_id
+
+
+class ProductCartNotFoundError(HTTPException):
+    def __init__(self, product_id: uuid.UUID):
+        # Using status code 404 (Not Found) for missing resources
+        super().__init__(
+            status_code=404,
             detail=f"Product with id '{product_id}' was not found.",
         )
         self.product_id = product_id
@@ -50,3 +60,13 @@ class InvalidUuidError(HTTPException):
             detail=f"'{uuid_str}' is not a valid.",
         )
         self.uuid_str = uuid_str
+
+
+class ZeroOrNegativeCartItemCountError(HTTPException):
+    def __init__(self, item_count: int):
+        # Using status code 400 (Bad Request) for invalid input errors
+        super().__init__(
+            status_code=400,
+            detail=f"'item count {item_count}' need to be greater than 0",
+        )
+        self.item_count = item_count

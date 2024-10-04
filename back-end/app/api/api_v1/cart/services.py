@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 import uuid
 
@@ -5,7 +6,7 @@ import uuid
 from beanie import DeleteRules, WriteRules
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ProductNotFoundError
+from app.core.exceptions import ProductCartNotFoundError, ProductNotFoundError
 
 from app.api.api_v1.cart.schemas import CartItemModel, CartItemModify
 from app.core.models import Cart, CartItem, Product
@@ -15,22 +16,28 @@ from app.api.api_v1.products.services import get_product
 class CartService:
 
     @classmethod
-    async def merge_carts(
-        cls,
-        sql_session: AsyncSession,
-        session_cart: Cart,
-        user_cart: Cart,
-    ):
+    async def merge_carts(cls, session_cart: Cart, user_cart: Cart):
+        """Merge items from session cart into user cart."""
+        logging.info(
+            f"Merging carts: session_cart={session_cart.id}, user_cart={user_cart.id}"
+        )
 
-        for item in session_cart.items:
-            item: CartItemModel
-            await cls.add_item_to_cart(
-                cart=user_cart,
-                cart_item_model=item,
-                sql_session=sql_session,
-            )
+        items_map = {item.product_id: item for item in user_cart.items}
+
+        for session_item in session_cart.items:
+            if session_item.product_id in items_map:
+                existing_item = items_map[session_item.product_id]
+                existing_item.count += session_item.count
+                existing_item.total_price += session_item.total_price
+            else:
+                user_cart.items.append(session_item)
+
+        user_cart.total_count = sum(item.count for item in user_cart.items)
+        user_cart.total_price = sum(item.total_price for item in user_cart.items)
+
         await user_cart.save()
         await session_cart.delete(link_rule=DeleteRules.DELETE_LINKS)
+        logging.info(f"Cart merged successfully.")
         return user_cart
 
     @classmethod
@@ -58,7 +65,6 @@ class CartService:
     @classmethod
     async def get_cart(
         cls,
-        sql_session: AsyncSession,
         session_id: uuid.UUID,
         user_id: Optional[uuid.UUID] = None,
     ) -> Cart:
@@ -84,7 +90,6 @@ class CartService:
                 return await cls.merge_carts(
                     session_cart=session_cart,
                     user_cart=user_cart,
-                    sql_session=sql_session,
                 )
 
             user_cart = Cart(
@@ -129,7 +134,7 @@ class CartService:
             )
 
             if not product_from_db:
-                raise ProductNotFound(product_id=cart_product_id)
+                raise ProductNotFoundError(product_id=cart_product_id)
 
             new_item = CartItem(
                 product_id=cart_product_id,
@@ -149,7 +154,7 @@ class CartService:
         await cart.save(link_rule=WriteRules.WRITE)
 
     @classmethod
-    async def substitute_product_from_cart(
+    async def subtract_product_from_cart(
         cls,
         cart: Cart,
         substract_product: CartItemModify,
@@ -190,6 +195,9 @@ class CartService:
             cart.total_price -= product.total_price
             await product.delete()
             await cart.save()
+            return
+
+        raise ProductCartNotFoundError(product_id=product_id)
 
     @classmethod
     async def delete_cart_items(

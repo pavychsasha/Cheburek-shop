@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.models import sql_db_helper
 from app.core.models.cart import Cart
 
-from app.api.api_v1.cart.schemas import CartModel, CartItemModify
+from app.api.api_v1.cart.schemas import CartItemModify, CartModel
 from app.api.api_v1.cart.services import CartService
 from app.api.api_v1.cart.dependencies import mongo_cart
 
@@ -55,7 +55,7 @@ async def add_item_to_cart(
     Returns:
         JSONResponse: A message confirming the addition of the item to the cart.
     """
-    # Use the CartService class method to add the item to the cart
+
     await CartService.add_item_to_cart(
         cart=cart,
         cart_item_model=item,
@@ -63,8 +63,8 @@ async def add_item_to_cart(
     )
 
 
-@router.patch("/substitute_product")
-async def substitute_item_to_cart(
+@router.patch("/subtract_product", status_code=status.HTTP_204_NO_CONTENT)
+async def subtract_item_to_cart(
     product: CartItemModify,
     cart: Annotated[Cart, Depends(mongo_cart)],
 ):
@@ -84,7 +84,7 @@ async def substitute_item_to_cart(
         JSONResponse: A message confirming the addition of the item to the cart.
     """
     # Use the CartService class method to add the item to the cart
-    await CartService.substitute_product_from_cart(
+    await CartService.subtract_product_from_cart(
         cart=cart,
         substract_product=product,
     )

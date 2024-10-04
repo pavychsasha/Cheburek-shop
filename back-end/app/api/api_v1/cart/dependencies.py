@@ -20,7 +20,7 @@ async def session_id(request: Request) -> uuid.UUID:
     # If no session_id exists, create one
     if not session_id:
         session_id = uuid.uuid4()
-        request.session["session_id"] = session_id
+        request.session["session_id"] = str(session_id)  # uuid is not json serializable
 
     if isinstance(session_id, str):
         session_id = uuid.UUID(session_id)
@@ -30,9 +30,6 @@ async def session_id(request: Request) -> uuid.UUID:
 async def mongo_cart(
     session_id: Annotated[uuid.UUID, Depends(session_id)],
     user_id: Annotated[Optional[uuid.UUID], Depends(current_user_id)],
-    sql_session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
 ):
     # Use the CartService class method to retrieve the cart
-    return await CartService.get_cart(
-        sql_session=sql_session, session_id=session_id, user_id=user_id
-    )
+    return await CartService.get_cart(session_id=session_id, user_id=user_id)

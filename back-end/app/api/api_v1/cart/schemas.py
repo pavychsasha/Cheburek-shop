@@ -6,18 +6,22 @@ from pydantic import BaseModel, Field
 class CartItemModel(BaseModel):
     product_id: uuid.UUID
     name: str
-    price: float
-    count: int
+    price: float = Field(..., gt=0)
+    count: int = Field(..., gt=0)
     img_src: str
-    total_price: float
+    total_price: float = Field(..., gt=0)
 
 
 class CartItemModify(BaseModel):
     product_id: uuid.UUID
-    count: int
+    count: int = Field(..., gt=0)
 
 
 class CartModel(BaseModel):
     items: List[Optional[CartItemModel]] = []
     total_count: int = 0
     total_price: float = 0
+
+    class ConfigDict:
+        orm_mode = True
+        from_attributes = True

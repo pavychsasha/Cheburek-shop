@@ -51,9 +51,6 @@ async def get_product(
     return product
 
 
-from sqlalchemy.exc import ArgumentError
-
-
 async def search_products(
     session: AsyncSession,
     category: str | None = None,
@@ -80,18 +77,19 @@ async def search_products(
         query = query.where(Product.category == category)
 
     # Sort by field and order validation
-    if order == "desc":
-        try:
-            query = query.order_by(desc(getattr(Product, sort_by)))
-        except AttributeError:
-            raise InvalidProductOrderError(f"'{order}' is not valid.")
-    elif order == "asc":
-        try:
-            query = query.order_by(asc(getattr(Product, sort_by)))
-        except AttributeError:
-            raise InvalidProductOrderError(f"'{order}' is not valid.")
-    elif order:
-        raise InvalidProductOrderError(f"'{order}' is not a valid order.")
+    if sort_by:
+        if order == "desc":
+            try:
+                query = query.order_by(desc(getattr(Product, sort_by)))
+            except AttributeError:
+                raise InvalidProductOrderError(f"'{order}' is not valid.")
+        elif order == "asc":
+            try:
+                query = query.order_by(asc(getattr(Product, sort_by)))
+            except AttributeError:
+                raise InvalidProductOrderError(f"'{order}' is not valid.")
+        elif order:
+            raise InvalidProductOrderError(f"'{order}' is not a valid order.")
 
     # Add pagination
     query = query.limit(limit).offset(offset)
