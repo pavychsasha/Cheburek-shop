@@ -1,12 +1,14 @@
 from typing import Annotated
 import uuid
 
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, Security
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models import sql_db_helper, Cart
 from app.api.api_v1.cart.dependencies import mongo_cart
 from app.api.api_v1.cart.schemas import CartOrder
+from app.api.dependencies.authentication.fastapi_users import current_active_superuser
+
 from .schemas import OrderModel
 from .services import OrderService
 
@@ -19,7 +21,8 @@ router = APIRouter(tags=["Orders"])
     status_code=status.HTTP_200_OK,
 )
 async def get_orders(
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    superuser: Annotated[AsyncSession, Security(current_active_superuser)],
 ):
     orders = await OrderService.get_orders(session=session)
     return orders
@@ -32,7 +35,7 @@ async def get_orders(
 )
 async def make_order(
     cart: Annotated[CartOrder, Depends(mongo_cart)],
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+    session: Annotated[AsyncSession, Security(sql_db_helper.session_dependency)],
 ):
     return await OrderService.make_order(session=session, mongo_cart=cart)
 
@@ -42,7 +45,8 @@ async def make_order(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_all_orders(
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    superuser: Annotated[AsyncSession, Security(current_active_superuser)],
 ):
     return await OrderService.delete_all_products(session=session)
 
@@ -53,6 +57,7 @@ async def delete_all_orders(
 )
 async def delete_order(
     order_id: uuid.UUID,
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    superuser: Annotated[AsyncSession, Security(current_active_superuser)],
 ):
     return await OrderService.delete_order(session=session, order_id=order_id)

@@ -1,9 +1,11 @@
 import uuid
 from typing import Annotated
-from fastapi import APIRouter, status, Depends, Query
+from fastapi import APIRouter, status, Depends, Query, Security
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.models import sql_db_helper
+from app.core.models import sql_db_helper, User
+from app.api.dependencies.authentication.fastapi_users import current_active_superuser
+
 from . import services
 from .dependencies import product_by_id
 from .schemas import (
@@ -23,18 +25,18 @@ router = APIRouter(tags=["Products"])
     status_code=status.HTTP_200_OK,
 )
 async def get_products(
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
 ):
     return await services.get_products(session=session)
 
 
 @router.get("/search/", response_model=list[Product], status_code=status.HTTP_200_OK)
 async def get_product_by_query(
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     name: Annotated[str | None, Query(max_length=90)] = None,
     category: Annotated[str | None, Query(max_length=30)] = None,
     sort_by: Annotated[str | None, Query(max_length=30)] = None,
     order: Annotated[str | None, Query(max_length=30)] = None,
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
 ):
     return await services.search_products(
         session=session,
@@ -52,7 +54,8 @@ async def get_product_by_query(
 )
 async def create_product(
     product_in: ProductCreate,
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    superuser: Annotated[User, Security(current_active_superuser)],
 ):
     return await services.create_product(session=session, product_in=product_in)
 
@@ -64,7 +67,8 @@ async def create_product(
 )
 async def create_bulk_product(
     products_in: ProductBulkCreate,
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    superuser: Annotated[User, Security(current_active_superuser)],
 ):
     return await services.bulk_create_product(
         session=session,
@@ -78,7 +82,7 @@ async def create_bulk_product(
     status_code=status.HTTP_200_OK,
 )
 async def get_product(
-    product: Product = Depends(product_by_id),
+    product: Annotated[Product, Depends(product_by_id)],
 ):
     return product
 
@@ -90,7 +94,8 @@ async def get_product(
 async def update_product(
     product_id: uuid.UUID,
     product_update: ProductUpdate,
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    superuser: Annotated[User, Security(current_active_superuser)],
 ):
     return await services.update_product(
         product_id=product_id,
@@ -106,7 +111,8 @@ async def update_product(
 async def update_product_partial(
     product_id: uuid.UUID,
     product_update: ProductPartialUpdate,
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    superuser: Annotated[User, Security(current_active_superuser)],
 ):
     return await services.update_product(
         session=session,
@@ -122,6 +128,19 @@ async def update_product_partial(
 )
 async def delete_product(
     product_id: uuid.UUID,
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    superuser: Annotated[User, Security(current_active_superuser)],
 ) -> None:
     await services.delete_product(session=session, product_id=product_id)
+
+
+@router.delete(
+    "/",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_products(
+    product_ids: list[uuid.UUID],
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    superuser: Annotated[User, Security(current_active_superuser)],
+) -> None:
+    await services.delete_products(session=session, product_ids=product_ids)
