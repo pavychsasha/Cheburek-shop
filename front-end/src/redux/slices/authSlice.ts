@@ -2,8 +2,7 @@ import {createSlice} from "@reduxjs/toolkit";
 import {IAuth} from "../../types/auth.ts";
 
 const initialState: IAuth = {
-    isAuthorized: true,
-    bearerToken: localStorage.getItem("bearerToken") ?? '',
+    isAuthorized: false,
 }
 
 const authSlice = createSlice({
@@ -11,9 +10,7 @@ const authSlice = createSlice({
     initialState,
     reducers: {
         setIsAuth(state, action){
-            const {isAuthorized, bearerToken} = action.payload;
-            localStorage.setItem('bearerToken', bearerToken);
-            state.isAuthorized = isAuthorized;
+            state.isAuthorized = action.payload;
         }
     }
 });

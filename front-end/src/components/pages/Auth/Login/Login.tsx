@@ -28,6 +28,10 @@ const Login = () => {
 
     const {submitForm} = useSubmitForm('http://localhost:8000/api/v1/auth/login');
 
+/*
+    const bearerToken = useSelector((state: RootState) => state.auth.bearerToken)
+*/
+
     const dispatch = useDispatch();
 
     const onSubmit: SubmitHandler<IFormLogin> = async (data) => {
@@ -58,7 +62,7 @@ const Login = () => {
 
         //Checking for login status /users/me
         axios.get('http://localhost:8000/api/v1/users/me', {
-            withCredentials: true,
+            withCredentials: true
         }).then(res => {
             if (res.data) {
                 dispatch(setIsAuth(true));
