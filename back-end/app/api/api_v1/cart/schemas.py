@@ -25,3 +25,9 @@ class CartModel(BaseModel):
     class ConfigDict:
         orm_mode = True
         from_attributes = True
+
+
+class CartOrder(BaseModel):
+    items: list[CartItemModel] = Field(..., min_length=1)
+    total_count: int = Field(..., gt=0)
+    total_price: float = Field(..., gt=0)

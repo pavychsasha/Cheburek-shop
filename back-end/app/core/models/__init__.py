@@ -10,6 +10,8 @@ __all__ = (
     "mongo_db_helper",
     "Product",
     "User",
+    "Order",
+    "OrderProductAssociation",
 )
 
 from .cart import all_document_models, Cart, CartItem
@@ -23,3 +25,5 @@ from .db_helper import (
 )
 from .product import Product
 from .user import User
+from .order import Order
+from .order_association import OrderProductAssociation

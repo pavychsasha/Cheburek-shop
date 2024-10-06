@@ -67,6 +67,14 @@ class ZeroOrNegativeCartItemCountError(HTTPException):
         # Using status code 400 (Bad Request) for invalid input errors
         super().__init__(
             status_code=400,
-            detail=f"'item count {item_count}' need to be greater than 0",
+            detail=f"item count {item_count}' need to be greater than 0",
         )
         self.item_count = item_count
+
+
+class ZeroProductsOrderError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=400,
+            detail=f"Cart should contain products",
+        )
