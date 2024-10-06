@@ -81,7 +81,7 @@ const Login = () => {
                         register={register('username', {
                             required: `Це поле є обов'язковим`,
                             pattern: {
-                                value: /^[a-zA-Z0-9@._-]{3,16}$/,
+                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
                                 message: `Некоректно введенне ім'я користувача`,
                             },
                         })}

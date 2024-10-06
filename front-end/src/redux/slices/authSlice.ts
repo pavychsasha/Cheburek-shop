@@ -11,9 +11,9 @@ const authSlice = createSlice({
     initialState,
     reducers: {
         setIsAuth(state, action){
-            //const {isAuthorized, bearerToken} = action.payload;
-            //localStorage.setItem('bearerToken', bearerToken);
-            state.isAuthorized = action.payload;
+            const {isAuthorized, bearerToken} = action.payload;
+            localStorage.setItem('bearerToken', bearerToken);
+            state.isAuthorized = isAuthorized;
         }
     }
 });
