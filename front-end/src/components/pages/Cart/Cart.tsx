@@ -4,7 +4,7 @@ import {FaTrash} from "react-icons/fa";
 import CartItem from "../../common/CartItem/CartItem.tsx";
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../../../redux/store.ts";
-import {clearCart} from "../../../redux/slices/cartSLice.ts";
+import {clearCart, fetchCart} from "../../../redux/slices/cartSLice.ts";
 import React from "react";
 
 
@@ -16,9 +16,9 @@ const Cart = () => {
 
     React.useEffect(() => {
         if (isAuthorized) {
-            console.log(11);
+            dispatch(fetchCart());
         }
-    }, [isAuthorized, dispatch]);
+    }, [isAuthorized]);
 
 
     const handleClickClear = () => {

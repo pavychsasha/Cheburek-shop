@@ -6,7 +6,7 @@ import {RootState} from "../../../redux/store.ts";
 import React from "react";
 
 interface ICardProps {
-    id: number;
+    id: string;
     name: string;
     imageSrc: string;
     price: number;
@@ -34,7 +34,6 @@ const Card: React.FC<ICardProps> = ({id, name, imageSrc, price, }) => {
     const handleClickMinus = React.useCallback(() => {
         dispatch(removeItem(id));
     }, [dispatch, id]);
-
 
     return (
         <div className={styles.wrapper}>
