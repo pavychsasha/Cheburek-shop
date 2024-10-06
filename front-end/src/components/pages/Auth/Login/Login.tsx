@@ -28,6 +28,10 @@ const Login = () => {
 
     const {submitForm} = useSubmitForm('http://localhost:8000/api/v1/auth/login');
 
+/*
+    const bearerToken = useSelector((state: RootState) => state.auth.bearerToken)
+*/
+
     const dispatch = useDispatch();
 
     const onSubmit: SubmitHandler<IFormLogin> = async (data) => {
@@ -58,7 +62,7 @@ const Login = () => {
 
         //Checking for login status /users/me
         axios.get('http://localhost:8000/api/v1/users/me', {
-            withCredentials: true,
+            withCredentials: true
         }).then(res => {
             if (res.data) {
                 dispatch(setIsAuth(true));
@@ -81,7 +85,7 @@ const Login = () => {
                         register={register('username', {
                             required: `Це поле є обов'язковим`,
                             pattern: {
-                                value: /^[a-zA-Z0-9@._-]{3,16}$/,
+                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
                                 message: `Некоректно введенне ім'я користувача`,
                             },
                         })}
