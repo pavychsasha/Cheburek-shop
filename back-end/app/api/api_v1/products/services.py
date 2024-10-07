@@ -31,7 +31,12 @@ async def get_products(
     session: AsyncSession, limit: int = 0, offset: int = 0
 ) -> list[Product]:
     """Fetch products with pagination."""
-    stmt = select(Product).order_by(Product.product_id).limit(limit).offset(offset)
+    stmt = select(Product).order_by(Product.product_id)
+    if limit:
+        stmt = stmt.limit(limit=limit)
+    if offset:
+        stmt = stmt.offset(offset=offset)
+
     result = await session.execute(stmt)
     return result.scalars().all()  # type: ignore
 
