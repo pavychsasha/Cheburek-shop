@@ -1,12 +1,12 @@
-import {useEffect} from 'react';
 import styles from '../Auth.module.scss';
 import {SubmitHandler, useForm} from 'react-hook-form';
 import InputField from '../../../common/InputField/InputField.tsx';
 import useSubmitForm from '../../../../hooks/useSubmitForm.ts';
 import {setIsAuth} from "../../../../redux/slices/authSlice.ts";
-import {useDispatch} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import {useNavigate} from 'react-router-dom';
-import axios from 'axios';
+import {RootState} from "../../../../redux/store.ts";
+import React from "react";
 
 //Type type(interface) of login form
 interface IFormLogin {
@@ -28,11 +28,9 @@ const Login = () => {
 
     const {submitForm} = useSubmitForm('http://localhost:8000/api/v1/auth/login');
 
-/*
-    const bearerToken = useSelector((state: RootState) => state.auth.bearerToken)
-*/
-
     const dispatch = useDispatch();
+
+    const isAuthorized = useSelector((state:RootState) => state.auth.isAuthorized);
 
     const onSubmit: SubmitHandler<IFormLogin> = async (data) => {
         const {res: response, error} = await submitForm({
@@ -58,18 +56,11 @@ const Login = () => {
         }
     };
 
-    useEffect(() => {
-
-        //Checking for login status /users/me
-        axios.get('http://localhost:8000/api/v1/users/me', {
-            withCredentials: true
-        }).then(res => {
-            if (res.data) {
-                dispatch(setIsAuth(true));
-                navigate('/');
-            }
-        })
-    }, [dispatch, navigate]);
+    React.useEffect(() => {
+      if (!isAuthorized) {
+          navigate('/');
+      }
+    })
 
     return (
         <main className={styles.container}>
