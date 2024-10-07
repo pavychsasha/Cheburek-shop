@@ -9,6 +9,7 @@ import React from "react";
 
 
 const Cart = () => {
+    //Getting variables from state
     const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized);
     const {items, total_price, total_count} = useSelector((state: RootState) => state.cart);
 
@@ -20,6 +21,7 @@ const Cart = () => {
         }
     }, [dispatch, isAuthorized]);
 
+    //Handlers for cart actions
     const handleClickClear = () => {
         dispatch(clearCart())
     }

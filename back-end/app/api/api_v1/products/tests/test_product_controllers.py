@@ -29,7 +29,7 @@ async def test_create_product(client: AsyncClient):
         "price": 9.99,
         "category": "Cheburek",
         "stock_quantity": 25,
-        "image_src": "sme_img_src",
+        "image_src": "sme_image_src",
     }
 
     # Send a POST request to create a product
@@ -57,7 +57,7 @@ async def test_search_product(client: AsyncClient):
         "price": 9.99,
         "category": "Cheburek",
         "stock_quantity": 25,
-        "image_src": "some_img_src",
+        "image_src": "some_image_src",
     }
 
     # Send a POST request to create a product
@@ -85,7 +85,7 @@ async def test_create_product_missing_fields(client: AsyncClient):
         "price": 9.99,
         "category": "Cheburek",
         "stock_quantity": 25,
-        "image_src": "some_img_src",
+        "image_src": "some_image_src",
     }
 
     # Send a POST request to create a product
@@ -105,7 +105,7 @@ async def test_create_product_invalid_price(client: AsyncClient):
         "price": -5.00,  # Invalid price
         "category": "Cheburek",
         "stock_quantity": 25,
-        "image_src": "some_img_src",
+        "image_src": "some_image_src",
     }
 
     response = await client.post("/api/v1/products/", json=product_data)
@@ -140,7 +140,7 @@ async def test_update_product(client: AsyncClient):
         "price": 5.99,
         "category": "SomeCategory",
         "stock_quantity": 10,
-        "image_src": "old_img_src",
+        "image_src": "old_image_src",
     }
     create_response = await client.post("/api/v1/products/", json=product_data)
     product_id = create_response.json()["product_id"]
@@ -152,7 +152,7 @@ async def test_update_product(client: AsyncClient):
         "price": 5.99,
         "category": "SomeCategory",
         "stock_quantity": 10,
-        "image_src": "old_img_src",
+        "image_src": "old_image_src",
     }
     response = await client.put(f"/api/v1/products/{product_id}/", json=updated_data)
 
@@ -185,7 +185,7 @@ async def test_delete_product(client: AsyncClient):
         "price": 9.99,
         "category": "Cheburek",
         "stock_quantity": 25,
-        "image_src": "delete_img_src",
+        "image_src": "delete_image_src",
     }
     create_response = await client.post("/api/v1/products/", json=product_data)
     product_id = create_response.json()["product_id"]
@@ -211,7 +211,7 @@ async def test_bulk_create_products(client: AsyncClient):
                 "price": 12.99,
                 "category": "Bulk",
                 "stock_quantity": 50,
-                "image_src": "bulk_img_src_1",
+                "image_src": "bulk_image_src_1",
             },
             {
                 "name": "Bulk Product 2",
@@ -219,7 +219,7 @@ async def test_bulk_create_products(client: AsyncClient):
                 "price": 8.99,
                 "category": "Bulk",
                 "stock_quantity": 100,
-                "image_src": "bulk_img_src_2",
+                "image_src": "bulk_image_src_2",
             },
         ]
     }

@@ -6,6 +6,7 @@ import {setIsAuth} from "../../../../redux/slices/authSlice.ts";
 import {NavLink, useNavigate} from "react-router-dom";
 import {useDispatch} from "react-redux";
 
+//Type(interface) of register form
 interface IFormRegister {
     email: string;
     password: string;
@@ -14,6 +15,8 @@ interface IFormRegister {
 }
 
 const Register = () => {
+
+    //Parameters for a register form
     const {
         register,
         handleSubmit,
@@ -30,14 +33,19 @@ const Register = () => {
     const dispatch = useDispatch();
 
     const onSubmit: SubmitHandler<IFormRegister> = async (data) => {
+
+        //User data for register
         const {res: regResponse, error: regError} = await submitRegisterForm({
             email: data.email,
             password: data.password,
             username: data.username
         });
 
+        //Checking for response /auth/register
         if (regResponse && regResponse.status === 201) {
             const {res: logResponse, error: logError} = await submitLoginForm({
+
+                //User data for login
                 grant_type: '',
                 username: data.email,
                 password: data.password,
@@ -45,6 +53,8 @@ const Register = () => {
                 client_id: '',
                 client_secret: '',
             });
+
+            //Checking for response /auth/login
             if (logResponse && logResponse.status === 204) {
                 dispatch(setIsAuth(true));
                 navigate('/');
@@ -67,6 +77,8 @@ const Register = () => {
             <div className={styles.login__box}>
                 <h1>Реєстрація</h1>
                 <form onSubmit={handleSubmit(onSubmit)}>
+
+                    {/*Email field*/}
                     <InputField
                         label="Електронна пошта"
                         type="email"
@@ -80,6 +92,8 @@ const Register = () => {
                         })}
                         error={errors.email}
                     />
+
+                    {/*Username field*/}
                     <InputField
                         label="Ім'я користувача"
                         type="text"
@@ -93,6 +107,8 @@ const Register = () => {
                         })}
                         error={errors.username}
                     />
+
+                    {/*Password field*/}
                     <InputField
                         label="Пароль"
                         type="password"
@@ -106,6 +122,8 @@ const Register = () => {
                         })}
                         error={errors.password}
                     />
+
+                    {/*RePassword field*/}
                     <InputField
                         label="Повторіть пароль"
                         type="password"
@@ -120,6 +138,8 @@ const Register = () => {
                         {isSubmitting ? 'Виконується реєстрація' : 'Зареєструватися'}
                     </button>
                 </form>
+
+                {/*Redirect to login page*/}
                 <NavLink to={'/login'}><p className={styles.forgot__password}>Вже зареєстровані?</p></NavLink>
             </div>
         </main>

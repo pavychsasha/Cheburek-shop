@@ -38,7 +38,7 @@ async def get_cart(cart: Annotated[Cart, Depends(mongo_cart)]):
 async def add_item_to_cart(
     item: CartItemModify,
     cart: Annotated[Cart, Depends(mongo_cart)],
-    session: AsyncSession = Depends(sql_db_helper.session_dependency),
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
 ):
     """
     Add an item to the current cart.

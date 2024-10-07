@@ -168,3 +168,13 @@ async def delete_product(
     await session.execute(delete(Product).where(Product.product_id == product_id))
 
     await session.commit()
+
+
+async def delete_products(
+    session: AsyncSession,
+    product_ids: list[uuid.UUID],
+) -> None:
+    """Delete a product by its ID. Perform soft deletion by default."""
+    await session.execute(delete(Product).where(Product.product_id.in_(product_ids)))
+
+    await session.commit()

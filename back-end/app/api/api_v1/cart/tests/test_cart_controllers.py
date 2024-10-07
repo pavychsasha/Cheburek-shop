@@ -32,7 +32,7 @@ class TestMongoService:
         assert cart_dict["items"][0]["product_id"] == str(product_id)
         assert cart_dict["items"][0]["name"] == product.name
         assert cart_dict["items"][0]["price"] == product.price
-        assert cart_dict["items"][0]["img_src"] == product.image_src
+        assert cart_dict["items"][0]["image_src"] == product.image_src
         assert cart_dict["items"][0]["total_price"] == product.price * 5
         assert cart_dict["total_price"] == product.price * 5
         assert cart_dict["total_count"] == 5

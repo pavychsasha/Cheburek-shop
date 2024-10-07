@@ -1,8 +1,12 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 import uuid
 from sqlalchemy import func, CheckConstraint, Index
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
+
+if TYPE_CHECKING:
+    from .order_association import OrderProductAssociation
 
 
 class Product(Base):
@@ -30,6 +34,10 @@ class Product(Base):
         onupdate=func.now(),
     )
 
+    orders: Mapped[list["OrderProductAssociation"]] = relationship(
+        back_populates="product"
+    )
+
     __table_args__ = (
         Index("ix_product_category", "category"),
         Index("ix_product_price", "price"),
@@ -41,9 +49,3 @@ class Product(Base):
 
     def __str__(self) -> str:
         return f"Product<(product_id='{self.product_id!s}', name={self.name!r})>"
-
-    def update_stock(self, quantity: int) -> None:
-        """Update stock quantity by adding the given quantity (can be negative)."""
-        if self.stock_quantity + quantity < 0:
-            raise ValueError("Stock quantity cannot be negative")
-        self.stock_quantity += quantity

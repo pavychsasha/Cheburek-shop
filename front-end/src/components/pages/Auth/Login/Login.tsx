@@ -8,12 +8,15 @@ import {useDispatch} from "react-redux";
 import {useNavigate} from 'react-router-dom';
 import axios from 'axios';
 
+//Type type(interface) of login form
 interface IFormLogin {
     username: string;
     password: string;
 }
 
 const Login = () => {
+
+    //Parameters for login form
     const {
         register,
         handleSubmit,
@@ -22,11 +25,19 @@ const Login = () => {
     } = useForm<IFormLogin>({mode: 'onChange'});
 
     const navigate = useNavigate();
+
     const {submitForm} = useSubmitForm('http://localhost:8000/api/v1/auth/login');
+
+/*
+    const bearerToken = useSelector((state: RootState) => state.auth.bearerToken)
+*/
+
     const dispatch = useDispatch();
 
     const onSubmit: SubmitHandler<IFormLogin> = async (data) => {
         const {res: response, error} = await submitForm({
+
+            //User data for login
             grant_type: '',
             username: data.username,
             password: data.password,
@@ -35,6 +46,7 @@ const Login = () => {
             client_secret: '',
         });
 
+        //Checking for response auth/login
         if (response && response.status === 204) {
             dispatch(setIsAuth(true));
             navigate('/');
@@ -47,8 +59,10 @@ const Login = () => {
     };
 
     useEffect(() => {
+
+        //Checking for login status /users/me
         axios.get('http://localhost:8000/api/v1/users/me', {
-            withCredentials: true,
+            withCredentials: true
         }).then(res => {
             if (res.data) {
                 dispatch(setIsAuth(true));
@@ -62,6 +76,8 @@ const Login = () => {
             <div className={styles.login__box}>
                 <h1>Вхід</h1>
                 <form onSubmit={handleSubmit(onSubmit)}>
+
+                    {/*Email field*/}
                     <InputField
                         label="Електронна пошта"
                         type="text"
@@ -75,6 +91,8 @@ const Login = () => {
                         })}
                         error={errors.username}
                     />
+
+                    {/*Password field*/}
                     <InputField
                         label="Пароль"
                         type="password"

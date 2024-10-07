@@ -9,7 +9,7 @@ class CartItem(Document):
     name: str
     price: float = Field(..., ge=0)
     count: int = Field(..., ge=0)
-    img_src: str
+    image_src: str
     total_price: float = Field(..., ge=0)
 
     class Settings:

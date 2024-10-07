@@ -1,5 +1,5 @@
 import re
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from datetime import datetime
 from typing import Optional, List
 import uuid
@@ -25,10 +25,9 @@ class ProductCreate(ProductBase):
 
 
 class ProductBulkCreate(BaseModel):
-    products: List[ProductCreate]
+    model_config = ConfigDict(from_attributes=True)
 
-    class ConfigDict:
-        orm_mode = True
+    products: List[ProductCreate]
 
 
 class ProductUpdate(ProductBase):
@@ -36,6 +35,8 @@ class ProductUpdate(ProductBase):
 
 
 class ProductPartialUpdate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
     price: Optional[float] = Field(None, gt=0)
@@ -50,20 +51,25 @@ class ProductPartialUpdate(BaseModel):
             raise ValueError(f"{cls.__name__} field must not contain whitespace")
         return v
 
-    class ConfigDict:
-        orm_mode = True
-        from_attributes = True
-
 
 class ProductInDBBase(ProductBase):
+    model_config = ConfigDict(from_attributes=True)
+
     product_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
 
-    class ConfigDict:
-        orm_mode = True
-        from_attributes = True
-
 
 class Product(ProductInDBBase):
     pass
+
+
+class ProductOrder(ProductInDBBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    created_at: datetime = Field(..., exclude=True)
+    updated_at: datetime = Field(..., exclude=True)
+    stock_quantity: Optional[int] = Field(..., exclude=True)
+    category: Optional[str] = Field(..., exclude=True)
+    image_src: str = Field(..., exclude=True)
+    description: str = Field(..., exclude=True)
