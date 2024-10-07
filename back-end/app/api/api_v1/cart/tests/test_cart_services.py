@@ -25,7 +25,7 @@ class TestCartService:
             name="Product 1",
             price=10.0,
             count=2,
-            img_src="image1.jpg",
+            image_src="image1.jpg",
             total_price=20.0,
         )
 
@@ -36,7 +36,7 @@ class TestCartService:
             name="Product 2",
             price=15.0,
             count=1,
-            img_src="image2.jpg",
+            image_src="image2.jpg",
             total_price=15.0,
         )
 
@@ -85,7 +85,7 @@ class TestCartService:
             name="Product",
             price=15.0,
             count=2,
-            img_src="image.jpg",
+            image_src="image.jpg",
             total_price=30.0,
         )
 
@@ -96,7 +96,7 @@ class TestCartService:
             name="Product",
             price=15.0,
             count=3,
-            img_src="image.jpg",
+            image_src="image.jpg",
             total_price=45.0,
         )
 
@@ -248,7 +248,7 @@ class TestCartService:
             name="Product",
             price=10.0,
             count=1,
-            img_src="image.jpg",
+            image_src="image.jpg",
             total_price=10.0,
         )
         cart = Cart(
@@ -273,7 +273,7 @@ class TestCartService:
             name="Product",
             price=15.0,
             count=5,
-            img_src="image.jpg",
+            image_src="image.jpg",
             total_price=75.0,
         )
         cart = Cart(
@@ -305,7 +305,7 @@ class TestCartService:
             name="Product",
             price=15.0,
             count=3,
-            img_src="image.jpg",
+            image_src="image.jpg",
             total_price=45.0,
         )
         cart = Cart(

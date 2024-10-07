@@ -141,7 +141,7 @@ class CartService:
                 count=cart_item_model.count,
                 name=product_from_db.name,
                 price=product_from_db.price,
-                img_src=product_from_db.image_src,
+                image_src=product_from_db.image_src,
                 total_price=cart_item_model.count * product_from_db.price,
             )
 
