@@ -8,7 +8,7 @@ class CartItemModel(BaseModel):
     name: str
     price: float = Field(..., gt=0)
     count: int = Field(..., gt=0)
-    img_src: str
+    image_src: str
     total_price: float = Field(..., gt=0)
 
 
