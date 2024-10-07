@@ -66,9 +66,9 @@ const Home = () => {
                     : items.map(item =>
                         <Card
                             key={item.product_id}
-                            id={item.product_id}
+                            product_id={item.product_id}
                             name={item.name}
-                            imageSrc={item.image_src}
+                            image_src={item.image_src}
                             price={item.price}/>)}
             </main>
         </>

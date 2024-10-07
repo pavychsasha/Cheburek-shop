@@ -6,14 +6,14 @@ import React from "react";
 import {RootState} from "../../../redux/store.ts";
 
 interface ICartItemProps {
-    id: string;
+    product_id: string;
     name: string;
-    imageSrc: string;
+    image_src: string;
     count: number;
     price: number;
 }
 
-const CartItem: React.FC<ICartItemProps> = ({id, name, imageSrc, count, price}) => {
+const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count, price}) => {
 
     const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized);
 
@@ -21,30 +21,33 @@ const CartItem: React.FC<ICartItemProps> = ({id, name, imageSrc, count, price}) 
 
     const handleClickPlus = () => {
         if (isAuthorized){
-            const itemsToAdd = {
-                product_id: id,
-                count: 1
+            const itemToAdd = {
+                product_id: product_id,
+                name: name,
+                image_src: image_src,
+                price: price,
+                count: count
             }
-            dispatch(addItemToBackend(itemsToAdd))
+            dispatch(addItemToBackend(itemToAdd))
         } else {
             dispatch(addItem({
-                id
+                product_id
             }))
         }
     }
 
     const handleClickMinus = () => {
-        dispatch(removeItem(id))
+        dispatch(removeItem(product_id))
     }
 
     const handleClickDelete = () => {
-        dispatch(deleteItem(id))
+        dispatch(deleteItem(product_id))
     }
 
     return (
         <div className={styles.cart__item}>
             <div className={styles.info}>
-                <img src={imageSrc} alt=""/>
+                <img src={image_src} alt=""/>
                 <h3>{name}</h3>
             </div>
             <p>{price * count}₴</p>

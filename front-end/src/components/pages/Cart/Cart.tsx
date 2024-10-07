@@ -10,7 +10,7 @@ import React from "react";
 
 const Cart = () => {
     const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized);
-    const {items, totalPrice, totalCount} = useSelector((state: RootState) => state.cart);
+    const {items, total_price, total_count} = useSelector((state: RootState) => state.cart);
 
     const dispatch = useDispatch();
 
@@ -18,8 +18,7 @@ const Cart = () => {
         if (isAuthorized) {
             dispatch(fetchCart());
         }
-    }, [isAuthorized]);
-
+    }, [dispatch, isAuthorized]);
 
     const handleClickClear = () => {
         dispatch(clearCart())
@@ -40,18 +39,18 @@ const Cart = () => {
             <div className={styles.items}>
                 {
                     items.map((item) =>
-                        <CartItem key={item.id}
-                                  id={item.id}
+                        <CartItem key={item.product_id}
+                                  product_id={item.product_id}
                                   name={item.name}
                                   price={item.price}
                                   count={item.count}
-                                  imageSrc={item.imageSrc}/>)
+                                  image_src={item.image_src}/>)
                 }
             </div>
             <div className={styles.bottom}>
                 <div className={styles.detail}>
-                    <p>Кількість товару: <span>{totalCount} шт.</span></p>
-                    <p>Загальна вартість: <span className={styles.total__price}>{totalPrice}₴</span></p>
+                    <p>Кількість товару: <span>{total_count} шт.</span></p>
+                    <p>Загальна вартість: <span className={styles.total__price}>{total_price}₴</span></p>
                 </div>
                 <div className={styles.buttons}>
 

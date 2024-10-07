@@ -2,24 +2,24 @@ import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
 import axios from "axios";
 
 interface IItem {
-    id: string;
+    product_id: string;
     name: string;
     price: number;
-    imageSrc: string;
+    image_src: string;
     count: number;
 }
 
 interface ICartState {
-    totalPrice: number;
-    totalCount: number;
+    total_price: number;
+    total_count: number;
     items: IItem[];
     fetchCartStatus: string;
     addItemStatus: string;
 }
 
 const initialState: ICartState = {
-    totalPrice: 0,
-    totalCount: 0,
+    total_price: 0,
+    total_count: 0,
     items: [],
     fetchCartStatus: '',
     addItemStatus: ''
@@ -28,29 +28,29 @@ const initialState: ICartState = {
 
 const baseUrl = 'http://localhost:8000/api/v1';
 
-const findItem = (items: IItem[], id: string) => items.find(item => item.id === id);
+const findItem = (items: IItem[], id: string) => items.find(item => item.product_id === id);
 
 const updateTotals = (state: ICartState) => {
-    state.totalPrice = state.items.reduce((sum, item) => sum + (item.price * item.count), 0);
-    state.totalCount = state.items.reduce((count, item) => count + item.count, 0);
-}
-
-interface IPatchParams {
-    product_id: string;
-    count: number;
+    state.total_price = state.items.reduce((sum, item) => sum + (item.price * item.count), 0);
+    state.total_count = state.items.reduce((count, item) => count + item.count, 0);
 }
 
 export const fetchCart = createAsyncThunk('cart/fetchCart',
     async () => {
-        const {data} = await axios.get(baseUrl + '/cart/');
+        const {data} = await axios.get(baseUrl + '/cart/', {withCredentials: true});
+        console.log(data);
         return data;
     }
 )
 
 export const addItemToBackend = createAsyncThunk('cart/addItem',
-    async (patchParams: IPatchParams) => {
-        const {data} = await axios.patch(baseUrl + '/cart/add', patchParams, {withCredentials: true})
-        return data;
+    async (item: IItem) => {
+    const patchParams = {
+        product_id: item.product_id,
+        count: 1
+    }
+        await axios.patch(baseUrl + '/cart/add', patchParams, {withCredentials: true})
+        return item;
     }
 )
 
@@ -59,7 +59,7 @@ const cartSlice = createSlice({
     initialState,
     reducers: {
         addItem(state, action) {
-            const existingItem = findItem(state.items, action.payload.id);
+            const existingItem = findItem(state.items, action.payload.product_id);
             if (existingItem) {
                 existingItem.count += 1;
             } else {
@@ -76,7 +76,7 @@ const cartSlice = createSlice({
                 if (existingItem.count > 1) {
                     existingItem.count -= 1;
                 } else {
-                    state.items = state.items.filter(item => item.id !== action.payload);
+                    state.items = state.items.filter(item => item.product_id !== action.payload);
                 }
                 updateTotals(state);
             }
@@ -84,7 +84,7 @@ const cartSlice = createSlice({
         deleteItem(state, action) {
             const existingItem = findItem(state.items, action.payload);
             if (existingItem) {
-                state.items = state.items.filter(item => item.id !== action.payload);
+                state.items = state.items.filter(item => item.product_id !== action.payload);
                 updateTotals(state);
             }
         },
@@ -100,7 +100,9 @@ const cartSlice = createSlice({
                 state.items = [];
             })
             .addCase(fetchCart.fulfilled, (state, action) => {
-                state.items = action.payload;
+                state.items = action.payload.items;
+                state.total_count = action.payload.total_count;
+                state.total_price = action.payload.total_price;
                 state.fetchCartStatus = 'success';
             })
             .addCase(fetchCart.rejected, (state) => {
@@ -112,7 +114,8 @@ const cartSlice = createSlice({
                 state.addItemStatus = 'loading';
             })
             .addCase(addItemToBackend.fulfilled, (state, action) => {
-                const existingItem = findItem(state.items, action.payload.id);
+                const existingItem = findItem(state.items, action.payload.product_id);
+                console.log(action.payload)
                 if (existingItem) {
                     existingItem.count += 1;
                 } else {
