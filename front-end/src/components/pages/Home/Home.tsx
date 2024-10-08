@@ -2,13 +2,14 @@ import Categories from "../../common/Categories/Categories";
 import Skeleton from "../../common/Card/Skeleton";
 import Card from "../../common/Card/Card";
 import React from "react";
-import styles from './Home.module.scss'
+import styles from './Home.module.scss';
 import Sort from "../../common/Sort/Sort";
 import {useSelector, useDispatch} from "react-redux";
-import {RootState} from '../../../redux/store'
+import {RootState} from '../../../redux/store';
 import {setCategory, setSort} from "../../../redux/slices/filterSlice";
 import {fetchItems} from "../../../redux/slices/itemsSlice.ts";
 import {IParams} from "../../../types/api.ts";
+
 
 const Home = () => {
 
@@ -26,11 +27,11 @@ const Home = () => {
     //Handlers for setting filtration
     const onChangeCategory = (newCategory: string) => {
         dispatch(setCategory(newCategory));
-    }
+    };
 
     const onChangeSort = (sort: object) => {
         dispatch(setSort(sort));
-    }
+    };
 
     //Getting products with fetchItems function
     const getItems = async () => {
@@ -43,18 +44,18 @@ const Home = () => {
             sortBy,
             orderBy,
             searchValue,
-        }
+        };
 
         //Fetching items from db using API
         dispatch(fetchItems(params));
 
         window.scrollTo(0, 0);
-    }
+    };
 
+    // Fetch items when category, sort, or searchValue changes
     React.useEffect(() => {
         getItems();
     }, [category, sort, searchValue]);
-
 
     return (
         <>
@@ -69,19 +70,18 @@ const Home = () => {
                       onChangeSort={(sort) => onChangeSort(sort)}/>
             </div>
             <main className={styles.grid__wrapper}>
-
                 {/*Checking for loading status*/}
                 {status === 'loading' ? [...new Array(8)].map((_, index) => <Skeleton key={index}/>)
                     : items.map(item =>
                         <Card
                             key={item.product_id}
-                            id={item.product_id}
+                            product_id={item.product_id}
                             name={item.name}
-                            imageSrc={item.image_src}
+                            image_src={item.image_src}
                             price={item.price}/>)}
             </main>
         </>
-    )
-}
+    );
+};
 
 export default Home;

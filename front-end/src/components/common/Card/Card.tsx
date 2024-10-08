@@ -1,20 +1,21 @@
 import styles from './Card.module.scss'
 import {FaMinus, FaPlus} from "react-icons/fa";
-import {addItem, removeItem} from "../../../redux/slices/cartSLice.ts";
+import {addItem, addItemToBackend, removeItem} from "../../../redux/slices/cartSLice.ts";
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../../../redux/store.ts";
 import React from "react";
 
 interface ICardProps {
-    id: number;
+    product_id: string;
     name: string;
-    imageSrc: string;
+    image_src: string;
     price: number;
 }
 
-const Card: React.FC<ICardProps> = ({id, name, imageSrc, price, }) => {
+const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
     const cartItem = useSelector((state: RootState) =>
-        state.cart.items.find((item) => item.id === id))
+        state.cart.items.find((item) => item.product_id === product_id));
+    const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized);
 
     const dispatch = useDispatch();
 
@@ -22,24 +23,27 @@ const Card: React.FC<ICardProps> = ({id, name, imageSrc, price, }) => {
 
     const handleClickPlus = React.useCallback(() => {
         const newItem = {
-            id: id,
-            imageSrc: imageSrc,
+            product_id: product_id,
+            image_src: image_src,
             name: name,
             price: price,
             count: 0
         }
-        dispatch(addItem(newItem));
-    }, [dispatch, id, imageSrc, name, price]);
+        if (isAuthorized) {
+            dispatch(addItemToBackend(newItem));
+        } else {
+            dispatch(addItem(newItem));
+        }
+    }, [dispatch, product_id, image_src, name, price]);
 
     const handleClickMinus = React.useCallback(() => {
-        dispatch(removeItem(id));
-    }, [dispatch, id]);
-
+        dispatch(removeItem(product_id));
+    }, [dispatch, product_id]);
 
     return (
         <div className={styles.wrapper}>
             <div className={styles.card}>
-                <img src={imageSrc}
+                <img src={image_src}
                      alt="Чебурек"/>
                 <h3>{name}</h3>
                 <div className={styles.bottom}>

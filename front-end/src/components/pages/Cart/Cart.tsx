@@ -4,27 +4,22 @@ import {FaTrash} from "react-icons/fa";
 import CartItem from "../../common/CartItem/CartItem.tsx";
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../../../redux/store.ts";
-import {clearCart} from "../../../redux/slices/cartSLice.ts";
-import React from "react";
-
+import {clearCart, clearCartFromBackend} from "../../../redux/slices/cartSLice.ts";
 
 const Cart = () => {
     //Getting variables from state
-    const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized);
-    const {items, totalPrice, totalCount} = useSelector((state: RootState) => state.cart);
+    const {items, total_price, total_count} = useSelector((state: RootState) => state.cart);
+    const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized)
 
     const dispatch = useDispatch();
 
-    React.useEffect(() => {
-        if (isAuthorized) {
-            console.log(11);
-        }
-    }, [isAuthorized, dispatch]);
-
-
     //Handlers for cart actions
     const handleClickClear = () => {
-        dispatch(clearCart())
+        if (isAuthorized) {
+            dispatch(clearCartFromBackend());
+        } else {
+            dispatch(clearCart());
+        }
     }
 
     return (
@@ -42,18 +37,18 @@ const Cart = () => {
             <div className={styles.items}>
                 {
                     items.map((item) =>
-                        <CartItem key={item.id}
-                                  id={item.id}
+                        <CartItem key={item.product_id}
+                                  product_id={item.product_id}
                                   name={item.name}
                                   price={item.price}
                                   count={item.count}
-                                  imageSrc={item.imageSrc}/>)
+                                  image_src={item.image_src}/>)
                 }
             </div>
             <div className={styles.bottom}>
                 <div className={styles.detail}>
-                    <p>Кількість товару: <span>{totalCount} шт.</span></p>
-                    <p>Загальна вартість: <span className={styles.total__price}>{totalPrice}₴</span></p>
+                    <p>Кількість товару: <span>{total_count} шт.</span></p>
+                    <p>Загальна вартість: <span className={styles.total__price}>{total_price}₴</span></p>
                 </div>
                 <div className={styles.buttons}>
 
