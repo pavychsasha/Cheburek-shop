@@ -15,6 +15,9 @@ interface ICartState {
     items: IItem[];
     fetchCartStatus: string;
     addItemStatus: string;
+    subtractItemStatus: string;
+    deleteItemStatus: string;
+    clearCartStatus: string;
 }
 
 const initialState: ICartState = {
@@ -22,38 +25,54 @@ const initialState: ICartState = {
     total_count: 0,
     items: [],
     fetchCartStatus: '',
-    addItemStatus: ''
+    addItemStatus: '',
+    subtractItemStatus: '',
+    deleteItemStatus: '',
+    clearCartStatus: ''
 };
-
 
 const baseUrl = 'http://localhost:8000/api/v1';
 
+// Helper function to find item by product ID
 const findItem = (items: IItem[], id: string) => items.find(item => item.product_id === id);
 
+// Helper function to update total price and count
 const updateTotals = (state: ICartState) => {
     state.total_price = state.items.reduce((sum, item) => sum + (item.price * item.count), 0);
     state.total_count = state.items.reduce((count, item) => count + item.count, 0);
-}
+};
 
-export const fetchCart = createAsyncThunk('cart/fetchCart',
-    async () => {
-        const {data} = await axios.get(baseUrl + '/cart/', {withCredentials: true});
-        console.log(data);
-        return data;
-    }
-)
+// Helper function to handle API status updates
+const updateStatus = (state: ICartState, field: keyof ICartState, status: string) => {
+    state[field] = status;
+};
 
-export const addItemToBackend = createAsyncThunk('cart/addItem',
-    async (item: IItem) => {
-    const patchParams = {
-        product_id: item.product_id,
-        count: 1
-    }
-        await axios.patch(baseUrl + '/cart/add', patchParams, {withCredentials: true})
-        return item;
-    }
-)
+// Async Thunks for API calls
+export const fetchCart = createAsyncThunk('cart/fetchCart', async () => {
+    const {data} = await axios.get(baseUrl + '/cart/', {withCredentials: true});
+    return data;
+});
 
+export const addItemToBackend = createAsyncThunk('cart/addItem', async (item: IItem) => {
+    await axios.patch(baseUrl + '/cart/add', {product_id: item.product_id, count: 1}, {withCredentials: true});
+    return item;
+});
+
+export const subtractItemFromBackend = createAsyncThunk('cart/subtractItem', async (product_id: string) => {
+    await axios.patch(baseUrl + '/cart/subtract_product', {product_id, count: 1}, {withCredentials: true});
+    return product_id;
+});
+
+export const deleteItemFromBackend = createAsyncThunk('cart/deleteItem', async (product_id: string) => {
+    await axios.delete(baseUrl + `/cart/product/${product_id}`, {withCredentials: true});
+    return product_id;
+});
+
+export const clearCartFromBackend = createAsyncThunk('cart/clearCart', async () => {
+    await axios.delete(baseUrl + '/cart/', {withCredentials: true});
+});
+
+// Cart Slice
 const cartSlice = createSlice({
     name: 'cart',
     initialState,
@@ -63,30 +82,20 @@ const cartSlice = createSlice({
             if (existingItem) {
                 existingItem.count += 1;
             } else {
-                state.items.push({
-                    ...action.payload,
-                    count: 1
-                });
+                state.items.push({...action.payload, count: 1});
             }
             updateTotals(state);
         },
         removeItem(state, action) {
             const existingItem = findItem(state.items, action.payload);
             if (existingItem) {
-                if (existingItem.count > 1) {
-                    existingItem.count -= 1;
-                } else {
-                    state.items = state.items.filter(item => item.product_id !== action.payload);
-                }
+                existingItem.count > 1 ? existingItem.count -= 1 : state.items = state.items.filter(item => item.product_id !== action.payload);
                 updateTotals(state);
             }
         },
         deleteItem(state, action) {
-            const existingItem = findItem(state.items, action.payload);
-            if (existingItem) {
-                state.items = state.items.filter(item => item.product_id !== action.payload);
-                updateTotals(state);
-            }
+            state.items = state.items.filter(item => item.product_id !== action.payload);
+            updateTotals(state);
         },
         clearCart(state) {
             state.items = [];
@@ -94,42 +103,61 @@ const cartSlice = createSlice({
         }
     },
     extraReducers: (builder) => {
+        // Fetch Cart
         builder
-            .addCase(fetchCart.pending, (state) => {
-                state.fetchCartStatus = 'loading';
-                state.items = [];
-            })
+            .addCase(fetchCart.pending, (state) => updateStatus(state, 'fetchCartStatus', 'loading'))
             .addCase(fetchCart.fulfilled, (state, action) => {
                 state.items = action.payload.items;
                 state.total_count = action.payload.total_count;
                 state.total_price = action.payload.total_price;
-                state.fetchCartStatus = 'success';
+                updateStatus(state, 'fetchCartStatus', 'success');
             })
-            .addCase(fetchCart.rejected, (state) => {
-                state.fetchCartStatus = 'error';
-                state.items = [];
-            })
+            .addCase(fetchCart.rejected, (state) => updateStatus(state, 'fetchCartStatus', 'error'));
+
+        // Add Item
         builder
-            .addCase(addItemToBackend.pending, (state) => {
-                state.addItemStatus = 'loading';
-            })
+            .addCase(addItemToBackend.pending, (state) => updateStatus(state, 'addItemStatus', 'loading'))
             .addCase(addItemToBackend.fulfilled, (state, action) => {
                 const existingItem = findItem(state.items, action.payload.product_id);
-                console.log(action.payload)
-                if (existingItem) {
-                    existingItem.count += 1;
-                } else {
-                    state.items.push({
-                        ...action.payload,
-                        count: 1
-                    });
-                }
-                state.addItemStatus = 'success';
+                existingItem ? existingItem.count += 1 : state.items.push({...action.payload, count: 1});
+                updateStatus(state, 'addItemStatus', 'success');
                 updateTotals(state);
             })
-            .addCase(addItemToBackend.rejected, (state) => {
-                state.addItemStatus = 'error';
+            .addCase(addItemToBackend.rejected, (state) => updateStatus(state, 'addItemStatus', 'error'));
+
+        // Subtract Item
+        builder
+            .addCase(subtractItemFromBackend.pending, (state) => updateStatus(state, 'subtractItemStatus', 'loading'))
+            .addCase(subtractItemFromBackend.fulfilled, (state, action) => {
+                const existingItem = findItem(state.items, action.payload);
+                if (existingItem) {
+                    existingItem.count > 1 ? existingItem.count -= 1 : state.items = state.items.filter(item => item.product_id !== action.payload);
+                    updateStatus(state, 'subtractItemStatus', 'success');
+                    updateTotals(state);
+                }
             })
+            .addCase(subtractItemFromBackend.rejected, (state) => updateStatus(state, 'subtractItemStatus', 'error'));
+
+        // Delete Item
+        builder
+            .addCase(deleteItemFromBackend.pending, (state) => updateStatus(state, 'deleteItemStatus', 'loading'))
+            .addCase(deleteItemFromBackend.fulfilled, (state, action) => {
+                state.items = state.items.filter(item => item.product_id !== action.payload);
+                updateStatus(state, 'deleteItemStatus', 'success');
+                updateTotals(state);
+            })
+            .addCase(deleteItemFromBackend.rejected, (state) => updateStatus(state, 'deleteItemStatus', 'error'));
+
+        // Clear Cart
+        builder
+            .addCase(clearCartFromBackend.pending, (state) => updateStatus(state, 'clearCartStatus', 'loading'))
+            .addCase(clearCartFromBackend.fulfilled, (state) => {
+                state.items = [];
+                state.total_count = 0;
+                state.total_price = 0;
+                updateStatus(state, 'clearCartStatus', 'success');
+            })
+            .addCase(clearCartFromBackend.rejected, (state) => updateStatus(state, 'clearCartStatus', 'error'));
     }
 });
 

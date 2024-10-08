@@ -57,7 +57,7 @@ const Login = () => {
     };
 
     React.useEffect(() => {
-      if (!isAuthorized) {
+      if (isAuthorized) {
           navigate('/');
       }
     })

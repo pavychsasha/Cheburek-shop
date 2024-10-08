@@ -1,7 +1,13 @@
 import styles from './CartItem.module.scss'
 import {ImCross} from "react-icons/im";
 import {useDispatch, useSelector} from "react-redux";
-import {addItem, addItemToBackend, deleteItem, removeItem} from "../../../redux/slices/cartSLice.ts";
+import {
+    addItem,
+    addItemToBackend,
+    deleteItem, deleteItemFromBackend,
+    removeItem,
+    subtractItemFromBackend
+} from "../../../redux/slices/cartSLice.ts";
 import React from "react";
 import {RootState} from "../../../redux/store.ts";
 
@@ -20,7 +26,7 @@ const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count,
     const dispatch = useDispatch();
 
     const handleClickPlus = () => {
-        if (isAuthorized){
+        if (isAuthorized) {
             const itemToAdd = {
                 product_id: product_id,
                 name: name,
@@ -37,11 +43,19 @@ const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count,
     }
 
     const handleClickMinus = () => {
-        dispatch(removeItem(product_id))
+        if (isAuthorized){
+            dispatch(subtractItemFromBackend(product_id))
+        } else {
+            dispatch(removeItem(product_id))
+        }
     }
 
     const handleClickDelete = () => {
-        dispatch(deleteItem(product_id))
+        if (isAuthorized){
+            dispatch(deleteItemFromBackend(product_id))
+        } else {
+            dispatch(deleteItem(product_id))
+        }
     }
 
     return (
