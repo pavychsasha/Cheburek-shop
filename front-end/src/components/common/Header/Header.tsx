@@ -3,7 +3,7 @@ import {CiShoppingCart} from "react-icons/ci";
 
 import styles from './Header.module.scss';
 import Searchbar from "../Searchbar/Searchbar.tsx";
-import {NavLink} from "react-router-dom";
+import {NavLink, useLocation} from "react-router-dom";
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from '../../../redux/store.ts'
 import {setSearchValue} from "../../../redux/slices/filterSlice.ts";
@@ -14,6 +14,8 @@ const Header = () => {
     const {total_price, total_count} = useSelector((state: RootState) => state.cart)
 
     const dispatch = useDispatch();
+
+    const location = useLocation();
 
     const onChangeSearch = (value: string) => {
         dispatch(setSearchValue(value));
@@ -30,8 +32,9 @@ const Header = () => {
                     </div>
                 </div>
             </NavLink>
-            <Searchbar searchValue={searchValue}
-                       onChangeSearch={onChangeSearch}/>
+            {location.pathname !== '/cart' &&  <Searchbar searchValue={searchValue}
+                                                          onChangeSearch={onChangeSearch}
+            />}
             <div className={styles.btn}>
                 <NavLink to="/cart">
                     <span>{total_price} ₴</span>
