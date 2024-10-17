@@ -9,73 +9,94 @@ header {
     flex-direction: row;
   }
 
-  .link {
+  a {
     text-decoration: none;
-  }
 
-  .logo__and__name {
-    display: flex;
-    align-content: center;
-    flex-direction: row;
-
-    @media (max-width: 768px) {
-    }
-
-    .logo {
-      width: 72px;
-      height: 72px;
-      margin-right: 8px;
-    }
-
-    .name__and__slogan {
+    .logo__and__name {
       display: flex;
       align-content: center;
-      justify-content: space-evenly;
-      flex-direction: column;
+      flex-direction: row;
 
-      h1{
-        font-size: 32px;
-        color: #000;
-        margin: 0;
-        padding: 0;
-        
-        @media (max-width: 768px) {
-          display: none;
-        }
+      @media (max-width: 768px) {
       }
 
-      p {
-        font-size: 20px;
-        color: rgba(0, 0, 0, 0.7);
-        margin: 0;
-        padding: 0;
+      .logo {
+        width: 72px;
+        height: 72px;
+        margin-right: 8px;
+      }
 
-        @media (max-width: 768px) {
-          font-size: 14px;
+      .name__and__slogan {
+        display: flex;
+        align-content: center;
+        justify-content: space-evenly;
+        flex-direction: column;
+
+        h1 {
+          font-size: 32px;
+          color: #000;
+          margin: 0;
+          padding: 0;
+
+          @media (max-width: 768px) {
+            display: none;
+          }
+        }
+
+        p {
+          font-size: 20px;
+          color: rgba(0, 0, 0, 0.7);
+          margin: 0;
+          padding: 0;
+
+          @media (max-width: 768px) {
+            font-size: 14px;
+          }
         }
       }
     }
   }
 
-  .btn {
+  .left {
+    display: flex;
+    flex-direction: row;
+
     a {
-      padding: 8px 8px;
       text-decoration: none;
-      color: white;
-      background-color: #d56550;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
 
-      .delim {
-        margin-left: 8px;
+      .user {
+        width: 40px;
+        height: 40px;
+        color: rgba(0, 0, 0, 0.7);
       }
+    }
 
-      svg {
-        margin-left: 8px;
-        margin-right: 4px;
+    .btn {
+      margin-left: 1.5rem;
+
+      a {
+        padding: 8px 16px;
+        text-decoration: none;
+        color: white;
+        background-color: #d56550;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+
+        .delim {
+          margin: 0 8px;
+          padding: 0;
+          color: rgba(255, 255, 255, 0.6);
+          font-weight: 100;
+        }
+
+        svg {
+          margin-left: 4px;
+        }
       }
     }
   }
+
+
 }
 
