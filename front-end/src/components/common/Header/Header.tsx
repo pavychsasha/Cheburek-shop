@@ -7,6 +7,7 @@ import {NavLink, useLocation} from "react-router-dom";
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from '../../../redux/store.ts'
 import {setSearchValue} from "../../../redux/slices/filterSlice.ts";
+import {FaUserCircle} from "react-icons/fa";
 
 
 const Header = () => {
@@ -32,16 +33,21 @@ const Header = () => {
                     </div>
                 </div>
             </NavLink>
-            {location.pathname !== '/cart' &&  <Searchbar searchValue={searchValue}
-                                                          onChangeSearch={onChangeSearch}
+            {location.pathname !== '/cart' && <Searchbar searchValue={searchValue}
+                                                         onChangeSearch={onChangeSearch}
             />}
-            <div className={styles.btn}>
-                <NavLink to="/cart">
-                    <span>{total_price} ₴</span>
-                    <span className={styles.delim}>|</span>
-                    <CiShoppingCart/>
-                    <span>{total_count}</span>
+            <div className={styles.left}>
+                <NavLink className={styles.link} to="/register">
+                    <FaUserCircle className={styles.user}/>
                 </NavLink>
+                <div className={styles.btn}>
+                    <NavLink className={styles.link} to="/cart">
+                        <span>{total_price} ₴</span>
+                        <span className={styles.delim}>|</span>
+                        <span>{total_count}</span>
+                        <CiShoppingCart/>
+                    </NavLink>
+                </div>
             </div>
         </header>)
 }
