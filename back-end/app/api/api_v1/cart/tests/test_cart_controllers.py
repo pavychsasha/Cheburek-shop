@@ -1,5 +1,7 @@
 import urllib.parse
 import uuid
+from gettext import translation
+
 import pytest
 from httpx import AsyncClient
 import urllib
@@ -30,7 +32,10 @@ class TestMongoService:
         response = await client.get("/api/v1/cart/")
         cart_dict = response.json()
         assert cart_dict["items"][0]["product_id"] == str(product_id)
-        assert cart_dict["items"][0]["name"] == product.name
+
+        assert cart_dict["items"][0]["name"]  in [translation.product_name
+                                                  for translation in product.translations]
+
         assert cart_dict["items"][0]["price"] == product.price
         assert cart_dict["items"][0]["image_src"] == product.image_src
         assert cart_dict["items"][0]["total_price"] == product.price * 5
@@ -335,7 +340,6 @@ class TestMongoService:
         assert register_response.status_code == 201
 
         login_payload = {"username": "user@example.com", "password": "string"}
-        # login_payload = urllib.parse.urlencode(login_payload)
 
         login_response = await client.post(
             "/api/v1/auth/login",

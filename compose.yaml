@@ -26,6 +26,7 @@ services:
     volumes:
       - ./back-end/app:/backend/app
       - ./back-end/alembic:/backend/alembic
+      - ./back-end/beanie_migrations:/backend/beanie_migrations
       - ./back-end/pyproject.toml:/backend/pyproject.toml
       - ./back-end/poetry.lock:/backend/poetry.lock
       - ./back-end/alembic.ini:/backend/alembic.ini
