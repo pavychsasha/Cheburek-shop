@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
-from os import getenv
+
+from fastapi_users.exceptions import UserAlreadyExists
 
 from app.core.schemas.user import UserCreate
 from app.api.dependencies.authentication.user_manager import (
@@ -15,8 +16,17 @@ get_users_db_context = contextlib.asynccontextmanager(get_users_db)
 get_user_manager_context = contextlib.asynccontextmanager(get_user_manager)
 
 
-default_email = getenv("DEFAULT_EMAIL", "admin@admin.com")
-default_password = getenv("DEFAULT_PASSWORD", "adminpassword")
+email = str(input("Enter admin-user's email (admin@mail.com): "))
+if not email:
+    email = "admin@mail.com"
+password = str(input("Enter admin-user's password (adminpassword): "))
+if not password:
+    password = "adminpassword"
+username = str(input("Enter admin-user's username (adminusername): "))
+if not username:
+    username = "adminusername"
+
+
 default_is_active = True
 default_is_superuser = True
 default_is_verified = True
@@ -34,8 +44,9 @@ async def create_user(
 
 
 async def create_superuser(
-    email: str = default_email,
-    password: str = default_password,
+    email: str = email,
+    password: str = password,
+    username: str = username,
     is_active: bool = default_is_active,
     is_superuser: bool = default_is_superuser,
     is_verified: bool = default_is_verified,
@@ -46,17 +57,21 @@ async def create_superuser(
         is_active=is_active,
         is_superuser=is_superuser,
         is_verified=is_verified,
+        username=username,
     )
 
     async with sql_db_helper.session_factory() as session:
         async with get_users_db_context(session) as user_db:
             async with get_user_manager_context(user_db) as user_manager:
-                user = await create_user(
-                    user_manager=user_manager,
-                    user_create=user_create,
-                )
-                print(f"User created {user}")
-                return user
+                try:
+                    user = await create_user(
+                        user_manager=user_manager,
+                        user_create=user_create,
+                    )
+                    print(f"User created {user}")
+                    return user
+                except UserAlreadyExists:
+                    print(f"User already exists {user_create}")
 
 
 if __name__ == "__main__":
