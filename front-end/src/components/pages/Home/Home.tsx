@@ -23,6 +23,7 @@ const Home = () => {
 
     //List of categories
     const categories = ['Все', 'Чебуреки', 'Пиріжки', 'Напої', 'Інше'];
+    //const categoriesEn = ['All', 'Chebureks', 'Pies', 'Drinks', 'Others'];
 
     //Handlers for setting filtration
     const onChangeCategory = (newCategory: string) => {

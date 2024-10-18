@@ -3,19 +3,20 @@ import React from "react";
 
 interface ISortProps {
     value: {
-        name: string;
+        nameUa: string;
+        nameEn: string;
         sortType: string;
         sortOrder: string;
     };
-    onChangeSort: (sort: { name: string; sortType: string }) => void;
+    onChangeSort: (sort: { nameUa: string; sortType: string }) => void;
 }
 
 const Sort: React.FC<ISortProps> = ({value, onChangeSort}) => {
     const sortList = [
-        {name: 'алфавітом(зрост.)', sortType: 'name', sortOrder: 'asc'},
-        {name: 'ціною(зрост.)', sortType: 'price', sortOrder: 'asc'},
-        {name: 'алфавітом(спад.)', sortType: 'name', sortOrder: 'desc'},
-        {name: 'ціною(спад.)', sortType: 'price', sortOrder: 'desc'}
+        {nameUa: 'алфавітом(зрост.)', nameEn: 'alphabet(asc)', sortType: 'name', sortOrder: 'asc'},
+        {nameUa: 'ціною(зрост.)', nameEn: 'price(asc)', sortType: 'price', sortOrder: 'asc'},
+        {nameUa: 'алфавітом(спад.)', nameEn: 'alphabet(desc)', sortType: 'name', sortOrder: 'desc'},
+        {nameUa: 'ціною(спад.)', nameEn: 'price(desc)', sortType: 'price', sortOrder: 'desc'}
     ];
 
     const handleOnChangeSort = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -29,7 +30,7 @@ const Sort: React.FC<ISortProps> = ({value, onChangeSort}) => {
             <select value={value.sortType + value.sortOrder} onChange={handleOnChangeSort}>
                 {sortList.map((sort, index) => (
                     <option key={index} value={sort.sortType + sort.sortOrder}>
-                        {sort.name}
+                        {sort.nameUa}
                     </option>
                 ))}
             </select>
