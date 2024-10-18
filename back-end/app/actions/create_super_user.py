@@ -15,18 +15,6 @@ from app.core.models import sql_db_helper, User
 get_users_db_context = contextlib.asynccontextmanager(get_users_db)
 get_user_manager_context = contextlib.asynccontextmanager(get_user_manager)
 
-
-email = str(input("Enter admin-user's email (admin@mail.com): "))
-if not email:
-    email = "admin@mail.com"
-password = str(input("Enter admin-user's password (adminpassword): "))
-if not password:
-    password = "adminpassword"
-username = str(input("Enter admin-user's username (adminusername): "))
-if not username:
-    username = "adminusername"
-
-
 default_is_active = True
 default_is_superuser = True
 default_is_verified = True
@@ -44,9 +32,9 @@ async def create_user(
 
 
 async def create_superuser(
-    email: str = email,
-    password: str = password,
-    username: str = username,
+    email: str,
+    password: str,
+    username: str,
     is_active: bool = default_is_active,
     is_superuser: bool = default_is_superuser,
     is_verified: bool = default_is_verified,
@@ -75,4 +63,13 @@ async def create_superuser(
 
 
 if __name__ == "__main__":
-    asyncio.run(create_superuser())
+    email = str(input("Enter admin-user's email (admin@mail.com): "))
+    if not email:
+        email = "admin@mail.com"
+    password = str(input("Enter admin-user's password (adminpassword): "))
+    if not password:
+        password = "adminpassword"
+    username = str(input("Enter admin-user's username (adminusername): "))
+    if not username:
+        username = "adminusername"
+    asyncio.run(create_superuser(email=email, password=password, username=username))
