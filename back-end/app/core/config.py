@@ -59,6 +59,7 @@ class MongoDatabaseCollections(BaseModel):
 class MongoDatabaseConfig(BaseModel):
     # username: str
     # password: str
+
     host: str = "mongo"
     database_name: str = "cheburek_mongo_db"
     test_database_name: str = "test_cheburek_mongo_db"
