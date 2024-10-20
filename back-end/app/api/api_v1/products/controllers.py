@@ -15,7 +15,7 @@ from .schemas import (
     ProductUpdate,
     ProductPartialUpdate,
     ProductBulkCreate,
-    ProductResponse
+    ProductResponse, Pagination, pagination_params, ProductPaginatedResponse
 )
 
 router = APIRouter(tags=["Products"])
@@ -23,34 +23,40 @@ router = APIRouter(tags=["Products"])
 
 @router.get(
     "/",
-    response_model=list[ProductResponse],
+    response_model=ProductPaginatedResponse,
     status_code=status.HTTP_200_OK,
 )
 async def get_products(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     current_language: Annotated[str, Depends(current_language)],
+    pagination_params: Annotated[Pagination, Depends(pagination_params)]
 ):
-    products = await services.get_products(session=session)
-    return await services.localize_products_list(products=products, language=current_language)
+    return await services.get_all_products_response(
+        session=session,
+        pagination_params=pagination_params,
+        current_language=current_language
+    )
 
 
-@router.get("/search/", response_model=list[ProductResponse], status_code=status.HTTP_200_OK)
+@router.get("/search/", response_model=ProductPaginatedResponse, status_code=status.HTTP_200_OK)
 async def get_product_by_query(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     current_language: Annotated[str, Depends(current_language)],
+    pagination_params: Annotated[Pagination, Depends(pagination_params)],
     name: Annotated[str | None, Query(max_length=90)] = None,
     category: Annotated[str | None, Query(max_length=30)] = None,
     sort_by: Annotated[str | None, Query(max_length=30)] = None,
     order: Annotated[str | None, Query(max_length=30)] = None,
 ):
-    products = await services.search_products(
+    return await services.get_searched_products_response(
         session=session,
         category=category,
         sort_by=sort_by,
         order=order,
         name=name,
+        current_language=current_language,
+        pagination_params=pagination_params
     )
-    return await services.localize_products_list(products=products, language=current_language)
 
 
 @router.post(
