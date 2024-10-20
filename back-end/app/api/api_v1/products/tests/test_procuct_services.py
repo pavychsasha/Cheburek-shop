@@ -22,15 +22,15 @@ from app.api.api_v1.products.schemas import (
     ProductCreate,
     ProductPartialUpdate,
     ProductUpdate,
-    ProductBulkCreate, ProductTranslations,
+    ProductBulkCreate, ProductTranslations, Pagination,
 )
 
 
 @pytest.mark.asyncio
-async def test_get_products(session: AsyncSession):
+async def test_get_products(session: AsyncSession, products):
     """Test fetching products with pagination."""
     # Assuming products are already added in setup
-    products = await get_products(session, limit=5, offset=0)
+    products = await get_products(session, Pagination(per_page=5, page=1))
 
     assert len(products) <= 5
     assert all(isinstance(product, Product) for product in products)
@@ -384,11 +384,11 @@ async def test_get_products_pagination(session: AsyncSession):
         )
 
     # Fetch the first 5 products (with explicit ordering)
-    products_page_1 = await search_products(session, limit=5, offset=0, sort_by="name")
+    products_page_1 = await search_products(session, pagination_params=Pagination(per_page=5, page=1), sort_by="name")
     assert len(products_page_1) == 5
 
     # Fetch the next set (remaining product)
-    products_page_2 = await search_products(session, limit=5, offset=5, sort_by="name")
+    products_page_2 = await search_products(session, pagination_params=Pagination(per_page=5, page=2), sort_by="name")
     assert len(products_page_2) == 1
 
     # Ensure pagination works and products are fetched in correct order

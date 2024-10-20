@@ -15,7 +15,8 @@ async def test_get_products(client: AsyncClient):
     assert response.status_code == 200
 
     # Check that the response returns an empty list (assuming no products initially)
-    assert response.json() == []
+    assert response.json()["products"] == []
+    assert response.json()["pages"] == 0
 
 
 @pytest.mark.asyncio
@@ -78,7 +79,7 @@ async def test_search_product(superuser_client: AsyncClient):
     products = response.json()
 
     assert len(products) > 0
-    assert products[0]["name"] == "Test Product"
+    assert products["products"][0]["name"] == "Test Product"
 
 
 @pytest.mark.asyncio
@@ -137,7 +138,7 @@ async def test_search_product_no_results(client: AsyncClient):
     assert response.status_code == 200
 
     # Check that no products are returned
-    assert response.json() == []
+    assert response.json()["products"] == []
 
 
 @pytest.mark.asyncio
@@ -334,5 +335,5 @@ async def test_bulk_create_and_search(superuser_client: AsyncClient):
     assert response.status_code == 200
     products = response.json()
     assert len(products) == 2
-    assert products[0]["name"] == "Bulk Product 1"
-    assert products[1]["name"] == "Bulk Product 2"
+    assert products["products"][0]["name"] == "Bulk Product 1"
+    assert products["products"][1]["name"] == "Bulk Product 2"
