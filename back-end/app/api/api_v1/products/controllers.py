@@ -4,6 +4,7 @@ from fastapi import APIRouter, status, Depends, Query, Security
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models import sql_db_helper, User
+from app.api.dependencies.session import current_language
 from app.api.dependencies.authentication.fastapi_users import current_active_superuser
 
 from . import services
@@ -14,6 +15,7 @@ from .schemas import (
     ProductUpdate,
     ProductPartialUpdate,
     ProductBulkCreate,
+    ProductResponse, Pagination, pagination_params, ProductPaginatedResponse
 )
 
 router = APIRouter(tags=["Products"])
@@ -21,29 +23,39 @@ router = APIRouter(tags=["Products"])
 
 @router.get(
     "/",
-    response_model=list[Product],
+    response_model=ProductPaginatedResponse,
     status_code=status.HTTP_200_OK,
 )
 async def get_products(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    current_language: Annotated[str, Depends(current_language)],
+    pagination_params: Annotated[Pagination, Depends(pagination_params)]
 ):
-    return await services.get_products(session=session)
+    return await services.get_all_products_response(
+        session=session,
+        pagination_params=pagination_params,
+        current_language=current_language
+    )
 
 
-@router.get("/search/", response_model=list[Product], status_code=status.HTTP_200_OK)
+@router.get("/search/", response_model=ProductPaginatedResponse, status_code=status.HTTP_200_OK)
 async def get_product_by_query(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    current_language: Annotated[str, Depends(current_language)],
+    pagination_params: Annotated[Pagination, Depends(pagination_params)],
     name: Annotated[str | None, Query(max_length=90)] = None,
     category: Annotated[str | None, Query(max_length=30)] = None,
     sort_by: Annotated[str | None, Query(max_length=30)] = None,
     order: Annotated[str | None, Query(max_length=30)] = None,
 ):
-    return await services.search_products(
+    return await services.get_searched_products_response(
         session=session,
         category=category,
         sort_by=sort_by,
         order=order,
         name=name,
+        current_language=current_language,
+        pagination_params=pagination_params
     )
 
 

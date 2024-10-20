@@ -22,15 +22,15 @@ from app.api.api_v1.products.schemas import (
     ProductCreate,
     ProductPartialUpdate,
     ProductUpdate,
-    ProductBulkCreate,
+    ProductBulkCreate, ProductTranslations, Pagination,
 )
 
 
 @pytest.mark.asyncio
-async def test_get_products(session: AsyncSession):
+async def test_get_products(session: AsyncSession, products):
     """Test fetching products with pagination."""
     # Assuming products are already added in setup
-    products = await get_products(session, limit=5, offset=0)
+    products = await get_products(session, Pagination(per_page=5, page=1))
 
     assert len(products) <= 5
     assert all(isinstance(product, Product) for product in products)
@@ -40,9 +40,15 @@ async def test_get_products(session: AsyncSession):
 async def test_get_product(session: AsyncSession):
     """Test fetching a product by ID."""
     # Create a sample product first
+    product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Test Product",
+            product_description="A test product"
+        )
+    ]
     product_data = ProductCreate(
-        name="Test Product",
-        description="A test product",
+        translations=product_translations,
         price=10.99,
         category="Food",
         stock_quantity=100,
@@ -54,8 +60,13 @@ async def test_get_product(session: AsyncSession):
     fetched_product = await get_product(session, created_product.product_id)
 
     assert fetched_product.product_id == created_product.product_id
-    assert fetched_product.name == "Test Product"
-
+    assert fetched_product.translations[0].product_name == "Test Product"
+    assert fetched_product.translations[0].product_description == "A test product"
+    assert fetched_product.translations[0].language_code == "en"
+    assert fetched_product.price == 10.99
+    assert fetched_product.category == "Food"
+    assert fetched_product.stock_quantity == 100
+    assert fetched_product.image_src == "test_image.png"
 
 @pytest.mark.asyncio
 async def test_get_product_not_found(session: AsyncSession):
@@ -69,9 +80,15 @@ async def test_get_product_not_found(session: AsyncSession):
 @pytest.mark.asyncio
 async def test_create_product(session: AsyncSession):
     """Test creating a new product."""
+    product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name=f"New Product",
+            product_description=f"A new product"
+        )
+    ]
     product_data = ProductCreate(
-        name="New Product",
-        description="A new product",
+        translations=product_translations,
         price=12.99,
         category="Electronics",
         stock_quantity=50,
@@ -80,7 +97,7 @@ async def test_create_product(session: AsyncSession):
 
     product = await create_product(session, product_data)
 
-    assert product.name == "New Product"
+    assert product.translations[0].product_name == "New Product"
     assert product.price == 12.99
     assert product.category == "Electronics"
 
@@ -88,9 +105,15 @@ async def test_create_product(session: AsyncSession):
 @pytest.mark.asyncio
 async def test_create_product_duplicate_name(session: AsyncSession):
     """Test creating a product with a duplicate name."""
+    product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Duplicate Product",
+            product_description="A duplicate test product"
+        )
+    ]
     product_data = ProductCreate(
-        name="Duplicate Product",
-        description="A duplicate test product",
+        translations=product_translations,
         price=19.99,
         category="Home",
         stock_quantity=10,
@@ -108,19 +131,31 @@ async def test_create_product_duplicate_name(session: AsyncSession):
 @pytest.mark.asyncio
 async def test_bulk_create_products(session: AsyncSession):
     """Test bulk creating products."""
+    product_translations_1 = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Bulk Product 1",
+            product_description="Bulk product description"
+        )
+    ]
+    product_translations_2 = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Bulk Product 2",
+            product_description="Another bulk product"
+        )
+    ]
     bulk_product_data = ProductBulkCreate(
         products=[
             ProductCreate(
-                name="Bulk Product 1",
-                description="Bulk product description",
+                translations=product_translations_1,
                 price=9.99,
                 category="Food",
                 stock_quantity=100,
                 image_src="bulk1.png",
             ),
             ProductCreate(
-                name="Bulk Product 2",
-                description="Another bulk product",
+                translations=product_translations_2,
                 price=15.99,
                 category="Electronics",
                 stock_quantity=50,
@@ -132,16 +167,29 @@ async def test_bulk_create_products(session: AsyncSession):
     bulk_products = await bulk_create_product(session, bulk_product_data)
 
     assert len(bulk_products.products) == 2
-    assert bulk_products.products[0].name == "Bulk Product 1"
+    assert bulk_products.products[0].translations[0].product_name == "Bulk Product 1"
 
 
 @pytest.mark.asyncio
 async def test_bulk_create_products_duplicate(session: AsyncSession):
     """Test bulk creating products with a duplicate."""
     # First, create a product
+    product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Existing Product",
+            product_description="An existing product"
+        )
+    ]
+    unique_product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name="New Bulk Product",
+            product_description="new Bulk Product"
+        )
+    ]
     product_data = ProductCreate(
-        name="Existing Product",
-        description="An existing product",
+        translations=product_translations,
         price=11.99,
         category="Home",
         stock_quantity=30,
@@ -153,16 +201,14 @@ async def test_bulk_create_products_duplicate(session: AsyncSession):
     bulk_product_data = ProductBulkCreate(
         products=[
             ProductCreate(
-                name="Existing Product",
-                description="Duplicate product",
+                translations=product_translations,
                 price=19.99,
                 category="Home",
                 stock_quantity=10,
                 image_src="duplicate.png",
             ),
             ProductCreate(
-                name="New Bulk Product",
-                description="New bulk product",
+                translations=unique_product_translations,
                 price=25.99,
                 category="Electronics",
                 stock_quantity=50,
@@ -179,9 +225,16 @@ async def test_bulk_create_products_duplicate(session: AsyncSession):
 async def test_update_product(session: AsyncSession):
     """Test updating an existing product."""
     # Create a product first
+    product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Product to Update",
+            product_description="Product description"
+        )
+    ]
+
     product_data = ProductCreate(
-        name="Product to Update",
-        description="Product description",
+        translations=product_translations,
         price=12.99,
         category="Toys",
         stock_quantity=30,
@@ -189,10 +242,17 @@ async def test_update_product(session: AsyncSession):
     )
     created_product = await create_product(session, product_data)
 
+    product_translations_update = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Updated Product",
+            product_description="Updated product description"
+        )
+    ]
+
     # Now update the product
     update_data = ProductUpdate(
-        name="Updated Product",
-        description="Updated product description",
+        translations=product_translations_update,
         price=15.99,
         category="Games",
         stock_quantity=20,
@@ -202,7 +262,7 @@ async def test_update_product(session: AsyncSession):
         session, created_product.product_id, update_data
     )
 
-    assert updated_product.name == "Updated Product"
+    assert updated_product.translations[0].product_name == "Updated Product"
     assert updated_product.price == 15.99
     assert updated_product.category == "Games"
 
@@ -211,9 +271,15 @@ async def test_update_product(session: AsyncSession):
 async def test_delete_product(session: AsyncSession):
     """Test deleting a product."""
     # Create a product first
+    product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Product to Delete",
+            product_description="This product will be deleted"
+        )
+    ]
     product_data = ProductCreate(
-        name="Product to Delete",
-        description="This product will be deleted",
+        translations=product_translations,
         price=9.99,
         category="Food",
         stock_quantity=100,
@@ -233,11 +299,24 @@ async def test_delete_product(session: AsyncSession):
 async def test_search_products(session: AsyncSession):
     """Test searching products by category and name."""
     # Create a few products
+    product_translations_1 = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Search Product 1",
+            product_description="Product 1 description"
+        ),
+    ]
+    product_translations_2 = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Search Product 2",
+            product_description="Product 2 description"
+        ),
+    ]
     await create_product(
         session,
         ProductCreate(
-            name="Search Product 1",
-            description="Product 1 description",
+            translations=product_translations_1,
             price=5.99,
             category="Food",
             stock_quantity=100,
@@ -247,8 +326,7 @@ async def test_search_products(session: AsyncSession):
     await create_product(
         session,
         ProductCreate(
-            name="Search Product 2",
-            description="Product 2 description",
+            translations=product_translations_2,
             price=15.99,
             category="Electronics",
             stock_quantity=50,
@@ -259,7 +337,7 @@ async def test_search_products(session: AsyncSession):
     # Search by name
     products_by_name = await search_products(session, name="Search Product 1")
     assert len(products_by_name) == 1
-    assert products_by_name[0].name == "Search Product 1"
+    assert products_by_name[0].translations[0].product_name == "Search Product 1"
 
     # Search by category
     products_by_category = await search_products(session, category="Electronics")
@@ -287,11 +365,17 @@ async def test_get_products_pagination(session: AsyncSession):
 
     # Create 6 products
     for i in range(6):
+        product_translations = [
+            ProductTranslations(
+                language_code="en",
+                product_name=f"Paginated Product {i}",
+                product_description=f"Description for product {i}"
+            )
+        ]
         await create_product(
             session,
             ProductCreate(
-                name=f"Paginated Product {i}",
-                description=f"Description for product {i}",
+                translations=product_translations,
                 price=5.99 + i,
                 category="Toys",
                 stock_quantity=10 + i,
@@ -300,81 +384,31 @@ async def test_get_products_pagination(session: AsyncSession):
         )
 
     # Fetch the first 5 products (with explicit ordering)
-    products_page_1 = await search_products(session, limit=5, offset=0, sort_by="name")
+    products_page_1 = await search_products(session, pagination_params=Pagination(per_page=5, page=1), sort_by="name")
     assert len(products_page_1) == 5
 
     # Fetch the next set (remaining product)
-    products_page_2 = await search_products(session, limit=5, offset=5, sort_by="name")
+    products_page_2 = await search_products(session, pagination_params=Pagination(per_page=5, page=2), sort_by="name")
     assert len(products_page_2) == 1
 
     # Ensure pagination works and products are fetched in correct order
-    assert products_page_1[0].name == "Paginated Product 0"
-    assert products_page_2[0].name == "Paginated Product 5"
-
-
-@pytest.mark.asyncio
-async def test_soft_delete_product(session: AsyncSession):
-    """Test soft deleting a product and ensuring it is excluded from results."""
-    # Create a product
-    product_data = ProductCreate(
-        name="Soft Delete Product",
-        description="A product to be soft-deleted",
-        price=12.99,
-        category="Furniture",
-        stock_quantity=100,
-        image_src="soft_delete.png",
-    )
-    created_product = await create_product(session, product_data)
-
-    # Soft delete the product
-    await delete_product(session, created_product.product_id)
-
-    # Try fetching the deleted product (should raise ProductNotFoundError)
-    with pytest.raises(ProductNotFoundError):
-        await get_product(session, created_product.product_id)
-
-    # Ensure the deleted product is not included in product listings
-    products = await get_products(session)
-    assert not any(
-        product.product_id == created_product.product_id for product in products
-    )
-
-
-@pytest.mark.asyncio
-async def test_hard_delete_product(session: AsyncSession):
-    """Test hard deleting a product and ensuring it is removed from the database."""
-    # Create a product
-    product_data = ProductCreate(
-        name="Hard Delete Product",
-        description="A product to be hard-deleted",
-        price=15.99,
-        category="Electronics",
-        stock_quantity=50,
-        image_src="hard_delete.png",
-    )
-    created_product = await create_product(session, product_data)
-
-    # Hard delete the product
-    await delete_product(session, created_product.product_id)
-
-    # Ensure the deleted product cannot be retrieved
-    with pytest.raises(ProductNotFoundError):
-        await get_product(session, created_product.product_id)
-
-    # Ensure the product is completely removed from the database
-    products = await get_products(session)
-    assert not any(
-        product.product_id == created_product.product_id for product in products
-    )
+    assert products_page_1[0].translations[0].product_name == "Paginated Product 0"
+    assert products_page_2[0].translations[0].product_name == "Paginated Product 5"
 
 
 @pytest.mark.asyncio
 async def test_update_product_partial(session: AsyncSession):
     """Test partially updating a product."""
     # Create a product first
+    product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Product for Partial Update",
+            product_description="This product will be partially updated"
+        )
+    ]
     product_data = ProductCreate(
-        name="Product for Partial Update",
-        description="This product will be partially updated",
+        translations=product_translations,
         price=20.99,
         category="Books",
         stock_quantity=150,
@@ -384,15 +418,17 @@ async def test_update_product_partial(session: AsyncSession):
 
     # Now partially update the product (only change the name)
     partial_update_data = ProductPartialUpdate(
-        name="Partially Updated Product",
-    )  # type: ignore
+        translations=[{
+            "language_code": "en",
+            "product_name": "Partially Updated Product"}],
+    )
     updated_product = await update_product(
         session, created_product.product_id, partial_update_data, partial=True
     )
 
-    assert updated_product.name == "Partially Updated Product"
+    assert updated_product.translations[0].product_name == "Partially Updated Product"
     assert (
-        updated_product.description == "This product will be partially updated"
+        updated_product.translations[0].product_description == "This product will be partially updated"
     )  # Unchanged
     assert updated_product.price == 20.99  # Unchanged
 
@@ -418,9 +454,15 @@ async def test_get_products_no_results(session: AsyncSession):
 async def test_search_products_invalid_order(session: AsyncSession):
     """Test searching products with an invalid order parameter."""
     # Create a valid product first
+    product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Valid Product",
+            product_description="Valid product"
+        )
+    ]
     product_data = ProductCreate(
-        name="Valid Product",
-        description="Valid product",
+        translations=product_translations,
         price=20.99,
         category="Books",
         stock_quantity=50,
@@ -436,19 +478,24 @@ async def test_search_products_invalid_order(session: AsyncSession):
 @pytest.mark.asyncio
 async def test_bulk_create_duplicate_names_in_same_request(session: AsyncSession):
     """Test bulk creating products with duplicate names in the same request."""
+    product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Duplicate Bulk Product",
+            product_description="Duplicate X"
+        )
+    ]
     bulk_product_data = ProductBulkCreate(
         products=[
             ProductCreate(
-                name="Duplicate Bulk Product",
-                description="Duplicate 1",
+                translations=product_translations,
                 price=9.99,
                 category="Food",
                 stock_quantity=100,
                 image_src="bulk1.png",
             ),
             ProductCreate(
-                name="Duplicate Bulk Product",  # Duplicate name in the same request
-                description="Duplicate 2",
+                translations=product_translations,
                 price=15.99,
                 category="Electronics",
                 stock_quantity=50,
@@ -465,9 +512,15 @@ async def test_bulk_create_duplicate_names_in_same_request(session: AsyncSession
 async def test_update_product_partial_update(session: AsyncSession):
     """Test partial updates to a product."""
     # Create a product
+    product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Partial Update Product",
+            product_description="Original description"
+        )
+    ]
     product_data = ProductCreate(
-        name="Partial Update Product",
-        description="Original description",
+        translations=product_translations,
         price=12.99,
         category="Toys",
         stock_quantity=30,
@@ -482,16 +535,22 @@ async def test_update_product_partial_update(session: AsyncSession):
     )
 
     assert updated_product.price == 25.99
-    assert updated_product.name == "Partial Update Product"  # Unchanged
+    assert updated_product.translations[0].product_name == "Partial Update Product"  # Unchanged
 
 
 @pytest.mark.asyncio
 async def test_delete_product_and_check_exclusion_from_listings(session: AsyncSession):
     """Test soft deleting a product and ensuring it is excluded from product listings."""
     # Create a product
+    product_translations = [
+        ProductTranslations(
+            language_code="en",
+            product_name="Product to be Deleted",
+            product_description="This product will be deleted"
+        )
+    ]
     product_data = ProductCreate(
-        name="Product to be Deleted",
-        description="This product will be deleted",
+        translations=product_translations,
         price=10.99,
         category="Electronics",
         stock_quantity=50,
