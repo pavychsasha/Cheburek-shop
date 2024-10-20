@@ -1,6 +1,5 @@
 import cheburekLogo from "../../../assets/cheburekLogo.png";
 import {CiShoppingCart} from "react-icons/ci";
-
 import styles from './Header.module.scss';
 import Searchbar from "../Searchbar/Searchbar.tsx";
 import {NavLink, useLocation} from "react-router-dom";
@@ -8,6 +7,8 @@ import {useDispatch, useSelector} from "react-redux";
 import {RootState} from '../../../redux/store.ts'
 import {setSearchValue} from "../../../redux/slices/filterSlice.ts";
 import {FaUserCircle} from "react-icons/fa";
+import {useTranslation} from "react-i18next";
+
 
 
 const Header = () => {
@@ -17,6 +18,8 @@ const Header = () => {
     const dispatch = useDispatch();
 
     const location = useLocation();
+
+    const [t, i18n] = useTranslation('global');
 
     const onChangeSearch = (value: string) => {
         dispatch(setSearchValue(value));
@@ -28,7 +31,7 @@ const Header = () => {
                 <div className={styles.logo__and__name}>
                     <img src={cheburekLogo} className={styles.logo} alt="logo"/>
                     <div className={styles.name__and__slogan}>
-                        <h1>Пиріжечки&Чебуречки</h1>
+                        <h1>{t("header.logo")}</h1>
                         <p>Найсмачніше для найкращих</p>
                     </div>
                 </div>
