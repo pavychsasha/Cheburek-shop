@@ -18,12 +18,12 @@ class ApiV1Prefix(BaseModel):
     products: str = "/products"
     cart: str = "/cart"
     orders: str = "/orders"
+    languages: str = "/languages"
 
 
 class ApiPrefix(BaseModel):
     prefix: str = "/api"
     v1: ApiV1Prefix = ApiV1Prefix()
-    cookie_http_only: bool = True
 
     @property
     def bearer_token_url(self) -> str:
@@ -59,6 +59,7 @@ class MongoDatabaseCollections(BaseModel):
 class MongoDatabaseConfig(BaseModel):
     # username: str
     # password: str
+
     host: str = "mongo"
     database_name: str = "cheburek_mongo_db"
     test_database_name: str = "test_cheburek_mongo_db"
@@ -82,6 +83,11 @@ class AccessToken(BaseModel):
 class Session(BaseModel):
     secret_key: str
 
+class CookieTransportSettings(BaseModel):
+    cookie_http_only: bool = True
+    cookie_name: str = "userauth"
+    cookie_samesite: str = "none"
+    cookie_secure: bool = True
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -92,6 +98,7 @@ class Settings(BaseSettings):
     )
     run: RunConfig = RunConfig()
     api: ApiPrefix = ApiPrefix()
+    cookie_transport_settings: CookieTransportSettings = CookieTransportSettings()
     db: DatabaseConfig
     access_token: AccessToken
     mongo_db: MongoDatabaseConfig

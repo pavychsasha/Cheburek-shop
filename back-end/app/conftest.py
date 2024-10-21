@@ -1,20 +1,27 @@
 from typing import Any, AsyncGenerator
-from urllib import response
-from app.api.api_v1.products.schemas import ProductBulkCreate, ProductCreate
-from app.api.api_v1.products.services import bulk_create_product, get_products
-import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
-from httpx import AsyncClient
-from app.core.models import Base, User
-from app.core.config import settings
-from app.main import app as main_app
-from app.core.models import SQLDatabaseHelper, MongoDbHelper, sql_db_helper
 
+from app.core.config import settings
 
 # Override settings to use test databases
 settings.db.url = settings.db.test_url
 settings.mongo_db.url = settings.mongo_db.test_url
 settings.mongo_db.database_name = settings.mongo_db.test_database_name
+settings.cookie_transport_settings.cookie_secure = False
+
+
+from app.api.api_v1.products.schemas import ProductBulkCreate, ProductCreate
+from app.api.api_v1.products.services import bulk_create_product, get_products
+import pytest
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from httpx import AsyncClient
+
+from app.core.models import Base, User
+from app.main import app as main_app
+from app.core.models import SQLDatabaseHelper, MongoDbHelper, sql_db_helper
+
+
+
 
 
 @pytest.fixture(scope="function")
@@ -74,7 +81,7 @@ async def session(test_sql_db: SQLDatabaseHelper) -> AsyncGenerator[AsyncSession
 @pytest.fixture(scope="function")
 @pytest.mark.usefixtures("reset_databases")
 async def client(
-    test_sql_db: SQLDatabaseHelper,
+    test_sql_db: SQLDatabaseHelper
 ):
     """Set up a FastAPI client for testing."""
 
@@ -87,124 +94,118 @@ async def client(
         app=main_app,
         base_url="http://testserver",
     ) as ac:
+        ac.cookies = {}
         yield ac
+        ac.cookies = {}
 
     # Clear dependency overrides after the test
     main_app.dependency_overrides.clear()
 
 
 @pytest.fixture(scope="function")
+async def superuser_client(session: AsyncSession, client: AsyncClient) -> AsyncClient:
+
+    register_payload = {
+        "email": "somemail@mail.com",
+        "password": "PASSWORD",
+        "is_active": True,
+        "is_superuser": False,
+        "is_verified": False,
+        "username": "USERNAME",
+    }
+    await client.post(
+        "/api/v1/auth/register", json=register_payload
+    )
+
+    stmt = update(User).where(User.email == register_payload["email"]).values(is_superuser=True)
+    await session.execute(stmt)
+    await session.commit()
+
+    await client.post(
+        '/api/v1/auth/login',
+        data={
+            "username": "somemail@mail.com", "password": "PASSWORD"
+        },
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    )
+
+    yield client
+
+
+@pytest.fixture(scope="function")
 async def products(session: AsyncSession):
     products_lst = [
         {
-            "name": "Potato pie",
-            "description": "Pie with tender potatoes",
+            "translations": [
+                {
+                    "language_code": "en",
+                    "product_name": "Potato pie",
+                    "product_description": "Pie with tender potatoes"
+                },
+                {
+                    "language_code": "ukr",
+                    "product_name": "Пиріжок з картоплею",
+                    "product_description": "Пиріжок з ніжною картоплею"
+                }
+            ],
             "price": 20,
             "category": "Patties",
             "stock_quantity": 200,
-            "image_src": "https://i.imgur.com/gcIZ0Es.png",
-            "product_id": "244f9cdd-1f65-451b-a9e8-2248ce7b0e63",
-            "created_at": "2024-09-26T00:14:28.554784",
-            "updated_at": "2024-09-26T00:14:28.554784",
+            "image_src": "https://i.imgur.com/gcIZ0Es.png"
         },
         {
-            "name": "Cheburek with chicken, cheese and mushrooms",
-            "description": "Cheburek with chicken, cheese and mushrooms",
+            "translations": [
+                {
+                    "language_code": "en",
+                    "product_name": "Cheburek with chicken, cheese and mushrooms",
+                    "product_description": "Cheburek with chicken, cheese and mushrooms"
+                },
+                {
+                    "language_code": "ukr",
+                    "product_name": "Чебурек із куркою, сиром та грибами",
+                    "product_description": "Чебурек із куркою, сиром та грибами"
+                }
+            ],
             "price": 65,
             "category": "Chebureks",
             "stock_quantity": 100,
-            "image_src": "https://i.imgur.com/RKUO3jK.png",
-            "product_id": "31b03a13-1be7-41c1-83fa-e7560ef18e47",
-            "created_at": "2024-09-26T00:14:28.554784",
-            "updated_at": "2024-09-26T00:14:28.554784",
+            "image_src": "https://i.imgur.com/RKUO3jK.png"
         },
         {
-            "name": "Cheburek with meat and cheese",
-            "description": "Cheburek with meat and cheese",
+            "translations": [
+                {
+                    "language_code": "en",
+                    "product_name": "Cheburek with meat and cheese",
+                    "product_description": "Cheburek with meat and cheese"
+                },
+                {
+                    "language_code": "ukr",
+                    "product_name": "Чебурек із м'ясом та сиром",
+                    "product_description": "Чебурек із м'ясом та сиром"
+                }
+            ],
             "price": 60,
             "category": "Chebureks",
             "stock_quantity": 100,
-            "image_src": "https://i.imgur.com/RKUO3jK.png",
-            "product_id": "36d465c6-7d4e-45e1-af30-7d75d42828d1",
-            "created_at": "2024-09-26T00:14:28.554784",
-            "updated_at": "2024-09-26T00:14:28.554784",
+            "image_src": "https://i.imgur.com/RKUO3jK.png"
         },
         {
-            "name": "Sprite 0.5l",
-            "description": "Sprite refreshing drink 0.5l",
+            "translations": [
+                {
+                    "language_code": "en",
+                    "product_name": "Sprite 0.5l",
+                    "product_description": "Sprite refreshing drink 0.5l"
+                },
+                {
+                    "language_code": "ukr",
+                    "product_name": "Спрайт 0.5л",
+                    "product_description": "Освіжаючий напій Спрайт 0.5л"
+                }
+            ],
             "price": 30,
             "category": "Beverages",
             "stock_quantity": 300,
-            "image_src": "https://i.imgur.com/l7RFgRd.png",
-            "product_id": "4b5ac79a-b788-4b17-bd3d-1b21697e6424",
-            "created_at": "2024-09-26T00:14:28.554784",
-            "updated_at": "2024-09-26T00:14:28.554784",
-        },
-        {
-            "name": "Cheburek with chicken and cheese",
-            "description": "Cheburek with chicken and cheese",
-            "price": 60,
-            "category": "Chebureks",
-            "stock_quantity": 100,
-            "image_src": "https://i.imgur.com/RKUO3jK.png",
-            "product_id": "794affd7-cf3b-4304-b983-6bc1b607dbc1",
-            "created_at": "2024-09-26T00:14:28.554784",
-            "updated_at": "2024-09-26T00:14:28.554784",
-        },
-        {
-            "name": "Cheburek with meat, cheese and mushrooms",
-            "description": "Cheburek with meat, cheese and mushrooms",
-            "price": 65,
-            "category": "Chebureks",
-            "stock_quantity": 100,
-            "image_src": "https://i.imgur.com/RKUO3jK.png",
-            "product_id": "7d55ecf9-e7c2-495b-9d6a-81f12680414a",
-            "created_at": "2024-09-26T00:14:28.554784",
-            "updated_at": "2024-09-26T00:14:28.554784",
-        },
-        {
-            "name": "Nuggets",
-            "description": "Juicy nuggets",
-            "price": 25,
-            "category": "Other",
-            "stock_quantity": 150,
-            "image_src": "https://i.imgur.com/UAYLcz3.png",
-            "product_id": "8f5da484-6cc8-4665-ac4d-89470b49636f",
-            "created_at": "2024-09-26T00:14:28.554784",
-            "updated_at": "2024-09-26T00:14:28.554784",
-        },
-        {
-            "name": "Pie with potatoes and mushrooms",
-            "description": "Pie with potatoes and mushrooms",
-            "price": 25,
-            "category": "Patties",
-            "stock_quantity": 200,
-            "image_src": "https://i.imgur.com/gcIZ0Es.png",
-            "product_id": "96592016-0be1-4978-9594-ec9d9dc7d391",
-            "created_at": "2024-09-26T00:14:28.554784",
-            "updated_at": "2024-09-26T00:14:28.554784",
-        },
-        {
-            "name": "Coca-Cola 0.5L",
-            "description": "Refreshing drink Coca-Cola 0.5l",
-            "price": 30,
-            "category": "Beverages",
-            "stock_quantity": 300,
-            "image_src": "https://i.imgur.com/ym0F0Lg.png",
-            "product_id": "9cf64564-b38a-4bb3-a5ce-ceb58667f664",
-            "created_at": "2024-09-26T00:14:28.554784",
-            "updated_at": "2024-09-26T00:14:28.554784",
-        },
-        {
-            "name": "Cheburek with meat",
-            "description": "Cheburek with delicious meat",
-            "price": 55,
-            "category": "Chebureks",
-            "stock_quantity": 100,
-            "image_src": "https://i.imgur.com/RKUO3jK.png",
-            "product_id": "9e71884a-5345-41b4-b3cd-00ca5f003fa8",
-            "created_at": "2024-09-26T00:14:28.554784",
-            "updated_at": "2024-09-26T00:14:28.554784",
+            "image_src": "https://i.imgur.com/l7RFgRd.png"
         },
     ]
     product_bulk = ProductBulkCreate(

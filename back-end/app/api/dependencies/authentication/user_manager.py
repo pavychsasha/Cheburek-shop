@@ -9,7 +9,7 @@ from app.core.config import settings
 from fastapi import Depends
 from fastapi_users import BaseUserManager, UUIDIDMixin
 
-from app.core.models.user import User
+from app.core.models import User
 
 
 if TYPE_CHECKING:
@@ -28,7 +28,6 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         user: User,
         request: Optional[Request] = None,
     ):
-        # TODO: add cart user-session merge logic
         log.warning(
             "User %r has registered.",
             user.id,

@@ -9,6 +9,7 @@ __all__ = (
     "sql_db_helper",
     "mongo_db_helper",
     "Product",
+    "ProductTranslation",
     "User",
     "Order",
     "OrderProductAssociation",
@@ -24,6 +25,7 @@ from .db_helper import (
     mongo_db_helper,
 )
 from .product import Product
+from .product_translations import ProductTranslation
 from .user import User
 from .order import Order
 from .order_association import OrderProductAssociation

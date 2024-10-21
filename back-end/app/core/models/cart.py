@@ -6,10 +6,8 @@ from beanie import BackLink, Document, Link
 
 class CartItem(Document):
     product_id: uuid.UUID
-    name: str
     price: float = Field(..., ge=0)
     count: int = Field(..., ge=0)
-    image_src: str
     total_price: float = Field(..., ge=0)
 
     class Settings:

@@ -6,11 +6,12 @@ import uuid
 from beanie import DeleteRules, WriteRules
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.api_v1.products.schemas import ProductResponse
 from app.core.exceptions import ProductCartNotFoundError, ProductNotFoundError
 
-from app.api.api_v1.cart.schemas import CartItemModel, CartItemModify
+from app.api.api_v1.cart.schemas import CartItemModel, CartItemModify, CartModel, CartItemResponse, CartModelResponse
 from app.core.models import Cart, CartItem, Product
-from app.api.api_v1.products.services import get_product
+from app.api.api_v1.products.services import get_product, localize_product
 
 
 class CartService:
@@ -103,6 +104,50 @@ class CartService:
             return user_cart
 
     @classmethod
+    async def get_session_cart_with_product_data(
+        cls,
+        sql_session: AsyncSession,
+        session_id: uuid.UUID,
+        user_id: Optional[uuid.UUID] = None,
+        language: str = "en"
+    ):
+        cart = await cls.get_cart(
+            session_id=session_id,
+            user_id=user_id,
+        )
+        product_cart_items = []
+        if cart and cart.items:
+            for cart_item in cart.items:
+                cart_item: CartItem
+                product = await get_product(
+                    session=sql_session, product_id=cart_item.product_id,
+                )
+                localized_product: ProductResponse = await localize_product(
+                    product=product,
+                    language=language,
+                )
+                product_cart_items.append(
+                    CartItemResponse(
+                        product_id=cart_item.product_id,
+                        name=localized_product.name,
+                        image_src=localized_product.image_src,
+                        price=cart_item.price,
+                        count=cart_item.count,
+                        total_price=cart_item.total_price,
+                    )
+                )
+            return CartModelResponse(
+                items=product_cart_items,
+                total_count=cart.total_count,
+                total_price=cart.total_price,
+            )
+        return CartModelResponse(
+            items=[],
+            total_count=0,
+            total_price=0,
+        )
+
+    @classmethod
     async def find_product_in_cart(
         cls,
         cart: Cart,
@@ -139,9 +184,7 @@ class CartService:
             new_item = CartItem(
                 product_id=cart_product_id,
                 count=cart_item_model.count,
-                name=product_from_db.name,
                 price=product_from_db.price,
-                image_src=product_from_db.image_src,
                 total_price=cart_item_model.count * product_from_db.price,
             )
 

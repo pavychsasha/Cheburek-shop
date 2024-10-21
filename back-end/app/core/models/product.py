@@ -7,6 +7,7 @@ from .base import Base
 
 if TYPE_CHECKING:
     from .order_association import OrderProductAssociation
+    from .product_translations import ProductTranslation
 
 
 class Product(Base):
@@ -16,8 +17,6 @@ class Product(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
-    name: Mapped[str] = mapped_column(unique=True, index=True)
-    description: Mapped[str]
     price: Mapped[float] = mapped_column(CheckConstraint("price >= 0"), nullable=False)
     category: Mapped[str] = mapped_column(index=True)
     stock_quantity: Mapped[int] = mapped_column(
@@ -37,6 +36,7 @@ class Product(Base):
     orders: Mapped[list["OrderProductAssociation"]] = relationship(
         back_populates="product"
     )
+    translations: Mapped[list["ProductTranslation"]] = relationship()
 
     __table_args__ = (
         Index("ix_product_category", "category"),
@@ -48,4 +48,4 @@ class Product(Base):
     )
 
     def __str__(self) -> str:
-        return f"Product<(product_id='{self.product_id!s}', name={self.name!r})>"
+        return f"Product<(product_id='{self.product_id!s}')>"

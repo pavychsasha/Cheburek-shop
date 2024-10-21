@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.models import sql_db_helper
 from app.core.models.cart import Cart
 
-from app.api.api_v1.cart.schemas import CartItemModify, CartModel
+from app.api.api_v1.cart.schemas import CartItemModify, CartModel, CartModelResponse
 from app.api.api_v1.cart.services import CartService
-from app.api.api_v1.cart.dependencies import mongo_cart
+from app.api.api_v1.cart.dependencies import mongo_cart, mongo_cart_populated
 
 
 router = APIRouter(
@@ -18,8 +18,8 @@ router = APIRouter(
 
 
 # Get the cart
-@router.get("/", status_code=status.HTTP_200_OK, response_model=CartModel)
-async def get_cart(cart: Annotated[Cart, Depends(mongo_cart)]):
+@router.get("/", status_code=status.HTTP_200_OK, response_model=CartModelResponse)
+async def get_cart(cart: Annotated[CartModelResponse, Depends(mongo_cart_populated)]):
     """
     Retrieve the current cart for the user or session.
 
