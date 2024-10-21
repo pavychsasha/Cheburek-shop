@@ -1,4 +1,5 @@
 import uuid
+from logging import getLogger
 from typing import Optional
 
 import math
@@ -13,6 +14,8 @@ from app.core.exceptions import (
 from sqlalchemy import delete, select, asc, desc, and_, update, func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.dialects import postgresql
+
 from app.core.models import Product
 from app.core.models.product_translations import ProductTranslation
 
@@ -46,7 +49,7 @@ async def get_products(
         ).offset((pagination_params.page - 1) * pagination_params.per_page)
 
     result = await session.execute(stmt)
-    return result.unique().scalars().all()  # type: ignore
+    return result.unique().scalars().all()
 
 async def localize_product(
         product: Product,
@@ -75,11 +78,10 @@ async def localize_products_list(
     return localized_products
 
 async def get_num_of_pages(session: AsyncSession, per_page: int,  stmt=None) -> int:
-    select_from_stmt = stmt if stmt is not None else Product
-
-    count_products_stmt = select(
-        func.count()
-    ).select_from(select_from_stmt)
+    if stmt is not None:
+        count_products_stmt = select(func.count()).select_from(stmt)
+    else:
+        count_products_stmt = select(func.count()).select_from(Product)
 
     result = await session.execute(count_products_stmt)
     count_products = result.scalar()
@@ -144,7 +146,13 @@ async def search_products(
     # Construct the query
     stmt = select(Product).join(ProductTranslation).options(joinedload(Product.translations))
 
+    if pagination_params is not None:
+        stmt = stmt.limit(
+            pagination_params.per_page
+        ).offset((pagination_params.page - 1) * pagination_params.per_page)
+
     if name:
+        name = name.strip()
         stmt = stmt.where(
             ProductTranslation.product_name.ilike(f"%{name}%"),
         )
@@ -173,12 +181,6 @@ async def search_products(
         elif order:
             raise InvalidProductOrderError(f"'{order}' is not a valid order.")
 
-    # Add pagination
-    if pagination_params:
-        stmt = stmt.limit(
-            pagination_params.per_page
-        ).offset((pagination_params.page - 1) * pagination_params.per_page)
-
     if query_only:
         return stmt
 
@@ -194,19 +196,26 @@ async def get_searched_products_response(
         name: str | None = None,
         current_language: str = "en",
 ) -> ProductPaginatedResponse:
-    products_query = await search_products(
+
+    products = await search_products(
         session=session,
         category=category,
         sort_by=sort_by,
         order=order,
         name=name,
         pagination_params=pagination_params,
+    )
+    products_query = await search_products(
+        session=session,
+        category=category,
+        sort_by=sort_by,
+        order=order,
+        name=name,
         query_only=True
     )
-    result = await session.execute(products_query)
 
-    products = result.unique().scalars().all()
     num_of_pages = await get_num_of_pages(session=session, per_page=pagination_params.per_page, stmt=products_query)
+
     localized_products = await localize_products_list(products=products, language=current_language)
 
     return ProductPaginatedResponse(pages=num_of_pages, products=localized_products)
