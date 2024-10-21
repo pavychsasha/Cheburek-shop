@@ -2,6 +2,7 @@ import styles from './Searchbar.module.scss';
 import { CiSearch } from "react-icons/ci";
 import React from "react";
 import debounce from "lodash.debounce";
+import {useTranslation} from "react-i18next";
 
 interface ISearchProps {
     searchValue: string;
@@ -10,6 +11,8 @@ interface ISearchProps {
 
 const Searchbar: React.FC<ISearchProps> = ({ onChangeSearch }) => {
     const [localSearchValue, setLocalSearchValue] = React.useState<string>('');
+
+    const [t] = useTranslation('global');
 
     const updateSearchValue = React.useCallback(
         debounce((value: string) => {
@@ -34,7 +37,7 @@ const Searchbar: React.FC<ISearchProps> = ({ onChangeSearch }) => {
             <CiSearch />
             <input
                 type="text"
-                placeholder={'Пошук...'}
+                placeholder={t('searchbar.placeholder')}
                 value={localSearchValue}
                 onChange={handleChange}
             />

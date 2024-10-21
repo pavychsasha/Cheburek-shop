@@ -4,6 +4,7 @@ import {addItem, addItemToBackend, removeItem} from "../../../redux/slices/cartS
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../../../redux/store.ts";
 import React from "react";
+import {useTranslation} from "react-i18next";
 
 interface ICardProps {
     product_id: string;
@@ -18,6 +19,8 @@ const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
     const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized);
 
     const dispatch = useDispatch();
+
+    const [t] = useTranslation('global');
 
     const itemCount = cartItem ? cartItem.count : 0;
 
@@ -44,13 +47,13 @@ const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
         <div className={styles.wrapper}>
             <div className={styles.card}>
                 <img src={image_src}
-                     alt="Чебурек"/>
+                     alt={name}/>
                 <h3>{name}</h3>
                 <div className={styles.bottom}>
                     <p>ціна: {price}₴</p>
                     <div className={styles.button} onClick={itemCount === 0 ? handleClickPlus : undefined}>
                         {itemCount !== 0 && <FaMinus onClick={handleClickMinus}/>}
-                        <p>{itemCount === 0 ? 'Добавити' : <span>{itemCount}</span>}</p>
+                        <p>{itemCount === 0 ? t('card.button') : <span>{itemCount}</span>}</p>
                         {itemCount !== 0 && <FaPlus onClick={handleClickPlus}/>}
                     </div>
                 </div>

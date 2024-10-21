@@ -1,5 +1,6 @@
 import styles from "./Sort.module.scss";
 import React from "react";
+import {useTranslation} from "react-i18next";
 
 interface ISortProps {
     value: {
@@ -12,6 +13,8 @@ interface ISortProps {
 }
 
 const Sort: React.FC<ISortProps> = ({value, onChangeSort}) => {
+    const [t] = useTranslation('global');
+
     const sortList = [
         {nameUa: 'алфавітом(зрост.)', nameEn: 'alphabet(asc)', sortType: 'name', sortOrder: 'asc'},
         {nameUa: 'ціною(зрост.)', nameEn: 'price(asc)', sortType: 'price', sortOrder: 'asc'},
@@ -26,7 +29,7 @@ const Sort: React.FC<ISortProps> = ({value, onChangeSort}) => {
 
     return (
         <div className={styles.filter}>
-            <span>Сортувати за</span>
+            <span>{t('sort.sortBy')}</span>
             <select value={value.sortType + value.sortOrder} onChange={handleOnChangeSort}>
                 {sortList.map((sort, index) => (
                     <option key={index} value={sort.sortType + sort.sortOrder}>
