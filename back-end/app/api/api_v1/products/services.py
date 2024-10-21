@@ -1,5 +1,4 @@
 import uuid
-from logging import getLogger
 from typing import Optional
 
 import math
@@ -12,9 +11,8 @@ from app.core.exceptions import (
     InvalidProductOrderError,
 )
 from sqlalchemy import delete, select, asc, desc, and_, update, func
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.dialects import postgresql
 
 from app.core.models import Product
 from app.core.models.product_translations import ProductTranslation
@@ -24,7 +22,9 @@ from .schemas import (
     ProductUpdate,
     ProductPartialUpdate,
     ProductBulkCreate,
-    ProductResponse, ProductTranslations, Pagination, ProductPaginatedResponse,
+    ProductResponse,
+    Pagination,
+    ProductPaginatedResponse,
 )
 
 
@@ -144,7 +144,7 @@ async def search_products(
         raise InvalidSortFieldError(f"'{sort_by}' is not a valid field for sorting.")
 
     # Construct the query
-    stmt = select(Product).join(ProductTranslation).options(joinedload(Product.translations))
+    stmt = select(Product).join(ProductTranslation).options(selectinload(Product.translations))
 
     if pagination_params is not None:
         stmt = stmt.limit(
@@ -185,7 +185,7 @@ async def search_products(
         return stmt
 
     result = await session.execute(stmt)
-    return result.unique().scalars().all()
+    return result.scalars().all()
 
 async def get_searched_products_response(
         session: AsyncSession,
