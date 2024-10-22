@@ -11,6 +11,7 @@ class OrderProductModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     order_id: uuid.UUID = Field(..., exclude=True)
+    product_id: uuid.UUID = Field(..., exclude=True)
     order_product_id: uuid.UUID = Field(..., exclude=True)
     product: ProductOrder
     quantity: int

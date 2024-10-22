@@ -5,6 +5,7 @@ import CartItem from "../../common/CartItem/CartItem.tsx";
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../../../redux/store.ts";
 import {clearCart, clearCartFromBackend} from "../../../redux/slices/cartSLice.ts";
+import {useTranslation} from "react-i18next";
 
 const Cart = () => {
     //Getting variables from state
@@ -12,6 +13,8 @@ const Cart = () => {
     const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized)
 
     const dispatch = useDispatch();
+
+    const [t] = useTranslation('global');
 
     //Handlers for cart actions
     const handleClickClear = () => {
@@ -27,11 +30,11 @@ const Cart = () => {
             <div className={styles.top}>
                 <div className={styles.cart__heading}>
                     <FaCartShopping/>
-                    <h2>Кошик</h2>
+                    <h2>{t('cart.title')}</h2>
                 </div>
                 <div className={styles.delete} onClick={handleClickClear}>
                     <FaTrash/>
-                    <span>Очистити кошик</span>
+                    <span>{t('cart.clear')}</span>
                 </div>
             </div>
             <div className={styles.items}>
@@ -47,8 +50,8 @@ const Cart = () => {
             </div>
             <div className={styles.bottom}>
                 <div className={styles.detail}>
-                    <p>Кількість товару: <span>{total_count} шт.</span></p>
-                    <p>Загальна вартість: <span className={styles.total__price}>{total_price}₴</span></p>
+                    <p>{t('cart.totalQuantity')}: <span>{total_count} шт.</span></p>
+                    <p>{t('cart.totalPrice')}: <span className={styles.total__price}>{total_price}₴</span></p>
                 </div>
                 <div className={styles.buttons}>
 

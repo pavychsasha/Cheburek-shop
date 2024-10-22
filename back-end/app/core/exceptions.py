@@ -17,7 +17,7 @@ class ProductNotFoundError(HTTPException):
         # Using status code 404 (Not Found) for missing resources
         super().__init__(
             status_code=404,
-            detail=f"Product with id '{product_id}' was not found in the cart.",
+            detail=f"Product with id '{product_id}' was not found",
         )
         self.product_id = product_id
 
@@ -78,3 +78,12 @@ class ZeroProductsOrderError(HTTPException):
             status_code=400,
             detail=f"Cart should contain products",
         )
+
+
+class LanguageNotFoundError(HTTPException):
+    def __init__(self, language_code: str):
+        super().__init__(
+            status_code=404,
+            detail=f"language code {language_code}' was not found",
+        )
+        self.language_code = language_code
