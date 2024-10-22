@@ -1,18 +1,22 @@
 import uuid
 from typing import Annotated
-
-from app.api.dependencies.authentication.fastapi_users import \
-    current_active_superuser
-from app.api.dependencies.session import current_language
-from app.core.models import User, sql_db_helper
-from fastapi import APIRouter, Depends, Query, Security, status
+from fastapi import APIRouter, status, Depends, Query, Security
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.models import sql_db_helper, User
+from app.api.dependencies.session import current_language
+from app.api.dependencies.authentication.fastapi_users import current_active_superuser
 
 from . import services
 from .dependencies import product_by_id
-from .schemas import (Pagination, Product, ProductBulkCreate, ProductCreate,
-                      ProductPaginatedResponse, ProductPartialUpdate,
-                      ProductUpdate, pagination_params)
+from .schemas import (
+    Product,
+    ProductCreate,
+    ProductUpdate,
+    ProductPartialUpdate,
+    ProductBulkCreate,
+    ProductResponse, Pagination, pagination_params, ProductPaginatedResponse
+)
 
 router = APIRouter(tags=["Products"])
 
@@ -25,18 +29,16 @@ router = APIRouter(tags=["Products"])
 async def get_products(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     current_language: Annotated[str, Depends(current_language)],
-    pagination_params: Annotated[Pagination, Depends(pagination_params)],
+    pagination_params: Annotated[Pagination, Depends(pagination_params)]
 ):
     return await services.get_all_products_response(
         session=session,
         pagination_params=pagination_params,
-        current_language=current_language,
+        current_language=current_language
     )
 
 
-@router.get(
-    "/search/", response_model=ProductPaginatedResponse, status_code=status.HTTP_200_OK
-)
+@router.get("/search/", response_model=ProductPaginatedResponse, status_code=status.HTTP_200_OK)
 async def get_product_by_query(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     current_language: Annotated[str, Depends(current_language)],
@@ -53,7 +55,7 @@ async def get_product_by_query(
         order=order,
         name=name,
         current_language=current_language,
-        pagination_params=pagination_params,
+        pagination_params=pagination_params
     )
 
 

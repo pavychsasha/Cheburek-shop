@@ -1,10 +1,11 @@
 import re
-import uuid
+
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from datetime import datetime
-from typing import Annotated, List, Optional
+from typing import Optional, List, Annotated
+import uuid
 
 from fastapi import Query
-from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # TODO: add it to another folder during refactoring
@@ -12,14 +13,12 @@ class Pagination(BaseModel):
     per_page: int
     page: int
 
-
 class PaginationResponse(BaseModel):
     pages: int
 
-
 async def pagination_params(
     page: Annotated[int, Query(ge=1, required=False, le=2000)] = 1,
-    per_page: Annotated[int, Query(ge=1, required=False)] = 10,
+    per_page: Annotated[int, Query(ge=1, required=False)] = 10
 ):
     return Pagination(per_page=per_page, page=page)
 
@@ -32,7 +31,6 @@ class ProductTranslations(BaseModel):
     language_code: str
     product_name: str
     product_description: str
-
 
 class ProductTranslationsPartial(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -108,10 +106,8 @@ class ProductResponse(BaseModel):
     stock_quantity: Optional[int] = Field(default=0, ge=0)
     image_src: str = Field(..., min_length=1, max_length=350)
 
-
 class ProductPaginatedResponse(PaginationResponse):
     products: list[ProductResponse]
-
 
 class ProductOrder(ProductInDBBase):
     model_config = ConfigDict(from_attributes=True)

@@ -1,20 +1,31 @@
-import math
 import uuid
 from typing import Optional
 
-from app.core.exceptions import (InvalidProductOrderError,
-                                 InvalidSortFieldError, InvalidUuidError,
-                                 ProductNameDuplicationError,
-                                 ProductNotFoundError)
+import math
+
+from app.core.exceptions import (
+    InvalidUuidError,
+    ProductNameDuplicationError,
+    ProductNotFoundError,
+    InvalidSortFieldError,
+    InvalidProductOrderError,
+)
+from sqlalchemy import delete, select, asc, desc, and_, update, func
+from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.models import Product
 from app.core.models.product_translations import ProductTranslation
-from sqlalchemy import and_, asc, delete, desc, func, select, update
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload
 
-from .schemas import (Pagination, ProductBulkCreate, ProductCreate,
-                      ProductPaginatedResponse, ProductPartialUpdate,
-                      ProductResponse, ProductUpdate)
+from .schemas import (
+    ProductCreate,
+    ProductUpdate,
+    ProductPartialUpdate,
+    ProductBulkCreate,
+    ProductResponse,
+    Pagination,
+    ProductPaginatedResponse,
+)
 
 
 def validate_uuid(uuid_str: str):
@@ -191,6 +202,7 @@ async def get_searched_products_response(
     name: str | None = None,
     current_language: str = "en",
 ) -> ProductPaginatedResponse:
+
     products = await search_products(
         session=session,
         category=category,
@@ -260,6 +272,7 @@ async def bulk_create_product(
     session: AsyncSession,
     products_in: ProductBulkCreate,
 ) -> ProductBulkCreate:
+
     translation_names = []
     for product in products_in.products:
         for translation in product.translations:

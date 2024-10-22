@@ -1,23 +1,23 @@
 import uuid
-
-from app.api.api_v1.cart.services import CartService
 from app.core.exceptions import ZeroProductsOrderError
-from app.core.models import (Cart, CartItem, Order, OrderProductAssociation,
-                             Product)
-from sqlalchemy import delete, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
 from sqlalchemy.orm import joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.models import Order, OrderProductAssociation, Cart, CartItem, Product
+from app.api.api_v1.cart.services import CartService
+from app.api.api_v1.orders.schemas import OrderModel, OrderProductModel
 
 class OrderService:
+
     @classmethod
     async def get_orders(cls, session: AsyncSession):
         stmt = (
             select(Order)
             .options(
-                joinedload(Order.products)
-                .selectinload(OrderProductAssociation.product)
-                .selectinload(Product.translations)
+                joinedload(Order.products).selectinload(
+                    OrderProductAssociation.product
+                ).selectinload(Product.translations)
             )
             .order_by(Order.created_at)
         )

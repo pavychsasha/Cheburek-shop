@@ -9,9 +9,7 @@ async def session_id(request: Request) -> uuid.UUID:
     # If no session_id exists, create one
     if not session_uuid:
         session_uuid = uuid.uuid4()
-        request.session["session_id"] = str(
-            session_uuid
-        )  # uuid is not json serializable
+        request.session["session_id"] = str(session_uuid)  # uuid is not json serializable
 
     if isinstance(session_uuid, str):
         session_uuid = uuid.UUID(session_uuid)

@@ -180,20 +180,6 @@ docs = ["Sphinx (>=5.3.0,<5.4.0)", "sphinx-rtd-theme (>=1.2.2)", "sphinxcontrib-
 test = ["flake8 (>=6.1,<7.0)", "uvloop (>=0.15.3)"]
 
 [[package]]
-name = "autopep8"
-version = "2.3.1"
-description = "A tool that automatically formats Python code to conform to the PEP 8 style guide"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "autopep8-2.3.1-py2.py3-none-any.whl", hash = "sha256:a203fe0fcad7939987422140ab17a930f684763bf7335bdb6709991dd7ef6c2d"},
-    {file = "autopep8-2.3.1.tar.gz", hash = "sha256:8d6c87eba648fdcfc83e29b788910b8643171c395d9c4bcf115ece035b9c9dda"},
-]
-
-[package.dependencies]
-pycodestyle = ">=2.12.0"
-
-[[package]]
 name = "bcrypt"
 version = "4.1.2"
 description = "Modern password hashing for your software and your servers"
@@ -1263,13 +1249,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pre-commit"
-version = "4.0.1"
+version = "3.8.0"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "pre_commit-4.0.1-py2.py3-none-any.whl", hash = "sha256:efde913840816312445dc98787724647c65473daefe420785f885e8ed9a06878"},
-    {file = "pre_commit-4.0.1.tar.gz", hash = "sha256:80905ac375958c0444c65e9cebebd948b3cdb518f335a091a670a89d652139d2"},
+    {file = "pre_commit-3.8.0-py2.py3-none-any.whl", hash = "sha256:9a90a53bf82fdd8778d58085faf8d83df56e40dfe18f45b19446e26bf1b3a63f"},
+    {file = "pre_commit-3.8.0.tar.gz", hash = "sha256:8bb6494d4a20423842e198980c9ecf9f96607a07ea29549e180eef9ae80fe7af"},
 ]
 
 [package.dependencies]
@@ -2265,4 +2251,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "72c4ba2fbb06479df75c45711dfda8da997e0238ca5d96e78e2842b5b36456ee"
+content-hash = "d1992fb7e05751d231bcf83760f0e7eb98d126e522a60401aef53367aa8db4b8"

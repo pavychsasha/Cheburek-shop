@@ -26,10 +26,9 @@ beanie = "^1.26.0"
 black = "^24.4.2"
 flake8 = "^7.0.0"
 pytest = "^8.2.0"
+pre-commit = "^3.7.1"
 pytest-asyncio = "^0.23.6"
 pytest-cov = "^5.0.0"
-pre-commit = "^4.0.1"
-autopep8 = "^2.3.1"
 
 [build-system]
 requires = ["poetry-core"]

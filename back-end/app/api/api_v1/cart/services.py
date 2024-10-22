@@ -1,18 +1,21 @@
 import logging
-import uuid
 from typing import Optional
+import uuid
 
-from app.api.api_v1.cart.schemas import (CartItemModel, CartItemModify,
-                                         CartItemResponse, CartModelResponse)
-from app.api.api_v1.products.schemas import ProductResponse
-from app.api.api_v1.products.services import get_product, localize_product
-from app.core.exceptions import ProductCartNotFoundError, ProductNotFoundError
-from app.core.models import Cart, CartItem, Product
+
 from beanie import DeleteRules, WriteRules
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.api_v1.products.schemas import ProductResponse
+from app.core.exceptions import ProductCartNotFoundError, ProductNotFoundError
+
+from app.api.api_v1.cart.schemas import CartItemModel, CartItemModify, CartModel, CartItemResponse, CartModelResponse
+from app.core.models import Cart, CartItem, Product
+from app.api.api_v1.products.services import get_product, localize_product
+
 
 class CartService:
+
     @classmethod
     async def merge_carts(cls, session_cart: Cart, user_cart: Cart):
         """Merge items from session cart into user cart."""
@@ -66,6 +69,7 @@ class CartService:
         session_id: uuid.UUID,
         user_id: Optional[uuid.UUID] = None,
     ) -> Cart:
+
         session_cart: Optional[Cart] = await cls.get_session_cart(session_id=session_id)
 
         if not session_cart:
@@ -105,7 +109,7 @@ class CartService:
         sql_session: AsyncSession,
         session_id: uuid.UUID,
         user_id: Optional[uuid.UUID] = None,
-        language: str = "en",
+        language: str = "en"
     ):
         cart = await cls.get_cart(
             session_id=session_id,
@@ -116,8 +120,7 @@ class CartService:
             for cart_item in cart.items:
                 cart_item: CartItem
                 product = await get_product(
-                    session=sql_session,
-                    product_id=cart_item.product_id,
+                    session=sql_session, product_id=cart_item.product_id,
                 )
                 localized_product: ProductResponse = await localize_product(
                     product=product,

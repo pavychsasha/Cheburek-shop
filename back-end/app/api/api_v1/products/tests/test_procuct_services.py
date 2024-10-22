@@ -1,21 +1,29 @@
-import uuid
-
 import pytest
-from app.api.api_v1.products.schemas import (Pagination, ProductBulkCreate,
-                                             ProductCreate,
-                                             ProductPartialUpdate,
-                                             ProductTranslations,
-                                             ProductUpdate)
-from app.api.api_v1.products.services import (bulk_create_product,
-                                              create_product, delete_product,
-                                              get_product, get_products,
-                                              search_products, update_product)
-from app.core.exceptions import (InvalidProductOrderError,
-                                 InvalidSortFieldError, InvalidUuidError,
-                                 ProductNameDuplicationError,
-                                 ProductNotFoundError)
-from app.core.models import Product
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.models import Product
+from app.core.exceptions import (
+    InvalidUuidError,
+    ProductNameDuplicationError,
+    ProductNotFoundError,
+    InvalidSortFieldError,
+    InvalidProductOrderError,
+)
+from app.api.api_v1.products.services import (
+    get_products,
+    get_product,
+    search_products,
+    create_product,
+    bulk_create_product,
+    update_product,
+    delete_product,
+)
+from app.api.api_v1.products.schemas import (
+    ProductCreate,
+    ProductPartialUpdate,
+    ProductUpdate,
+    ProductBulkCreate, ProductTranslations, Pagination,
+)
 
 
 @pytest.mark.asyncio
@@ -36,7 +44,7 @@ async def test_get_product(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name="Test Product",
-            product_description="A test product",
+            product_description="A test product"
         )
     ]
     product_data = ProductCreate(
@@ -60,7 +68,6 @@ async def test_get_product(session: AsyncSession):
     assert fetched_product.stock_quantity == 100
     assert fetched_product.image_src == "test_image.png"
 
-
 @pytest.mark.asyncio
 async def test_get_product_not_found(session: AsyncSession):
     """Test fetching a non-existent product."""
@@ -77,7 +84,7 @@ async def test_create_product(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name=f"New Product",
-            product_description=f"A new product",
+            product_description=f"A new product"
         )
     ]
     product_data = ProductCreate(
@@ -102,7 +109,7 @@ async def test_create_product_duplicate_name(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name="Duplicate Product",
-            product_description="A duplicate test product",
+            product_description="A duplicate test product"
         )
     ]
     product_data = ProductCreate(
@@ -128,14 +135,14 @@ async def test_bulk_create_products(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name="Bulk Product 1",
-            product_description="Bulk product description",
+            product_description="Bulk product description"
         )
     ]
     product_translations_2 = [
         ProductTranslations(
             language_code="en",
             product_name="Bulk Product 2",
-            product_description="Another bulk product",
+            product_description="Another bulk product"
         )
     ]
     bulk_product_data = ProductBulkCreate(
@@ -171,14 +178,14 @@ async def test_bulk_create_products_duplicate(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name="Existing Product",
-            product_description="An existing product",
+            product_description="An existing product"
         )
     ]
     unique_product_translations = [
         ProductTranslations(
             language_code="en",
             product_name="New Bulk Product",
-            product_description="new Bulk Product",
+            product_description="new Bulk Product"
         )
     ]
     product_data = ProductCreate(
@@ -222,7 +229,7 @@ async def test_update_product(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name="Product to Update",
-            product_description="Product description",
+            product_description="Product description"
         )
     ]
 
@@ -239,7 +246,7 @@ async def test_update_product(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name="Updated Product",
-            product_description="Updated product description",
+            product_description="Updated product description"
         )
     ]
 
@@ -268,7 +275,7 @@ async def test_delete_product(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name="Product to Delete",
-            product_description="This product will be deleted",
+            product_description="This product will be deleted"
         )
     ]
     product_data = ProductCreate(
@@ -296,14 +303,14 @@ async def test_search_products(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name="Search Product 1",
-            product_description="Product 1 description",
+            product_description="Product 1 description"
         ),
     ]
     product_translations_2 = [
         ProductTranslations(
             language_code="en",
             product_name="Search Product 2",
-            product_description="Product 2 description",
+            product_description="Product 2 description"
         ),
     ]
     await create_product(
@@ -362,7 +369,7 @@ async def test_get_products_pagination(session: AsyncSession):
             ProductTranslations(
                 language_code="en",
                 product_name=f"Paginated Product {i}",
-                product_description=f"Description for product {i}",
+                product_description=f"Description for product {i}"
             )
         ]
         await create_product(
@@ -377,15 +384,11 @@ async def test_get_products_pagination(session: AsyncSession):
         )
 
     # Fetch the first 5 products (with explicit ordering)
-    products_page_1 = await search_products(
-        session, pagination_params=Pagination(per_page=5, page=1), sort_by="name"
-    )
+    products_page_1 = await search_products(session, pagination_params=Pagination(per_page=5, page=1), sort_by="name")
     assert len(products_page_1) == 5
 
     # Fetch the next set (remaining product)
-    products_page_2 = await search_products(
-        session, pagination_params=Pagination(per_page=5, page=2), sort_by="name"
-    )
+    products_page_2 = await search_products(session, pagination_params=Pagination(per_page=5, page=2), sort_by="name")
     assert len(products_page_2) == 1
 
     # Ensure pagination works and products are fetched in correct order
@@ -401,7 +404,7 @@ async def test_update_product_partial(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name="Product for Partial Update",
-            product_description="This product will be partially updated",
+            product_description="This product will be partially updated"
         )
     ]
     product_data = ProductCreate(
@@ -415,9 +418,9 @@ async def test_update_product_partial(session: AsyncSession):
 
     # Now partially update the product (only change the name)
     partial_update_data = ProductPartialUpdate(
-        translations=[
-            {"language_code": "en", "product_name": "Partially Updated Product"}
-        ],
+        translations=[{
+            "language_code": "en",
+            "product_name": "Partially Updated Product"}],
     )
     updated_product = await update_product(
         session, created_product.product_id, partial_update_data, partial=True
@@ -425,8 +428,7 @@ async def test_update_product_partial(session: AsyncSession):
 
     assert updated_product.translations[0].product_name == "Partially Updated Product"
     assert (
-        updated_product.translations[0].product_description
-        == "This product will be partially updated"
+        updated_product.translations[0].product_description == "This product will be partially updated"
     )  # Unchanged
     assert updated_product.price == 20.99  # Unchanged
 
@@ -456,7 +458,7 @@ async def test_search_products_invalid_order(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name="Valid Product",
-            product_description="Valid product",
+            product_description="Valid product"
         )
     ]
     product_data = ProductCreate(
@@ -480,7 +482,7 @@ async def test_bulk_create_duplicate_names_in_same_request(session: AsyncSession
         ProductTranslations(
             language_code="en",
             product_name="Duplicate Bulk Product",
-            product_description="Duplicate X",
+            product_description="Duplicate X"
         )
     ]
     bulk_product_data = ProductBulkCreate(
@@ -514,7 +516,7 @@ async def test_update_product_partial_update(session: AsyncSession):
         ProductTranslations(
             language_code="en",
             product_name="Partial Update Product",
-            product_description="Original description",
+            product_description="Original description"
         )
     ]
     product_data = ProductCreate(
@@ -533,9 +535,7 @@ async def test_update_product_partial_update(session: AsyncSession):
     )
 
     assert updated_product.price == 25.99
-    assert (
-        updated_product.translations[0].product_name == "Partial Update Product"
-    )  # Unchanged
+    assert updated_product.translations[0].product_name == "Partial Update Product"  # Unchanged
 
 
 @pytest.mark.asyncio
@@ -546,7 +546,7 @@ async def test_delete_product_and_check_exclusion_from_listings(session: AsyncSe
         ProductTranslations(
             language_code="en",
             product_name="Product to be Deleted",
-            product_description="This product will be deleted",
+            product_description="This product will be deleted"
         )
     ]
     product_data = ProductCreate(

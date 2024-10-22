@@ -1,13 +1,13 @@
-import uuid
 from typing import Annotated
+import uuid
 
+from fastapi import APIRouter, status, Depends, Security
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.models import sql_db_helper, Cart
 from app.api.api_v1.cart.dependencies import mongo_cart
 from app.api.api_v1.cart.schemas import CartOrder
-from app.api.dependencies.authentication.fastapi_users import \
-    current_active_superuser
-from app.core.models import sql_db_helper
-from fastapi import APIRouter, Depends, Security, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from app.api.dependencies.authentication.fastapi_users import current_active_superuser
 
 from .schemas import OrderModel
 from .services import OrderService

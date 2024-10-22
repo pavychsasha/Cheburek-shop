@@ -1,10 +1,14 @@
+import urllib.parse
 import uuid
+from gettext import translation
 
 import pytest
 from httpx import AsyncClient
+import urllib
 
 
 class TestMongoService:
+
     @pytest.mark.asyncio
     async def test_get_cart(self, client: AsyncClient):
         response = await client.get("/api/v1/cart/")
@@ -29,9 +33,8 @@ class TestMongoService:
         cart_dict = response.json()
         assert cart_dict["items"][0]["product_id"] == str(product_id)
 
-        assert cart_dict["items"][0]["name"] in [
-            translation.product_name for translation in product.translations
-        ]
+        assert cart_dict["items"][0]["name"]  in [translation.product_name
+                                                  for translation in product.translations]
 
         assert cart_dict["items"][0]["price"] == product.price
         assert cart_dict["items"][0]["image_src"] == product.image_src

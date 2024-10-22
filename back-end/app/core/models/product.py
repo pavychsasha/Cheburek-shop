@@ -1,10 +1,8 @@
-import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
-
-from sqlalchemy import CheckConstraint, Index, func
+import uuid
+from sqlalchemy import func, CheckConstraint, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from .base import Base
 
 if TYPE_CHECKING:

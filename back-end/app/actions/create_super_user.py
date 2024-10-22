@@ -1,12 +1,16 @@
 import asyncio
 import contextlib
 
-from app.api.dependencies.authentication.user_manager import (UserManager,
-                                                              get_user_manager)
-from app.api.dependencies.authentication.users import get_users_db
-from app.core.models import User, sql_db_helper
-from app.core.schemas.user import UserCreate
 from fastapi_users.exceptions import UserAlreadyExists
+
+from app.core.schemas.user import UserCreate
+from app.api.dependencies.authentication.user_manager import (
+    UserManager,
+    get_user_manager,
+)
+from app.api.dependencies.authentication.users import get_users_db
+from app.core.models import sql_db_helper, User
+
 
 get_users_db_context = contextlib.asynccontextmanager(get_users_db)
 get_user_manager_context = contextlib.asynccontextmanager(get_user_manager)

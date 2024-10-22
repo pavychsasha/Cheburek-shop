@@ -1,16 +1,16 @@
 """Creating schema
 
 Revision ID: f5938a854723
-Revises:
+Revises: 
 Create Date: 2024-09-09 04:19:54.559003
 
 """
 
 from typing import Sequence, Union
 
-import fastapi_users_db_sqlalchemy.generics
-import sqlalchemy as sa
 from alembic import op
+import sqlalchemy as sa
+import fastapi_users_db_sqlalchemy.generics
 
 # revision identifiers, used by Alembic.
 revision: str = "f5938a854723"
