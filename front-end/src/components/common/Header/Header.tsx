@@ -19,7 +19,7 @@ const Header = () => {
 
     const location = useLocation();
 
-    const [t, i18n] = useTranslation('global');
+    const [t] = useTranslation('global');
 
     const onChangeSearch = (value: string) => {
         dispatch(setSearchValue(value));
@@ -32,7 +32,7 @@ const Header = () => {
                     <img src={cheburekLogo} className={styles.logo} alt="logo"/>
                     <div className={styles.name__and__slogan}>
                         <h1>{t("header.logo")}</h1>
-                        <p>Найсмачніше для найкращих</p>
+                        <p>{t('header.slogan')}</p>
                     </div>
                 </div>
             </NavLink>
