@@ -2,7 +2,7 @@ import {createSlice} from "@reduxjs/toolkit";
 import {IFilterState} from "../../types/filter.ts";
 
 const initialState: IFilterState = {
-    category: 'Все',
+    category: 'All',
     sort: {
         nameUa: 'алфавітом',
         nameEn: 'alphabet',

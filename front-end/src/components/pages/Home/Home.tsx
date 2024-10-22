@@ -22,8 +22,8 @@ const Home = () => {
     const dispatch = useDispatch();
 
     //List of categories
-    const categories = ['Все', 'Чебуреки', 'Пиріжки', 'Напої', 'Інше'];
-    //const categoriesEn = ['All', 'Chebureks', 'Pies', 'Drinks', 'Others'];
+    //const categories = ['Все', 'Чебуреки', 'Пиріжки', 'Напої', 'Інше'];
+    const categoriesEn = ['All', 'Chebureks', 'Pies', 'Drinks', 'Other'];
 
     //Handlers for setting filtration
     const onChangeCategory = (newCategory: string) => {
@@ -36,7 +36,7 @@ const Home = () => {
 
     //Getting products with fetchItems function
     const getItems = async () => {
-        const categoryParam = category !== 'Все' ? category : '';
+        const categoryParam = category !== 'All' ? category : '';
         const sortBy = sort.sortType;
         const orderBy = sort.sortOrder;
 
@@ -63,7 +63,7 @@ const Home = () => {
             <nav>
                 <Categories value={category}
                             onChangeCategory={(newValue) => onChangeCategory(newValue)}
-                            categories={categories}/>
+                            categories={categoriesEn}/>
             </nav>
             <div className={styles.sort}>
                 <h2 className={styles.category__title}>{category}</h2>

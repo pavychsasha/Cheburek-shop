@@ -17,9 +17,9 @@ export const fetchItems = createAsyncThunk('items/fetchItemsStatus',
             searchValue
         } = params
         const {data} = await axios.get(
-            `${baseUrl}/products/search?name=${searchValue}&category=${categoryParam}&sort_by=${sortBy}&order=${orderBy}`
+            `${baseUrl}/products/search?name=${searchValue}&category=${categoryParam}&sort_by=${sortBy}&order=${orderBy}&page=1&per_page=8`
         );
-        return data;
+        return data.products;
     })
 
 const initialState: IItemsState = {
