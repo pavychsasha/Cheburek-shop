@@ -130,7 +130,6 @@ dmypy.json
 
 # FastAPI
 *.db
-*.json
 
 # VS Code
 .vscode/
