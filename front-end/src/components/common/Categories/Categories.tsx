@@ -20,7 +20,7 @@ const Categories: React.FC<ICategoriesProps> = ({value, onChangeCategory, catego
                     <li
                         key={index}
                         onClick={() => handleOnClickCategory(categories[index])}
-                        className={value === categories[index] ? styles.active : ''}
+                        className={value === categories[index] ? `${styles.item} ${styles.active}` : styles.item}
                     >
                         {category}
                     </li>

@@ -8,6 +8,7 @@ import {RootState} from '../../../redux/store.ts'
 import {setSearchValue} from "../../../redux/slices/filterSlice.ts";
 import {FaUserCircle} from "react-icons/fa";
 import {useTranslation} from "react-i18next";
+import LangSelector from "../LangSelector/LangSelector.tsx";
 
 
 
@@ -40,14 +41,10 @@ const Header = () => {
                                                          onChangeSearch={onChangeSearch}
             />}
             <div className={styles.left}>
-                <select name="" id="">
-                    <option value="">Ukrainian</option>
-                    <option value="">English</option>
-                </select>
+                <LangSelector/>
                 <NavLink className={styles.link} to="/register">
                     <FaUserCircle className={styles.user}/>
                 </NavLink>
-
                 <div className={styles.btn}>
                     <NavLink className={styles.link} to="/cart">
                         <span>{total_price} ₴</span>

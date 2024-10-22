@@ -38,6 +38,7 @@ header {
         align-content: center;
         justify-content: space-evenly;
         flex-direction: column;
+        width: 376px;
 
         h1 {
           font-size: 32px;
@@ -67,10 +68,13 @@ header {
   .left {
     display: flex;
     flex-direction: row;
-
+    align-items: center;
 
 
     a {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
       text-decoration: none;
 
       .user {
