@@ -2,6 +2,7 @@ import uuid
 from typing import Optional
 
 import math
+from logging import getLogger
 
 from app.core.exceptions import (
     InvalidUuidError,
@@ -11,7 +12,7 @@ from app.core.exceptions import (
     InvalidProductOrderError,
 )
 from sqlalchemy import delete, select, asc, desc, and_, update, func
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload, selectinload, aliased
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models import Product
@@ -128,6 +129,11 @@ async def get_product(
     return product
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 async def search_products(
     session: AsyncSession,
     category: str | None = None,
@@ -144,53 +150,90 @@ async def search_products(
     if sort_by and sort_by not in valid_sort_fields:
         raise InvalidSortFieldError(f"'{sort_by}' is not a valid field for sorting.")
 
-    # Construct the query
-    stmt = (
-        select(Product)
-        .join(ProductTranslation)
-        .options(selectinload(Product.translations))
+    # Define the order function
+    if order and order not in ["asc", "desc"]:
+        raise InvalidProductOrderError(order)
+
+    order_func = desc if order == "desc" else asc
+
+    translation_alias = aliased(ProductTranslation)
+
+    # Subquery for translations with row_number to get the first translation for each product.
+    translation_subquery = select(
+        translation_alias.product_id,
+        translation_alias.product_name,
+        translation_alias.product_description,
+        func.row_number()
+        .over(
+            partition_by=translation_alias.product_id,
+            order_by=order_func(translation_alias.product_name),
+        )
+        .label("rank"),
     )
 
+    # Filter by name if provided.
+    if name:
+        name = name.strip()
+        translation_subquery = translation_subquery.where(
+            translation_alias.product_name.ilike(f"%{name}%")
+        )
+
+    translation_subquery = translation_subquery.subquery()
+
+    # Main query to get products and join with the first translation found for each product.
+    stmt = (
+        select(Product)
+        .join(
+            translation_subquery,
+            translation_subquery.c.product_id == Product.product_id,
+        )
+        .where(
+            translation_subquery.c.rank == 1
+        )  # Get only the first matching translation
+        .options(
+            selectinload(Product.translations)
+        )  # Load all translations for each product
+    )
+
+    # Filter by category if provided.
+    if category:
+        stmt = stmt.where(Product.category == category)
+
+    # Sorting based on selected field
+    if sort_by:
+        if sort_by == "name":
+            # Sort using the subquery's product_name field
+            sort_field = translation_subquery.c.product_name
+        else:
+            # Sort using Product's attributes directly
+            sort_field = getattr(Product, sort_by)
+
+        # Apply the order to the statement
+        stmt = stmt.order_by(order_func(sort_field))
+    else:
+        # Default ordering by product_id
+        stmt = stmt.order_by(Product.product_id)
+
+    # Log the final SQL statement for debugging
+    logger.debug(f"Executing SQL query: {stmt}")
+
+    # Apply pagination if provided
     if pagination_params is not None:
         stmt = stmt.limit(pagination_params.per_page).offset(
             (pagination_params.page - 1) * pagination_params.per_page
         )
 
-    if name:
-        name = name.strip()
-        stmt = stmt.where(
-            ProductTranslation.product_name.ilike(f"%{name}%"),
-        )
-
-    if category:
-        stmt = stmt.where(Product.category == category)
-
-    # Sort by field and order validation
-    if sort_by:
-        if sort_by == "name" or sort_by == "description":
-            obj_to_sort = ProductTranslation
-            sort_by = "product_name" if sort_by == "name" else "product_description"
-        else:
-            obj_to_sort = Product
-
-        if order == "desc":
-            try:
-                stmt = stmt.order_by(desc(getattr(obj_to_sort, sort_by)))
-            except AttributeError:
-                raise InvalidProductOrderError(f"'{order}' is not valid.")
-        elif order == "asc":
-            try:
-                stmt = stmt.order_by(asc(getattr(obj_to_sort, sort_by)))
-            except AttributeError:
-                raise InvalidProductOrderError(f"'{order}' is not valid.")
-        elif order:
-            raise InvalidProductOrderError(f"'{order}' is not a valid order.")
-
+    # Return the query statement if only querying, else execute
     if query_only:
         return stmt
 
     result = await session.execute(stmt)
-    return result.scalars().all()
+    products = result.scalars().all()
+
+    # Log the retrieved products for debugging
+    logger.debug(f"Retrieved products: {products}")
+
+    return products
 
 
 async def get_searched_products_response(
