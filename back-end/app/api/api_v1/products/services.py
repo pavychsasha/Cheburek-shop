@@ -35,26 +35,27 @@ def validate_uuid(uuid_str: str):
     except ValueError:
         raise InvalidUuidError(uuid_str=uuid_str)
 
+
 async def get_products(
-        session: AsyncSession,
-        pagination_params: Pagination | None = None,
+    session: AsyncSession,
+    pagination_params: Pagination | None = None,
 ) -> list[Product]:
     """Fetch products with pagination."""
-    stmt = select(Product).options(
-        joinedload(Product.translations)
-    ).order_by(Product.product_id)
+    stmt = (
+        select(Product)
+        .options(joinedload(Product.translations))
+        .order_by(Product.product_id)
+    )
     if pagination_params:
-        stmt = stmt.limit(
-            pagination_params.per_page
-        ).offset((pagination_params.page - 1) * pagination_params.per_page)
+        stmt = stmt.limit(pagination_params.per_page).offset(
+            (pagination_params.page - 1) * pagination_params.per_page
+        )
 
     result = await session.execute(stmt)
     return result.unique().scalars().all()
 
-async def localize_product(
-        product: Product,
-        language: str = "en"
-) -> ProductResponse:
+
+async def localize_product(product: Product, language: str = "en") -> ProductResponse:
     for translation in product.translations:
         if translation.language_code == language:
             return ProductResponse(
@@ -67,9 +68,8 @@ async def localize_product(
                 image_src=product.image_src,
             )
 
-async def localize_products_list(
-        products: list[Product], language : str = "en"
-):
+
+async def localize_products_list(products: list[Product], language: str = "en"):
     localized_products: list[Optional[ProductResponse]] = []
     for product in products:
         localized_product = await localize_product(product, language)
@@ -77,7 +77,8 @@ async def localize_products_list(
 
     return localized_products
 
-async def get_num_of_pages(session: AsyncSession, per_page: int,  stmt=None) -> int:
+
+async def get_num_of_pages(session: AsyncSession, per_page: int, stmt=None) -> int:
     if stmt is not None:
         count_products_stmt = select(func.count()).select_from(stmt)
     else:
@@ -87,19 +88,17 @@ async def get_num_of_pages(session: AsyncSession, per_page: int,  stmt=None) -> 
     count_products = result.scalar()
     return math.ceil(count_products / per_page)
 
+
 async def get_all_products_response(
     session: AsyncSession,
     pagination_params: Pagination = Pagination(per_page=10, page=1),
     current_language: str = "en",
-
 ) -> ProductPaginatedResponse:
-    products = await get_products(
-        session=session,
-        pagination_params=pagination_params
+    products = await get_products(session=session, pagination_params=pagination_params)
+    num_of_pages = await get_num_of_pages(
+        session=session, per_page=pagination_params.per_page
     )
-    num_of_pages = await get_num_of_pages(session=session, per_page=pagination_params.per_page)
     localized_products = await localize_products_list(products, current_language)
-
 
     return ProductPaginatedResponse(pages=num_of_pages, products=localized_products)
 
@@ -113,10 +112,12 @@ async def get_product(
     if isinstance(product_id, str):
         product_id = validate_uuid(product_id)
 
-    stmt = select(Product).options(
-        joinedload(Product.translations)
-    ).where(
-        Product.product_id == product_id,
+    stmt = (
+        select(Product)
+        .options(joinedload(Product.translations))
+        .where(
+            Product.product_id == product_id,
+        )
     )
 
     result = await session.execute(stmt)
@@ -134,7 +135,7 @@ async def search_products(
     order: str | None = None,
     name: str | None = None,
     pagination_params: Pagination | None = None,
-    query_only = False
+    query_only=False,
 ):
     """Search products with pagination, sorting, and filtering."""
     valid_sort_fields = ["name", "price", "category", "stock_quantity"]
@@ -144,12 +145,16 @@ async def search_products(
         raise InvalidSortFieldError(f"'{sort_by}' is not a valid field for sorting.")
 
     # Construct the query
-    stmt = select(Product).join(ProductTranslation).options(selectinload(Product.translations))
+    stmt = (
+        select(Product)
+        .join(ProductTranslation)
+        .options(selectinload(Product.translations))
+    )
 
     if pagination_params is not None:
-        stmt = stmt.limit(
-            pagination_params.per_page
-        ).offset((pagination_params.page - 1) * pagination_params.per_page)
+        stmt = stmt.limit(pagination_params.per_page).offset(
+            (pagination_params.page - 1) * pagination_params.per_page
+        )
 
     if name:
         name = name.strip()
@@ -187,14 +192,15 @@ async def search_products(
     result = await session.execute(stmt)
     return result.scalars().all()
 
+
 async def get_searched_products_response(
-        session: AsyncSession,
-        pagination_params: Pagination,
-        category: str | None = None,
-        sort_by: str | None = None,
-        order: str | None = None,
-        name: str | None = None,
-        current_language: str = "en",
+    session: AsyncSession,
+    pagination_params: Pagination,
+    category: str | None = None,
+    sort_by: str | None = None,
+    order: str | None = None,
+    name: str | None = None,
+    current_language: str = "en",
 ) -> ProductPaginatedResponse:
 
     products = await search_products(
@@ -211,12 +217,18 @@ async def get_searched_products_response(
         sort_by=sort_by,
         order=order,
         name=name,
-        query_only=True
+        query_only=True,
     )
 
-    num_of_pages = await get_num_of_pages(session=session, per_page=pagination_params.per_page, stmt=products_query)
+    num_of_pages = await get_num_of_pages(
+        session=session,
+        per_page=pagination_params.per_page,
+        stmt=products_query,
+    )
 
-    localized_products = await localize_products_list(products=products, language=current_language)
+    localized_products = await localize_products_list(
+        products=products, language=current_language
+    )
 
     return ProductPaginatedResponse(pages=num_of_pages, products=localized_products)
 
@@ -231,15 +243,16 @@ async def create_product(session: AsyncSession, product_in: ProductCreate) -> Pr
     if len(translation_names) != len(set(translation_names)):
         raise ProductNameDuplicationError("Duplicate product names in request")
 
-    stmt = select(ProductTranslation).where(ProductTranslation.product_name.in_(translation_names))
+    stmt = select(ProductTranslation).where(
+        ProductTranslation.product_name.in_(translation_names)
+    )
     result = await session.execute(stmt)
     if result.one_or_none():
         raise ProductNameDuplicationError(translation_names)
 
     translations = [
         ProductTranslation(**translation.model_dump())
-        for translation
-        in product_in.translations
+        for translation in product_in.translations
     ]
 
     product = Product(
@@ -260,7 +273,6 @@ async def bulk_create_product(
     products_in: ProductBulkCreate,
 ) -> ProductBulkCreate:
 
-
     translation_names = []
     for product in products_in.products:
         for translation in product.translations:
@@ -270,7 +282,9 @@ async def bulk_create_product(
     if len(translation_names) != len(set(translation_names)):
         raise ProductNameDuplicationError("Duplicate product names in request")
 
-    stmt = select(ProductTranslation).where(ProductTranslation.product_name.in_(translation_names))
+    stmt = select(ProductTranslation).where(
+        ProductTranslation.product_name.in_(translation_names)
+    )
 
     result = await session.execute(stmt)
     existing_products = result.scalars().all()
@@ -285,8 +299,7 @@ async def bulk_create_product(
     for product in products_in.products:
         translations = [
             ProductTranslation(**translation.model_dump())
-            for translation
-            in product.translations
+            for translation in product.translations
         ]
         products.append(
             Product(
@@ -315,13 +328,16 @@ async def update_product(
     for name, value in product_update.model_dump(exclude_unset=partial).items():
         if name == "translations":
             for translation in product_update.translations:
-                stmt = update(ProductTranslation).where(
-                    and_(
-                        ProductTranslation.product_id == product_id,
-                        ProductTranslation.language_code == translation.language_code,
+                stmt = (
+                    update(ProductTranslation)
+                    .where(
+                        and_(
+                            ProductTranslation.product_id == product_id,
+                            ProductTranslation.language_code
+                            == translation.language_code,
+                        )
                     )
-                ).values(
-                    **translation.model_dump(exclude_unset=partial)
+                    .values(**translation.model_dump(exclude_unset=partial))
                 )
                 await session.execute(stmt)
         else:
