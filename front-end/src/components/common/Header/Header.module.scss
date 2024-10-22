@@ -9,6 +9,13 @@ header {
     flex-direction: row;
   }
 
+  select {
+    border: none;
+    outline: none;
+    appearance: none;
+    margin: 0 1.5rem;
+  }
+
   a {
     text-decoration: none;
 
@@ -61,6 +68,8 @@ header {
     display: flex;
     flex-direction: row;
 
+
+
     a {
       text-decoration: none;
 
@@ -96,7 +105,6 @@ header {
       }
     }
   }
-
-
 }
+
 

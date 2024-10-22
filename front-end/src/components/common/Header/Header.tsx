@@ -40,9 +40,14 @@ const Header = () => {
                                                          onChangeSearch={onChangeSearch}
             />}
             <div className={styles.left}>
+                <select name="" id="">
+                    <option value="">Ukrainian</option>
+                    <option value="">English</option>
+                </select>
                 <NavLink className={styles.link} to="/register">
                     <FaUserCircle className={styles.user}/>
                 </NavLink>
+
                 <div className={styles.btn}>
                     <NavLink className={styles.link} to="/cart">
                         <span>{total_price} ₴</span>
