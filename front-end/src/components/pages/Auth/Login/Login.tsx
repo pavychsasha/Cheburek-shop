@@ -7,6 +7,7 @@ import {useDispatch, useSelector} from "react-redux";
 import {useNavigate} from 'react-router-dom';
 import {RootState} from "../../../../redux/store.ts";
 import React from "react";
+import {useTranslation} from "react-i18next";
 
 //Type type(interface) of login form
 interface IFormLogin {
@@ -24,13 +25,15 @@ const Login = () => {
         formState: {errors, isSubmitting},
     } = useForm<IFormLogin>({mode: 'onChange'});
 
-    const navigate = useNavigate();
-
     const {submitForm} = useSubmitForm('http://localhost:8000/api/v1/auth/login');
+
+    const isAuthorized = useSelector((state:RootState) => state.auth.isAuthorized);
 
     const dispatch = useDispatch();
 
-    const isAuthorized = useSelector((state:RootState) => state.auth.isAuthorized);
+    const navigate = useNavigate();
+
+    const [t] = useTranslation('global');
 
     const onSubmit: SubmitHandler<IFormLogin> = async (data) => {
         const {res: response, error} = await submitForm({
@@ -51,7 +54,7 @@ const Login = () => {
         } else if (error) {
             setError('password', {
                 type: 'manual',
-                message: error.message || 'Неправильний пароль або логін',
+                message: error.message || t('auth.incorrectData'),
             });
         }
     };
@@ -65,19 +68,19 @@ const Login = () => {
     return (
         <main className={styles.container}>
             <div className={styles.login__box}>
-                <h1>Вхід</h1>
+                <h1>{t('auth.titleLogin')}</h1>
                 <form onSubmit={handleSubmit(onSubmit)}>
 
                     {/*Email field*/}
                     <InputField
-                        label="Електронна пошта"
+                        label={t('auth.username.label')}
                         type="text"
-                        placeholder="Введіть ваше ім'я користувача"
+                        placeholder={t('auth.username.placeholder')}
                         register={register('username', {
-                            required: `Це поле є обов'язковим`,
+                            required: t('auth.username.placeholder'),
                             pattern: {
                                 value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
-                                message: `Некоректно введенне ім'я користувача`,
+                                message: t('auth.username.message'),
                             },
                         })}
                         error={errors.username}
@@ -85,23 +88,23 @@ const Login = () => {
 
                     {/*Password field*/}
                     <InputField
-                        label="Пароль"
+                        label={t('auth.password.label')}
                         type="password"
-                        placeholder="Введіть ваш пароль"
+                        placeholder={t('auth.password.placeholder')}
                         register={register('password', {
-                            required: `Це поле є обов'язковим`,
+                            required: t('auth.password.required'),
                             pattern: {
                                 value: /^[A-Za-z\d@$!%*?&]{8,16}$/,
-                                message: 'Некоректно введено пароль',
+                                message: t('auth.password.message'),
                             },
                         })}
                         error={errors.password}
                     />
                     <button className={styles.submit__button} type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Виконується вхід' : 'Увійти'}
+                        {isSubmitting ? t('auth.button.login.loading') : t('auth.button.login.static')}
                     </button>
                 </form>
-                <p className={styles.forgot__password}>Забули пароль?</p>
+                <p className={styles.forgot__password}>{t('auth.forgotPassword')}</p>
             </div>
         </main>
     );

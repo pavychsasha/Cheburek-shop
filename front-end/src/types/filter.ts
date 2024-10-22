@@ -1,5 +1,6 @@
 interface ISortType {
-    name: string;
+    nameUa: string;
+    nameEn: string;
     sortType: string;
     sortOrder: string;
 }

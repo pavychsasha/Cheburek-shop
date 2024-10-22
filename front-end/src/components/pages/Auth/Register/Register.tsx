@@ -5,6 +5,7 @@ import useSubmitForm from '../../../../hooks/useSubmitForm.ts';
 import {setIsAuth} from "../../../../redux/slices/authSlice.ts";
 import {NavLink, useNavigate} from "react-router-dom";
 import {useDispatch} from "react-redux";
+import {useTranslation} from "react-i18next";
 
 //Type(interface) of register form
 interface IFormRegister {
@@ -25,12 +26,14 @@ const Register = () => {
         getValues,
     } = useForm<IFormRegister>({mode: 'onChange'});
 
-    const navigate = useNavigate();
-
     const {submitForm: submitRegisterForm} = useSubmitForm('http://localhost:8000/api/v1/auth/register');
     const {submitForm: submitLoginForm} = useSubmitForm('http://localhost:8000/api/v1/auth/login');
 
     const dispatch = useDispatch();
+
+    const navigate = useNavigate();
+
+    const [t] = useTranslation('global');
 
     const onSubmit: SubmitHandler<IFormRegister> = async (data) => {
 
@@ -61,13 +64,13 @@ const Register = () => {
             } else if (logError) {
                 setError('rePassword', {
                     type: 'manual',
-                    message: logError.message || 'Не вдалось увійти після реєстрації',
+                    message: logError.message || t('auth.registrationFailed'),
                 });
             }
         } else if (regError) {
             setError('rePassword', {
                 type: 'manual',
-                message: regError.message || 'Користувач із такими даними вже існує',
+                message: regError.message || t('auth.userExist'),
             });
         }
     };
@@ -75,19 +78,19 @@ const Register = () => {
     return (
         <main className={styles.container}>
             <div className={styles.login__box}>
-                <h1>Реєстрація</h1>
+                <h1>{t('auth.titleRegister')}</h1>
                 <form onSubmit={handleSubmit(onSubmit)}>
 
                     {/*Email field*/}
                     <InputField
-                        label="Електронна пошта"
+                        label={t('auth.email.label')}
                         type="email"
-                        placeholder="Введіть вашу електронну пошту"
+                        placeholder={t('auth.email.placeholder')}
                         register={register('email', {
-                            required: `Це поле є обов'язковим`,
+                            required: t('auth.email.required'),
                             pattern: {
                                 value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
-                                message: 'Некоректно введена пошта',
+                                message: t('auth.email.message'),
                             },
                         })}
                         error={errors.email}
@@ -95,14 +98,14 @@ const Register = () => {
 
                     {/*Username field*/}
                     <InputField
-                        label="Ім'я користувача"
+                        label={t('auth.username.label')}
                         type="text"
-                        placeholder="Введіть ваше ім`я користувача"
+                        placeholder={t('auth.username.placeholder')}
                         register={register('username', {
-                            required: `Це поле є обов'язковим`,
+                            required: t('auth.username.required'),
                             pattern: {
                                 value: /^[A-Z0-9._%+-]{3,16}$/i,
-                                message: 'Некоректно введене ім`я користувача',
+                                message: t('auth.username.message'),
                             },
                         })}
                         error={errors.username}
@@ -110,14 +113,14 @@ const Register = () => {
 
                     {/*Password field*/}
                     <InputField
-                        label="Пароль"
+                        label={t('auth.password.label')}
                         type="password"
-                        placeholder="Введіть ваш пароль"
+                        placeholder={t('auth.password.placeholder')}
                         register={register('password', {
-                            required: `Це поле є обов'язковим`,
+                            required: t('auth.password.required'),
                             pattern: {
                                 value: /^[A-Za-z\d@$!%*?&]{8,16}$/,
-                                message: 'Пароль повинен містити від 8 до 16 символів',
+                                message: t('auth.password.message'),
                             },
                         })}
                         error={errors.password}
@@ -125,22 +128,22 @@ const Register = () => {
 
                     {/*RePassword field*/}
                     <InputField
-                        label="Повторіть пароль"
+                        label={t('auth.rePassword.label')}
                         type="password"
-                        placeholder="Введіть ваш пароль повторно"
+                        placeholder={t('auth.rePassword.placeholder')}
                         register={register('rePassword', {
-                            required: `Це поле є обов'язковим`,
-                            validate: (value) => value === getValues('password') || 'Паролі повинні збігатися',
+                            required: t('auth.rePassword.required'),
+                            validate: (value) => value === getValues('password') || t('auth.passwordMatch'),
                         })}
                         error={errors.rePassword}
                     />
                     <button className={styles.submit__button} type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Виконується реєстрація' : 'Зареєструватися'}
+                        {isSubmitting ? t('auth.button.register.loading') : t('auth.button.register.static')}
                     </button>
                 </form>
 
                 {/*Redirect to login page*/}
-                <NavLink to={'/login'}><p className={styles.forgot__password}>Вже зареєстровані?</p></NavLink>
+                <NavLink to={'/login'}><p className={styles.forgot__password}>{t('auth.haveAccount')}</p></NavLink>
             </div>
         </main>
     );
