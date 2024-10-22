@@ -7,18 +7,18 @@ import {Provider} from 'react-redux'
 import {store} from "./redux/store";
 import {I18nextProvider} from "react-i18next";
 import globalEn from './locales/en/translation.json';
-import globalUa from './locales/ua/translation.json';
+import globalUa from './locales/ukr/translation.json';
 import i18next from "i18next";
 
 
 i18next.init({
     interpolation: {escapeValue: false},
-    lng: "ua",
+    lng: "en",
     resources: {
         en: {
             global: globalEn
         },
-        ua: {
+        ukr: {
             global: globalUa,
         }
     }
