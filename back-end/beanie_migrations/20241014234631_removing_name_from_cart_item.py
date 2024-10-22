@@ -1,8 +1,9 @@
 import uuid
-from pydantic import Field
-from beanie import Document, free_fall_migration
-from app.core.models.db_helper import sql_db_helper
+
 from app.api.api_v1.products.services import get_product
+from app.core.models.db_helper import sql_db_helper
+from beanie import Document, free_fall_migration
+from pydantic import Field
 
 
 class OldCartItem(Document):
@@ -28,7 +29,6 @@ class NewCartItem(Document):
 
 
 class Forward:
-
     @free_fall_migration(document_models=[OldCartItem, NewCartItem])
     async def remove_name_and_img(self, session):
         async with sql_db_helper.session_factory() as sql_session:

@@ -1,9 +1,5 @@
-from typing import Optional
 from pydantic import BaseModel
-from pydantic_settings import (
-    BaseSettings,
-    SettingsConfigDict,
-)
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class RunConfig(BaseModel):
@@ -83,11 +79,13 @@ class AccessToken(BaseModel):
 class Session(BaseModel):
     secret_key: str
 
+
 class CookieTransportSettings(BaseModel):
     cookie_http_only: bool = True
     cookie_name: str = "userauth"
     cookie_samesite: str = "none"
     cookie_secure: bool = True
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(

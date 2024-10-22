@@ -1,10 +1,9 @@
-from typing import Annotated
 import uuid
+from typing import Annotated
 
-from fastapi import Path, Depends, HTTPException, status
+from app.core.models import Product, sql_db_helper
+from fastapi import Depends, HTTPException, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core.models import sql_db_helper, Product
 
 from . import services
 

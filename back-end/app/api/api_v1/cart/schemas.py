@@ -1,5 +1,6 @@
-from typing import Optional, List
 import uuid
+from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -9,14 +10,17 @@ class CartItemModel(BaseModel):
     count: int = Field(..., gt=0)
     total_price: float = Field(..., gt=0)
 
+
 class CartItemResponse(CartItemModel):
     name: str
     image_src: str
+
 
 class CartModelResponse(BaseModel):
     items: List[Optional[CartItemResponse]] = []
     total_count: int = 0
     total_price: float = 0
+
 
 class CartItemModify(BaseModel):
     product_id: uuid.UUID

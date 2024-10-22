@@ -10,5 +10,6 @@ class UserRead(schemas.BaseUser[uuid.UUID]):
 class UserCreate(schemas.BaseUserCreate):
     username: str
 
+
 class UserUpdate(schemas.BaseUserUpdate):
     username: str

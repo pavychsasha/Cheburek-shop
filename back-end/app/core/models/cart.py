@@ -1,7 +1,8 @@
-from typing import Annotated, List, Optional
 import uuid
+from typing import List, Optional
+
+from beanie import Document, Link
 from pydantic import Field
-from beanie import BackLink, Document, Link
 
 
 class CartItem(Document):

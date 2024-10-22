@@ -1,17 +1,15 @@
 import uuid
-import pytest
 from unittest.mock import AsyncMock, patch
-from beanie import PydanticObjectId
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.models import Cart, CartItem, Product
+import pytest
+from app.api.api_v1.cart.schemas import CartItemModify
 from app.api.api_v1.cart.services import CartService
-from app.api.api_v1.cart.schemas import CartItemModel, CartItemModify
-from app.core.exceptions import ProductCartNotFoundError, ProductNotFoundError
+from app.core.exceptions import ProductCartNotFoundError
+from app.core.models import Cart, CartItem
+from beanie import PydanticObjectId
 
 
 class TestCartService:
-
     @pytest.mark.asyncio
     async def test_merge_carts_non_overlapping_items(self):
         # Create product IDs

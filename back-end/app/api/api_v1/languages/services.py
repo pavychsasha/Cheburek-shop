@@ -1,28 +1,24 @@
 from urllib.request import Request
 
-from sqlalchemy import distinct, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.exceptions import LanguageNotFoundError
 from app.core.models import ProductTranslation
+from sqlalchemy import distinct, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class LanguagesService:
     @classmethod
     async def get_all_languages(cls, session: AsyncSession):
-        stmt = select(
-            distinct(ProductTranslation.language_code)
-        )
+        stmt = select(distinct(ProductTranslation.language_code))
         translations = await session.execute(stmt)
         return translations.scalars().all()
 
-
     @classmethod
     async def switch_language(
-            cls,
-            session: AsyncSession,
-            request: Request,
-            language: str,
+        cls,
+        session: AsyncSession,
+        request: Request,
+        language: str,
     ):
         all_languages = await LanguagesService.get_all_languages(session=session)
 

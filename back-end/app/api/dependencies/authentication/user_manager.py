@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-import uuid
 import logging
+import uuid
 from typing import TYPE_CHECKING, Optional
 
 from app.api.dependencies.authentication.users import get_users_db
 from app.core.config import settings
+from app.core.models import User
 from fastapi import Depends
 from fastapi_users import BaseUserManager, UUIDIDMixin
-
-from app.core.models import User
-
 
 if TYPE_CHECKING:
     from fastapi import Request

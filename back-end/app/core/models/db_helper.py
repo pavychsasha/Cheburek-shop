@@ -1,19 +1,12 @@
 from typing import AsyncGenerator, Optional
 
-
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    create_async_engine,
-    async_sessionmaker,
-    AsyncEngine,
-)
-
-from motor.motor_asyncio import AsyncIOMotorClient
-from beanie import Document, Indexed, init_beanie
-
 from app.core.config import settings
 from app.core.models.cart import all_document_models
+from beanie import init_beanie
+from motor.motor_asyncio import AsyncIOMotorClient
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import (AsyncEngine, AsyncSession,
+                                    async_sessionmaker, create_async_engine)
 
 
 class SQLDatabaseHelper:
@@ -73,7 +66,8 @@ class MongoDbHelper:
         try:
             # Initialize Beanie with the correct database
             await init_beanie(
-                database=self.client[self.db_name], document_models=all_document_models  # type: ignore
+                # type: ignore
+                database=self.client[self.db_name], document_models=all_document_models
             )
             print(f"MongoDB connected to {self.db_name}.")
         except Exception as e:

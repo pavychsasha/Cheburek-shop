@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .base import Base
-from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
+from fastapi_users.db import (SQLAlchemyBaseUserTableUUID,
+                              SQLAlchemyUserDatabase)
 from sqlalchemy.orm import Mapped, relationship
+
+from .base import Base
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
+
     from .order import Order
 
 

@@ -1,16 +1,13 @@
-from typing import Annotated
 import uuid
-from fastapi import APIRouter, Depends, status
+from typing import Annotated
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.api.api_v1.cart.dependencies import mongo_cart, mongo_cart_populated
+from app.api.api_v1.cart.schemas import CartItemModify, CartModelResponse
+from app.api.api_v1.cart.services import CartService
 from app.core.models import sql_db_helper
 from app.core.models.cart import Cart
-
-from app.api.api_v1.cart.schemas import CartItemModify, CartModel, CartModelResponse
-from app.api.api_v1.cart.services import CartService
-from app.api.api_v1.cart.dependencies import mongo_cart, mongo_cart_populated
-
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(
     tags=["Cart"],
