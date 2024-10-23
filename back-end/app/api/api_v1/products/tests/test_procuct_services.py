@@ -68,6 +68,7 @@ async def test_get_product(session: AsyncSession):
     assert fetched_product.stock_quantity == 100
     assert fetched_product.image_src == "test_image.png"
 
+
 @pytest.mark.asyncio
 async def test_get_product_not_found(session: AsyncSession):
     """Test fetching a non-existent product."""

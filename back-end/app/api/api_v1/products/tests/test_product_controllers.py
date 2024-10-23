@@ -25,11 +25,13 @@ async def test_create_product(superuser_client: AsyncClient):
 
     # Define a product payload
     product_data = {
-        "translations": [{
-            "language_code": "en",
-            "product_name": "Test Product",
-            "product_description": "A test product description",
-        }],
+        "translations": [
+            {
+                "language_code": "en",
+                "product_name": "Test Product",
+                "product_description": "A test product description",
+            }
+        ],
         "price": 9.99,
         "category": "Cheburek",
         "stock_quantity": 25,
@@ -44,7 +46,10 @@ async def test_create_product(superuser_client: AsyncClient):
     # Check that the returned product matches the input
     created_product = response.json()
     assert created_product["translations"][0]["product_name"] == "Test Product"
-    assert created_product["translations"][0]["product_description"] == "A test product description"
+    assert (
+        created_product["translations"][0]["product_description"]
+        == "A test product description"
+    )
     assert created_product["price"] == 9.99
     assert created_product["category"] == "Cheburek"
 
@@ -55,11 +60,13 @@ async def test_search_product(superuser_client: AsyncClient):
 
     # Define a product payload
     product_data = {
-        "translations": [{
-            "language_code": "en",
-            "product_name": "Test Product",
-            "product_description": "A test product description",
-        }],
+        "translations": [
+            {
+                "language_code": "en",
+                "product_name": "Test Product",
+                "product_description": "A test product description",
+            }
+        ],
         "price": 9.99,
         "category": "Cheburek",
         "stock_quantity": 25,
@@ -70,7 +77,9 @@ async def test_search_product(superuser_client: AsyncClient):
     await superuser_client.post("/api/v1/products/", json=product_data)
 
     # Search for the product by name
-    response = await superuser_client.get("/api/v1/products/search/", params={"name": "Test"})
+    response = await superuser_client.get(
+        "/api/v1/products/search/", params={"name": "Test"}
+    )
 
     # Check that the response is OK (200)
     assert response.status_code == 200
@@ -88,10 +97,12 @@ async def test_create_product_missing_fields(superuser_client: AsyncClient):
 
     # Define product payload with missing required field (e.g., "name")
     product_data = {
-        "translations": [{
-            "language_code": "en",
-            "product_description": "A test product description",
-        }],
+        "translations": [
+            {
+                "language_code": "en",
+                "product_description": "A test product description",
+            }
+        ],
         "price": 9.99,
         "category": "Cheburek",
         "stock_quantity": 25,
@@ -110,10 +121,12 @@ async def test_create_product_invalid_price(superuser_client: AsyncClient):
     """Test POST /products with an invalid price (negative value)."""
 
     product_data = {
-        "translations": [{
-            "language_code": "en",
-            "product_description": "A test product description",
-        }],
+        "translations": [
+            {
+                "language_code": "en",
+                "product_description": "A test product description",
+            }
+        ],
         "price": -5.00,  # Invalid price
         "category": "Cheburek",
         "stock_quantity": 25,
@@ -147,53 +160,71 @@ async def test_update_product(superuser_client: AsyncClient):
 
     # Create a product first
     product_data = {
-        "translations": [{
-            "language_code": "en",
-            "product_name": "Old Product",
-            "product_description": "Old description",
-        }],
+        "translations": [
+            {
+                "language_code": "en",
+                "product_name": "Old Product",
+                "product_description": "Old description",
+            }
+        ],
         "price": 5.99,
         "category": "SomeCategory",
         "stock_quantity": 10,
         "image_src": "old_image_src",
     }
-    create_response = await superuser_client.post("/api/v1/products/", json=product_data)
+    create_response = await superuser_client.post(
+        "/api/v1/products/", json=product_data
+    )
     product_id = create_response.json()["product_id"]
 
     # Update the product
     updated_data = {
-        "translations": [{
-            "language_code": "en",
-            "product_name": "Updated Product",
-            "product_description": "Updated description",
-        }],
+        "translations": [
+            {
+                "language_code": "en",
+                "product_name": "Updated Product",
+                "product_description": "Updated description",
+            }
+        ],
         "price": 5.99,
         "category": "SomeCategory",
         "stock_quantity": 10,
         "image_src": "old_image_src",
     }
-    response = await superuser_client.put(f"/api/v1/products/{product_id}/", json=updated_data)
+    response = await superuser_client.put(
+        f"/api/v1/products/{product_id}/", json=updated_data
+    )
 
     # Check that the response is OK
     assert response.status_code == 200
     updated_product = response.json()
     assert updated_product["translations"][0]["product_name"] == "Updated Product"
-    assert updated_product["translations"][0]["product_description"] == "Updated description"
+    assert (
+        updated_product["translations"][0]["product_description"]
+        == "Updated description"
+    )
 
     # Test partial update (PATCH)
     patch_data = {
-        "translations": [{
-            "language_code": "en",
-            "product_name": "Patched Product",
-            "product_description": "Patched description",
-        }],
-        "category": "Other"
+        "translations": [
+            {
+                "language_code": "en",
+                "product_name": "Patched Product",
+                "product_description": "Patched description",
+            }
+        ],
+        "category": "Other",
     }
-    response = await superuser_client.patch(f"/api/v1/products/{product_id}/", json=patch_data)
+    response = await superuser_client.patch(
+        f"/api/v1/products/{product_id}/", json=patch_data
+    )
     assert response.status_code == 200
     patched_product = response.json()
     assert patched_product["translations"][0]["product_name"] == "Patched Product"
-    assert patched_product["translations"][0]["product_description"] == "Patched description"
+    assert (
+        patched_product["translations"][0]["product_description"]
+        == "Patched description"
+    )
     assert patched_product["category"] == "Other"
 
 
@@ -203,17 +234,21 @@ async def test_delete_product(superuser_client: AsyncClient):
 
     # Create a product first
     product_data = {
-        "translations": [{
-            "language_code": "en",
-            "product_name": "Product to delete",
-            "product_description": "Will be deleted",
-        }],
+        "translations": [
+            {
+                "language_code": "en",
+                "product_name": "Product to delete",
+                "product_description": "Will be deleted",
+            }
+        ],
         "price": 9.99,
         "category": "Cheburek",
         "stock_quantity": 25,
         "image_src": "delete_image_src",
     }
-    create_response = await superuser_client.post("/api/v1/products/", json=product_data)
+    create_response = await superuser_client.post(
+        "/api/v1/products/", json=product_data
+    )
     product_id = create_response.json()["product_id"]
 
     # Delete the product
@@ -232,22 +267,26 @@ async def test_bulk_create_products(superuser_client: AsyncClient):
     bulk_product_data = {
         "products": [
             {
-                "translations": [{
-                    "language_code": "en",
-                    "product_name": "Bulk Product 1",
-                    "product_description":"Bulk product 1 description",
-                }],
+                "translations": [
+                    {
+                        "language_code": "en",
+                        "product_name": "Bulk Product 1",
+                        "product_description": "Bulk product 1 description",
+                    }
+                ],
                 "price": 12.99,
                 "category": "Bulk",
                 "stock_quantity": 50,
                 "image_src": "bulk_image_src_1",
             },
             {
-                "translations": [{
-                    "language_code": "en",
-                    "product_name": "Bulk Product 2",
-                    "product_description":"Bulk product 2 description",
-                }],
+                "translations": [
+                    {
+                        "language_code": "en",
+                        "product_name": "Bulk Product 2",
+                        "product_description": "Bulk product 2 description",
+                    }
+                ],
                 "price": 8.99,
                 "category": "Bulk",
                 "stock_quantity": 100,
@@ -300,22 +339,26 @@ async def test_bulk_create_and_search(superuser_client: AsyncClient):
     bulk_product_data = {
         "products": [
             {
-                "translations": [{
-                    "language_code": "en",
-                    "product_name": "Bulk Product 1",
-                    "product_description":"Bulk product 1 description",
-                }],
+                "translations": [
+                    {
+                        "language_code": "en",
+                        "product_name": "Bulk Product 1",
+                        "product_description": "Bulk product 1 description",
+                    }
+                ],
                 "price": 12.99,
                 "category": "Bulk",
                 "stock_quantity": 50,
                 "image_src": "bulk_img_1",
             },
             {
-                "translations": [{
-                    "language_code": "en",
-                    "product_name": "Bulk Product 2",
-                    "product_description":"Bulk product 2 description",
-                }],
+                "translations": [
+                    {
+                        "language_code": "en",
+                        "product_name": "Bulk Product 2",
+                        "product_description": "Bulk product 2 description",
+                    }
+                ],
                 "price": 8.99,
                 "category": "Bulk",
                 "stock_quantity": 100,
@@ -331,7 +374,9 @@ async def test_bulk_create_and_search(superuser_client: AsyncClient):
     assert response.status_code == 201
 
     # Search for the products
-    response = await superuser_client.get("/api/v1/products/search/", params={"category": "Bulk"})
+    response = await superuser_client.get(
+        "/api/v1/products/search/", params={"category": "Bulk", "sort_by": "name"}
+    )
     assert response.status_code == 200
     products = response.json()
     assert len(products) == 2

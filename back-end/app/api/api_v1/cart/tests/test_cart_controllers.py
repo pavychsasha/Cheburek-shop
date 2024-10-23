@@ -33,8 +33,8 @@ class TestMongoService:
         cart_dict = response.json()
         assert cart_dict["items"][0]["product_id"] == str(product_id)
 
-        assert cart_dict["items"][0]["name"]  in [translation.product_name
-                                                  for translation in product.translations]
+        assert cart_dict["items"][0]["name"] in [translation.product_name
+                                                 for translation in product.translations]
 
         assert cart_dict["items"][0]["price"] == product.price
         assert cart_dict["items"][0]["image_src"] == product.image_src

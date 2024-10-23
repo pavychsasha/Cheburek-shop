@@ -11,6 +11,7 @@ router = APIRouter(
     tags=["Languages"],
 )
 
+
 @router.get("/")
 async def get_languages(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)]
@@ -20,9 +21,11 @@ async def get_languages(
     """
     return await LanguagesService.get_all_languages(session=session)
 
+
 @router.get("/current_language")
 async def get_current_language(current_language: Annotated[str, Depends(current_language)]):
     return {"language": current_language}
+
 
 @router.post("/change_language")
 async def switch_language(
@@ -36,4 +39,3 @@ async def switch_language(
         session=session,
         request=request,
     )
-

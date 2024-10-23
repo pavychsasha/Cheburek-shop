@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import Optional
 
@@ -128,8 +129,6 @@ async def get_product(
         raise ProductNotFoundError(product_id)
     return product
 
-
-import logging
 
 logger = logging.getLogger(__name__)
 
