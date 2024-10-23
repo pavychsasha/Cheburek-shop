@@ -9,6 +9,7 @@ from app.core.models import Base
 if TYPE_CHECKING:
     from .product import Product
 
+
 class ProductTranslation(Base):
     __tablename__ = 'ProductTranslations'
     translation_id = Column(Integer, primary_key=True, autoincrement=True,)

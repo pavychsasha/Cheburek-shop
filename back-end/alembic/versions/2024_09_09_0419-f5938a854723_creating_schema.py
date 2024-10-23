@@ -1,7 +1,7 @@
 """Creating schema
 
 Revision ID: f5938a854723
-Revises: 
+Revises:
 Create Date: 2024-09-09 04:19:54.559003
 
 """

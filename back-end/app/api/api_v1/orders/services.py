@@ -8,6 +8,7 @@ from app.core.models import Order, OrderProductAssociation, Cart, CartItem, Prod
 from app.api.api_v1.cart.services import CartService
 from app.api.api_v1.orders.schemas import OrderModel, OrderProductModel
 
+
 class OrderService:
 
     @classmethod

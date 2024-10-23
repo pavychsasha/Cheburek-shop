@@ -16,7 +16,6 @@ class LanguagesService:
         translations = await session.execute(stmt)
         return translations.scalars().all()
 
-
     @classmethod
     async def switch_language(
             cls,
