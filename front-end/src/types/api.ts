@@ -3,4 +3,5 @@ export interface IParams {
     orderBy: string;
     categoryParam: string;
     searchValue: string;
+    currentPage: number;
 }

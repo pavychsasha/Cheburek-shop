@@ -9,6 +9,7 @@ import {RootState} from '../../../redux/store';
 import {setCategory, setSort} from "../../../redux/slices/filterSlice";
 import {fetchItems} from "../../../redux/slices/itemsSlice.ts";
 import {IParams} from "../../../types/api.ts";
+import Pagination from "../../common/Pagination/Pagination.tsx";
 
 
 const Home = () => {
@@ -20,6 +21,8 @@ const Home = () => {
     const {items, status} = useSelector((state: RootState) => state.items);
 
     const dispatch = useDispatch();
+
+    const [currentPage, setCurrentPage] = React.useState(1)
 
     //List of categories
     //const categories = ['Все', 'Чебуреки', 'Пиріжки', 'Напої', 'Інше'];
@@ -45,6 +48,7 @@ const Home = () => {
             sortBy,
             orderBy,
             searchValue,
+            currentPage,
         };
 
         //Fetching items from db using API
@@ -56,7 +60,7 @@ const Home = () => {
     // Fetch items when category, sort, or searchValue changes
     React.useEffect(() => {
         getItems();
-    }, [category, sort, searchValue]);
+    }, [category, sort, searchValue, currentPage]);
 
     return (
         <>
@@ -70,16 +74,19 @@ const Home = () => {
                 <Sort value={sort}
                       onChangeSort={(sort) => onChangeSort(sort)}/>
             </div>
-            <main className={styles.grid__wrapper}>
-                {/*Checking for loading status*/}
-                {status === 'loading' ? [...new Array(8)].map((_, index) => <Skeleton key={index}/>)
-                    : items.map(item =>
-                        <Card
-                            key={item.product_id}
-                            product_id={item.product_id}
-                            name={item.name}
-                            image_src={item.image_src}
-                            price={item.price}/>)}
+            <main>
+                <div className={styles.grid__wrapper}>
+                    {/*Checking for loading status*/}
+                    {status === 'loading' ? [...new Array(8)].map((_, index) => <Skeleton key={index}/>)
+                        : items.map(item =>
+                            <Card
+                                key={item.product_id}
+                                product_id={item.product_id}
+                                name={item.name}
+                                image_src={item.image_src}
+                                price={item.price}/>)}
+                </div>
+                <Pagination setCurrentPage={setCurrentPage} currentPage={currentPage}/>
             </main>
         </>
     );

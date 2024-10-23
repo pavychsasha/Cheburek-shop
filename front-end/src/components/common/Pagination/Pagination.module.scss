@@ -1,0 +1,30 @@
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+
+  ul {
+    display: flex; // Щоб розташувати елементи по горизонталі
+
+    .page {
+      margin-right: 1rem;
+      padding: 8px;
+      width: 1.5rem;
+      height: 1.5rem;
+      text-align: center;
+      background-color: #fff;
+      color: #d56550;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 50%;
+      border: 2px solid #d56550;
+      cursor: pointer;
+    }
+  }
+}
+
+.active {
+  background-color: #d56550 !important;
+  color: #fff !important;
+  cursor: auto !important;
+}

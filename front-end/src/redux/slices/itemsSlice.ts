@@ -5,7 +5,6 @@ import {IItemsState} from "../../types/state.ts";
 
 const baseUrl = 'http://localhost:8000/api/v1';
 
-
 export const fetchItems = createAsyncThunk('items/fetchItemsStatus',
     async (params: IParams) => {
 
@@ -14,17 +13,19 @@ export const fetchItems = createAsyncThunk('items/fetchItemsStatus',
             sortBy,
             orderBy,
             categoryParam,
-            searchValue
+            searchValue,
+            currentPage
         } = params
         const {data} = await axios.get(
-            `${baseUrl}/products/search?name=${searchValue}&category=${categoryParam}&sort_by=${sortBy}&order=${orderBy}&page=1&per_page=8`
+            `${baseUrl}/products/search?name=${searchValue}&category=${categoryParam}&sort_by=${sortBy}&order=${orderBy}&page=${currentPage}&per_page=8`
         );
-        return data.products;
+        return data;
     })
 
 const initialState: IItemsState = {
     items: [],
-    status: ''
+    status: '',
+    pagesCount: 1
 };
 
 const itemsSlice = createSlice({
@@ -45,7 +46,8 @@ const itemsSlice = createSlice({
             })
             .addCase(fetchItems.fulfilled, (state, action) => {
                 state.status = 'success';
-                state.items = action.payload;
+                state.items = action.payload.products;
+                state.pagesCount = action.payload.pages;
             })
             .addCase(fetchItems.rejected, (state) => {
                 state.status = 'error';
