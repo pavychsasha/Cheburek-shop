@@ -1,25 +1,16 @@
 import styles from "./Sort.module.scss";
 import React from "react";
 import {useTranslation} from "react-i18next";
-
-interface ISortProps {
-    value: {
-        nameUa: string;
-        nameEn: string;
-        sortType: string;
-        sortOrder: string;
-    };
-    onChangeSort: (sort: { nameUa: string; sortType: string }) => void;
-}
+import {ISortProps} from "../../../types/props.ts";
 
 const Sort: React.FC<ISortProps> = ({value, onChangeSort}) => {
-    const [t] = useTranslation('global');
+    const [t, i18n] = useTranslation('global');
 
     const sortList = [
-        {nameUa: 'алфавітом(зрост.)', nameEn: 'alphabet(asc)', sortType: 'name', sortOrder: 'asc'},
-        {nameUa: 'ціною(зрост.)', nameEn: 'price(asc)', sortType: 'price', sortOrder: 'asc'},
-        {nameUa: 'алфавітом(спад.)', nameEn: 'alphabet(desc)', sortType: 'name', sortOrder: 'desc'},
-        {nameUa: 'ціною(спад.)', nameEn: 'price(desc)', sortType: 'price', sortOrder: 'desc'}
+        {nameUkr: 'алфавітом(зрост.)', nameEn: 'alphabet(asc)', sortType: 'name', sortOrder: 'asc'},
+        {nameUkr: 'ціною(зрост.)', nameEn: 'price(asc)', sortType: 'price', sortOrder: 'asc'},
+        {nameUkr: 'алфавітом(спад.)', nameEn: 'alphabet(desc)', sortType: 'name', sortOrder: 'desc'},
+        {nameUkr: 'ціною(спад.)', nameEn: 'price(desc)', sortType: 'price', sortOrder: 'desc'}
     ];
 
     const handleOnChangeSort = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -33,7 +24,7 @@ const Sort: React.FC<ISortProps> = ({value, onChangeSort}) => {
             <select value={value.sortType + value.sortOrder} onChange={handleOnChangeSort}>
                 {sortList.map((sort, index) => (
                     <option key={index} value={sort.sortType + sort.sortOrder}>
-                        {sort.nameUa}
+                        {i18n.language === 'en' ? sort.nameEn : sort.nameUkr}
                     </option>
                 ))}
             </select>
