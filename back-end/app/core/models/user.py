@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
-    username: Mapped["str"]
     orders: Mapped[list[Order]] = relationship(back_populates="user")
 
     @classmethod
@@ -20,4 +19,4 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
         return SQLAlchemyUserDatabase(session, User)
 
     def __str__(self) -> str:
-        return f"User<(user_id='{self.id!s}, username={self.username!r}')>"
+        return f"User<(user_id='{self.id!s}')>"
