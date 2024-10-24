@@ -50,7 +50,7 @@ const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
                      alt={name}/>
                 <h3>{name}</h3>
                 <div className={styles.bottom}>
-                    <p>ціна: {price}₴</p>
+                    <p>{t('card.price')}: {price}₴</p>
                     <div className={styles.button} onClick={itemCount === 0 ? handleClickPlus : undefined}>
                         {itemCount !== 0 && <FaMinus onClick={handleClickMinus}/>}
                         <p>{itemCount === 0 ? t('card.button') : <span>{itemCount}</span>}</p>

@@ -50,7 +50,7 @@ const Cart = () => {
             </div>
             <div className={styles.bottom}>
                 <div className={styles.detail}>
-                    <p>{t('cart.totalQuantity')}: <span>{total_count} шт.</span></p>
+                    <p>{t('cart.totalQuantity')}: <span>{total_count}</span></p>
                     <p>{t('cart.totalPrice')}: <span className={styles.total__price}>{total_price}₴</span></p>
                 </div>
                 <div className={styles.buttons}>

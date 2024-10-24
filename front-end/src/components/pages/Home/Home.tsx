@@ -10,6 +10,7 @@ import {setCategory, setSort} from "../../../redux/slices/filterSlice";
 import {fetchItems} from "../../../redux/slices/itemsSlice.ts";
 import {IParams} from "../../../types/api.ts";
 import Pagination from "../../common/Pagination/Pagination.tsx";
+import {useTranslation} from "react-i18next";
 
 
 const Home = () => {
@@ -24,9 +25,13 @@ const Home = () => {
 
     const [currentPage, setCurrentPage] = React.useState(1)
 
+    const {i18n} = useTranslation();
+
     //List of categories
-    //const categories = ['Все', 'Чебуреки', 'Пиріжки', 'Напої', 'Інше'];
     const categoriesEn = ['All', 'Chebureks', 'Pies', 'Drinks', 'Other'];
+    const categoriesUkr = ['Все', 'Чебуреки', 'Пиріжки', 'Напої', 'Інше'];
+
+    const displayCategories = i18n.language === 'en' ? categoriesEn : categoriesUkr;
 
     //Handlers for setting filtration
     const onChangeCategory = (newCategory: string) => {
@@ -67,7 +72,8 @@ const Home = () => {
             <nav>
                 <Categories value={category}
                             onChangeCategory={(newValue) => onChangeCategory(newValue)}
-                            categories={categoriesEn}/>
+                            categories={displayCategories}
+                            categoriesEn={categoriesEn}/>
             </nav>
             <div className={styles.sort}>
                 <h2 className={styles.category__title}>{category}</h2>
