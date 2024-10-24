@@ -4,11 +4,11 @@ import contextlib
 from fastapi_users.exceptions import UserAlreadyExists
 
 from app.core.schemas.user import UserCreate
-from app.api.dependencies.authentication.user_manager import (
+from app.core.dependencies.authentication.user_manager import (
     UserManager,
     get_user_manager,
 )
-from app.api.dependencies.authentication.users import get_users_db
+from app.core.dependencies.authentication.users import get_users_db
 from app.core.models import sql_db_helper, User
 
 

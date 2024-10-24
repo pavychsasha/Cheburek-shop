@@ -9,10 +9,10 @@ settings.mongo_db.database_name = settings.mongo_db.test_database_name  # noqa
 settings.cookie_transport_settings.cookie_secure = False  # noqa
 
 
-from app.api.api_v1.products.schemas import ProductBulkCreate, ProductCreate
-from app.api.api_v1.products.services import bulk_create_product, get_products
+from app.core.schemas.products import ProductBulkCreate, ProductCreate
+from app.api.v1.products.services import bulk_create_product, get_products
 import pytest
-from sqlalchemy import select, update
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 from httpx import AsyncClient
 

@@ -2,12 +2,12 @@ from app.core.config import settings
 from fastapi import APIRouter, Depends
 from fastapi.security import HTTPBearer
 
-from .api_v1.products.controllers import router as products_router
-from .api_v1.auth.controllers import router as auth_router
-from .api_v1.users.controllers import router as users_router
-from .api_v1.cart.controllers import router as cart_router
-from .api_v1.orders.controllers import router as order_router
-from .api_v1.languages.controllers import router as languages_router
+from .v1.products.controllers import router as products_router
+from .v1.auth.controllers import router as auth_router
+from .v1.users.controllers import router as users_router
+from .v1.cart.controllers import router as cart_router
+from .v1.orders.controllers import router as order_router
+from .v1.languages.controllers import router as languages_router
 
 http_bearer = HTTPBearer(auto_error=False)
 
