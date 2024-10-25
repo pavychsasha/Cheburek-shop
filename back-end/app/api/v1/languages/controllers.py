@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.caching.decorators import memoize
 from app.core.dependencies.session import current_language
 from app.core.models import sql_db_helper
 from .services import LanguagesService

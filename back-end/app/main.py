@@ -8,18 +8,20 @@ from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
 
 from app.core.config import settings
-from app.core.models import sql_db_helper, mongo_db_helper
+from app.core.models import sql_db_helper, mongo_db_helper, redis_db_helper
 from app.api import router as router_v1
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await mongo_db_helper.connect()
+    await redis_db_helper.connect()
     # startup
     yield
     # shutdown
     await mongo_db_helper.dispose()
     await sql_db_helper.dispose()
+    await redis_db_helper.dispose()
 
 
 app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)

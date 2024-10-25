@@ -4,6 +4,7 @@ from typing import Optional
 
 import math
 
+from app.core.caching.decorators import memoize
 from app.core.exceptions import (
     InvalidUuidError,
     ProductNameDuplicationError,
@@ -27,6 +28,9 @@ from app.core.schemas.products import (
     Pagination,
     ProductPaginatedResponse,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 def validate_uuid(uuid_str: str):
@@ -90,6 +94,7 @@ async def get_num_of_pages(session: AsyncSession, per_page: int, stmt=None) -> i
     return math.ceil(count_products / per_page)
 
 
+@memoize()
 async def get_all_products_response(
     session: AsyncSession,
     pagination_params: Pagination = Pagination(per_page=10, page=1),
@@ -104,6 +109,7 @@ async def get_all_products_response(
     return ProductPaginatedResponse(pages=num_of_pages, products=localized_products)
 
 
+@memoize()
 async def get_product(
     session: AsyncSession,
     product_id: str | uuid.UUID,
@@ -127,9 +133,6 @@ async def get_product(
     if not product:
         raise ProductNotFoundError(product_id)
     return product
-
-
-logger = logging.getLogger(__name__)
 
 
 async def search_products(
@@ -234,6 +237,7 @@ async def search_products(
     return products
 
 
+@memoize(ttl=60 * 60 * 24)
 async def get_searched_products_response(
     session: AsyncSession,
     pagination_params: Pagination,

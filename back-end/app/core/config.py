@@ -74,6 +74,12 @@ class MongoDatabaseConfig(BaseModel):
         return mongo_db_uri
 
 
+class RedisDatabaseConfig(BaseModel):
+    host: str = "redis"
+    port: int = 6379
+    db: int = 0
+
+
 class AccessToken(BaseModel):
     lifetime_seconds: int = 3600
     reset_password_token_secret: str
@@ -104,6 +110,7 @@ class Settings(BaseSettings):
     db: DatabaseConfig
     access_token: AccessToken
     mongo_db: MongoDatabaseConfig
+    redis: RedisDatabaseConfig
     session: Session
 
 

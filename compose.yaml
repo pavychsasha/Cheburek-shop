@@ -47,13 +47,23 @@ services:
       - fastapi
 
   mongo:
-    image: mongo:latest
+    image: mongo:7.0.14
     container_name: mongo
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
 
+  redis:
+      image: redis:7.4.1-alpine
+      container_name: redis
+      ports:
+        - "6379:6379"
+      volumes:
+        - redis-data:/data
+
 volumes:
   pgdata:
   mongo-data:
+  redis-data:
+    driver: local

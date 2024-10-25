@@ -8,6 +8,7 @@ __all__ = (
     "MongoDbHelper",
     "sql_db_helper",
     "mongo_db_helper",
+    "redis_db_helper",
     "Product",
     "ProductTranslation",
     "User",
@@ -23,6 +24,7 @@ from .db_helper import (
     MongoDbHelper,
     sql_db_helper,
     mongo_db_helper,
+    redis_db_helper,
 )
 from .product import Product
 from .product_translations import ProductTranslation

@@ -20,6 +20,9 @@ asyncpg = "^0.29.0"
 fastapi-users = {extras = ["sqlalchemy"], version = "^13.0.0"}
 motor = "^3.5.1"
 beanie = "^1.26.0"
+redis = "^5.1.1"
+aioredis = "^2.0.1"
+dill = "^0.3.9"
 
 
 [tool.poetry.group.dev.dependencies]

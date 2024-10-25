@@ -10,10 +10,14 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from beanie import Document, Indexed, init_beanie
+from beanie import init_beanie
+
+from redis.asyncio import Redis
+
 
 from app.core.config import settings
 from app.core.models.cart import all_document_models
+from app.core.caching.cache import RedisCache
 
 
 class SQLDatabaseHelper:
@@ -86,6 +90,27 @@ class MongoDbHelper:
             print(f"MongoDB connection to {self.db_name} closed.")
 
 
+class RedisDbHelper:
+    def __init__(self, host: str, port: int, db: int):
+        self.redis: Optional[Redis] = None
+        self.host = host
+        self.port = port
+        self.db = db
+        self.cache: Optional[RedisCache] = None
+
+    async def connect(self):
+        """Connects to the Redis instance and initializes the RedisCache."""
+        self.redis = Redis(host=self.host, port=self.port, db=self.db)
+        self.cache = RedisCache(self.redis)
+        print(f"Connected to Redis at {self.host}:{self.port}, DB {self.db}.")
+
+    async def dispose(self):
+        """Closes the Redis connection."""
+        if self.redis:
+            await self.redis.close()
+            print("Redis connection closed.")
+
+
 sql_db_helper = SQLDatabaseHelper(
     url=str(settings.db.url),
     echo=settings.db.echo,
@@ -97,4 +122,10 @@ sql_db_helper = SQLDatabaseHelper(
 mongo_db_helper = MongoDbHelper(
     db_url=settings.mongo_db.url,
     db_name=settings.mongo_db.database_name,
+)
+
+redis_db_helper = RedisDbHelper(
+    host=settings.redis.host,
+    port=settings.redis.port,
+    db=settings.redis.db,
 )
