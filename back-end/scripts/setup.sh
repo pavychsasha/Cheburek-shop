@@ -19,6 +19,9 @@ APP_CONFIG__ACCESS_TOKEN__VERIFICATION_TOKEN_SECRET=e68695768d118ba00c94348efb5d
 APP_CONFIG__MONGO_DB__HOST=mongo
 APP_CONFIG__MONGO_DB__DATABASE_NAME=cheburek_mongo_db
 APP_CONFIG__MONGO_DB__TEST_DATABASE_NAME=test_cheburek_mongo_db
+APP_CONFIG__REDIS__HOST=redis
+APP_CONFIG__REDIS__PORT=6379
+APP_CONFIG__REDIS__DB=0
 APP_CONFIG__SESSION__SECRET_KEY="93B306A6-7D22-4EBC-B3E8-2F268DE90CE7"
 EOT
   echo ".env file created."
@@ -26,19 +29,18 @@ else
   echo ".env file already exists."
 fi
 
-
 # Build and run the Docker containers
 echo "Building and running Docker containers..."
-docker compose up -d
-
+docker compose up -d --build
 
 # Step 2: Go into the container shell and run beanie migrations
 echo "Running Beanie migrations inside 'cheburek-shop-fastapi-1'..."
 docker exec -it cheburek-shop-fastapi-1 sh -c "PYTHONPATH=. beanie migrate -uri 'mongodb://mongo:27017/' -db cheburek_mongo_db -p ./beanie_migrations/"
 
-# Step 3: Run Alembic migrations
+# Step 3: Run Alembic migrations and populating products
 echo "Running Alembic migrations inside 'cheburek-shop-fastapi-1'..."
 docker exec -it cheburek-shop-fastapi-1 sh -c "alembic upgrade head"
+docker exec -it cheburek-shop-fastapi-1 sh -c "PYTHONPATH=. python3 app/actions/migrate_all_database.py"
 
 # Step 4: Run the script to create a superuser
 echo "Creating superuser..."
