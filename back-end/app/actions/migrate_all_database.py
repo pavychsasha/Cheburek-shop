@@ -4,8 +4,7 @@ from sqlalchemy import text, inspect
 
 from app.core.models import sql_db_helper
 from app.api.v1.products.services import bulk_create_product, ProductBulkCreate
-from alembic.config import Config
-from alembic import command
+
 
 # Data to be used for bulk creation
 PRODUCTS_DATA = {
@@ -265,11 +264,6 @@ PRODUCTS_DATA = {
     ]
 }
 
-# Paths for Alembic configuration
-ALEMBIC_CONFIG_PATH = (
-    "alembic.ini"  # Update if your alembic config is in a different path
-)
-
 
 async def truncate_products_databases():
     # Implement truncation logic for your databases here
@@ -290,13 +284,6 @@ async def truncate_products_databases():
     print("All databases truncated.")
 
 
-def upgrade_alembic():
-    print("Upgrading Alembic...")
-    alembic_cfg = Config(ALEMBIC_CONFIG_PATH)
-    command.upgrade(alembic_cfg, "head")
-    print("Alembic upgraded to head.")
-
-
 async def run_bulk_create():
     async with sql_db_helper.session_factory() as session:
         products_in = ProductBulkCreate(**PRODUCTS_DATA)
@@ -307,9 +294,6 @@ async def run_bulk_create():
 async def main():
     # Truncate databases
     await truncate_products_databases()
-
-    # Upgrade Alembic
-    upgrade_alembic()
 
     # Run bulk create
     await run_bulk_create()
