@@ -19,6 +19,7 @@ class ApiV1Prefix(BaseModel):
     cart: str = "/cart"
     orders: str = "/orders"
     languages: str = "/languages"
+    admin: str = "/admin"
 
 
 class ApiPrefix(BaseModel):
@@ -94,7 +95,7 @@ class CookieTransportSettings(BaseModel):
     cookie_http_only: bool = True
     cookie_name: str = "userauth"
     cookie_samesite: str = "none"
-    cookie_secure: bool = True
+    cookie_secure: bool = False
 
 
 class Settings(BaseSettings):

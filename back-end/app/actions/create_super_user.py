@@ -34,7 +34,6 @@ async def create_user(
 async def create_superuser(
     email: str,
     password: str,
-    username: str,
     is_active: bool = default_is_active,
     is_superuser: bool = default_is_superuser,
     is_verified: bool = default_is_verified,
@@ -45,7 +44,6 @@ async def create_superuser(
         is_active=is_active,
         is_superuser=is_superuser,
         is_verified=is_verified,
-        username=username,
     )
 
     async with sql_db_helper.session_factory() as session:
@@ -69,7 +67,5 @@ if __name__ == "__main__":
     password = str(input("Enter admin-user's password (adminpassword): "))
     if not password:
         password = "adminpassword"
-    username = str(input("Enter admin-user's username (adminusername): "))
-    if not username:
-        username = "adminusername"
-    asyncio.run(create_superuser(email=email, password=password, username=username))
+
+    asyncio.run(create_superuser(email=email, password=password))
