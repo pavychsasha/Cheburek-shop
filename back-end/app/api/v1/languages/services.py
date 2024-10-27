@@ -3,6 +3,7 @@ from urllib.request import Request
 from sqlalchemy import distinct, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.products.services import invalidate_products_cache
 from app.core.caching.decorators import memoize
 from app.core.exceptions import LanguageNotFoundError
 from app.core.models import ProductTranslation
@@ -33,3 +34,4 @@ class LanguagesService:
             return
 
         request.session["language"] = language
+        await invalidate_products_cache()
