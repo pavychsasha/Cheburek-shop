@@ -1,7 +1,7 @@
 from typing import Annotated
 import uuid
 
-from fastapi import APIRouter, status, Depends, Security
+from fastapi import APIRouter, status, Depends, Security, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models import sql_db_helper
@@ -11,7 +11,7 @@ from app.core.dependencies.authentication.fastapi_users_dependency import (
     current_active_superuser,
 )
 
-from app.core.schemas.orders import OrderModel
+from app.core.schemas.orders import OrderModel, OrderAddress, order_address_params
 from .services import OrderService
 
 router = APIRouter(tags=["Orders"])
@@ -28,7 +28,6 @@ async def get_orders(
 ):
     orders = await OrderService.get_orders(session=session)
     return orders
-    # return await OrderService.serialize_order_response(orders)
 
 
 @router.post(
@@ -36,10 +35,13 @@ async def get_orders(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def make_order(
+    address: Annotated[OrderAddress, Depends(order_address_params)],
     cart: Annotated[CartOrder, Depends(mongo_cart)],
     session: Annotated[AsyncSession, Security(sql_db_helper.session_dependency)],
 ):
-    return await OrderService.make_order(session=session, mongo_cart=cart)
+    return await OrderService.make_order(
+        address=address, session=session, mongo_cart=cart
+    )
 
 
 @router.delete(

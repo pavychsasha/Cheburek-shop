@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 import uuid
 
-from sqlalchemy import ForeignKey, select, func
+from sqlalchemy import ForeignKey, UniqueConstraint, select, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -12,6 +12,7 @@ from .product import Product
 if TYPE_CHECKING:
     from .user import User
     from .order_association import OrderProductAssociation
+    from .address import Address
 
 
 class Order(Base):
@@ -36,6 +37,10 @@ class Order(Base):
         ForeignKey("user.id", ondelete="SET NULL"), nullable=True
     )
     user: Mapped["User"] = relationship(back_populates="orders")
+
+    address: Mapped["Address"] = relationship(
+        back_populates="order", uselist=False, cascade="all, delete, delete-orphan"
+    )
 
     def __str__(self) -> str:
         return f"Order<(order_id='{self.order_id!s}')>"
