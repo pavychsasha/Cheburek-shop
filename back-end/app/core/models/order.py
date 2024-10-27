@@ -17,10 +17,6 @@ if TYPE_CHECKING:
 
 class Order(Base):
     __tablename__ = "Orders"
-    __table_args__ = (
-        UniqueConstraint("order_id"),
-        UniqueConstraint("user_id"),
-    )
 
     order_id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True,
@@ -43,8 +39,7 @@ class Order(Base):
     user: Mapped["User"] = relationship(back_populates="orders")
 
     address: Mapped["Address"] = relationship(
-        back_populates="order",
-        uselist=False,
+        back_populates="order", uselist=False, cascade="all, delete, delete-orphan"
     )
 
     def __str__(self) -> str:

@@ -32,11 +32,11 @@ class Address(Base):
     )
 
     order_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("Orders.order_id"), unique=True
+        ForeignKey("Orders.order_id", ondelete="CASCADE"), unique=True
     )
     order: Mapped["Order"] = relationship(
         back_populates="address",
         single_parent=True,
         uselist=False,
-        foreign_keys=[order_id],
+        cascade="all, delete, delete-orphan",
     )
