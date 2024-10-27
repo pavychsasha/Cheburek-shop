@@ -14,6 +14,10 @@ __all__ = (
     "User",
     "Order",
     "OrderProductAssociation",
+    "Address",
+    "City",
+    "State",
+    "Country",
 )
 
 from .cart import all_document_models, Cart, CartItem
@@ -31,3 +35,7 @@ from .product_translations import ProductTranslation
 from .user import User
 from .order import Order
 from .order_association import OrderProductAssociation
+from .address import Address
+from .city import City
+from .state import State
+from .country import Country
