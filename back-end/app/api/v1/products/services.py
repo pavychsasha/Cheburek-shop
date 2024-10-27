@@ -16,7 +16,7 @@ from sqlalchemy import delete, select, asc, desc, and_, update, func
 from sqlalchemy.orm import joinedload, selectinload, aliased
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.models import Product
+from app.core.models import Product, redis_db_helper
 from app.core.models.product_translations import ProductTranslation
 
 from app.core.schemas.products import (
@@ -39,6 +39,11 @@ def validate_uuid(uuid_str: str):
         return uuid.UUID(uuid_str)
     except ValueError:
         raise InvalidUuidError(uuid_str=uuid_str)
+
+
+async def invalidate_products_cache():
+    # TODO: this is just a hotfix to avoid stale information
+    redis_db_helper.cache.remove_all_cache_keys()
 
 
 async def get_products(
@@ -310,6 +315,7 @@ async def create_product(session: AsyncSession, product_in: ProductCreate) -> Pr
 
     session.add(product)
     await session.commit()
+    await invalidate_products_cache()
     return product
 
 
@@ -358,6 +364,7 @@ async def bulk_create_product(
 
     session.add_all(products)
     await session.commit()
+    await invalidate_products_cache()
     return products_in  # Return the created products as a list
 
 
@@ -388,6 +395,7 @@ async def update_product(
         else:
             setattr(product, name, value)
     await session.commit()
+    await invalidate_products_cache()
     return product
 
 
@@ -400,6 +408,7 @@ async def delete_product(
     await session.execute(delete(Product).where(Product.product_id == product_id))
 
     await session.commit()
+    await invalidate_products_cache()
 
 
 async def delete_products(
@@ -410,3 +419,4 @@ async def delete_products(
     await session.execute(delete(Product).where(Product.product_id.in_(product_ids)))
 
     await session.commit()
+    await invalidate_products_cache()

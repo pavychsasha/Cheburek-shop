@@ -89,3 +89,10 @@ class RedisCache:
         # Invalidate the specific cache entry.
         await self.redis.delete(key)
         logger.info(f"Invalidated cache for specific key: {key}")
+
+    async def remove_all_cache_keys(self) -> None:
+        """Remove all keys from the Redis cache."""
+        async for key in self.redis.scan_iter("*"):
+            await self.redis.delete(key)
+            logger.info(f"Deleted cache key: {key}")
+        logger.info("All cache keys have been removed.")
