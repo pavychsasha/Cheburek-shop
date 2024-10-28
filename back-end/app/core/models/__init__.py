@@ -6,6 +6,7 @@ __all__ = (
     "Base",
     "SQLDatabaseHelper",
     "MongoDbHelper",
+    "RedisDbHelper",
     "sql_db_helper",
     "mongo_db_helper",
     "redis_db_helper",
@@ -26,6 +27,7 @@ from .base import Base
 from .db_helper import (
     SQLDatabaseHelper,
     MongoDbHelper,
+    RedisDbHelper,
     sql_db_helper,
     mongo_db_helper,
     redis_db_helper,

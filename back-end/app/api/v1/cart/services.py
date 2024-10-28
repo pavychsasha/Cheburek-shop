@@ -16,7 +16,7 @@ from app.core.schemas.cart import (
     CartModelResponse,
 )
 from app.core.models import Cart, CartItem, Product
-from app.api.v1.products.services import get_product, localize_product
+from app.api.v1.products.services import ProductsService
 
 
 class CartService:
@@ -124,13 +124,15 @@ class CartService:
         if cart and cart.items:
             for cart_item in cart.items:
                 cart_item: CartItem
-                product = await get_product(
+                product = await ProductsService.get_product(
                     session=sql_session,
                     product_id=cart_item.product_id,
                 )
-                localized_product: ProductResponse = await localize_product(
-                    product=product,
-                    language=language,
+                localized_product: ProductResponse = (
+                    await ProductsService.localize_product(
+                        product=product,
+                        language=language,
+                    )
                 )
                 product_cart_items.append(
                     CartItemResponse(
@@ -180,7 +182,7 @@ class CartService:
                 cart_item_model.count * existing_product_in_cart.price
             )
         else:
-            product_from_db: Product | None = await get_product(
+            product_from_db: Product | None = await ProductsService.get_product(
                 session=sql_session, product_id=cart_product_id
             )
 
@@ -254,3 +256,12 @@ class CartService:
         cart: CartItem,
     ):
         await cart.delete()
+
+    @classmethod
+    async def remove_cart_item_references(cls, product_ids: list[uuid.UUID]):
+        cart_items_to_delete: list[CartItemModel] = await CartItem.find(
+            CartItem.product_id == product_id
+        ).to_list()
+
+        cart_item_ids = [item.id for item in cart_items_to_delete]
+        await CartItem.find(CartItem.product_id == product_id).delete()

@@ -40,7 +40,9 @@ class RedisCache:
 
         """Generate a unique cache key based on the function, module name, and arguments."""
         key_data = f"{module_name}.{func.__name__}:{bound_args}"
-        return hashlib.md5(key_data.encode()).hexdigest()
+        hashed_key = hashlib.md5(key_data.encode()).hexdigest()
+        full_key = f"{module_name}.{__name__}:{hashed_key}"
+        return full_key
 
     async def get(self, key: str) -> Any:
         """Retrieve a value from the Redis cache and deserialize it using pickle."""
@@ -73,15 +75,14 @@ class RedisCache:
 
         # If `invalidate_all` is specified, remove all keys related to the function.
         if invalidate_all:
-            return
             # Get the module and function name.
-            # module_name = inspect.getmodule(func).__name__
-            # func_name = func.__name__
-            # async for key in self.redis.scan_iter(f"{module_name}.{func_name}:*"):
-            #
-            #     await self.redis.delete(key)
-            #     logger.info(f"Invalidated cache for key: {key}")
-            # return
+            module_name = inspect.getmodule(func).__name__
+            func_name = func.__name__
+            async for key in self.redis.scan_iter(f"{module_name}.{func_name}:*"):
+
+                await self.redis.delete(key)
+                logger.info(f"Invalidated cache for key: {key}")
+            return
 
         # Generate the cache key for the specific arguments.
         key = await self.generate_key(func, args, kwargs)

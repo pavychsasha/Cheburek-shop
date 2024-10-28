@@ -6,14 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models import sql_db_helper, Product
 
-from app.api.v1.products import services
+from app.api.v1.products.services import ProductsService
 
 
 async def product_by_id(
     product_id: Annotated[uuid.UUID, Path],
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
 ) -> Product:
-    product = await services.get_product(session=session, product_id=product_id)
+    product = await ProductsService.get_product(session=session, product_id=product_id)
     if product is not None:
         return product
 
