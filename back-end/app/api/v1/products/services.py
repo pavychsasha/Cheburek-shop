@@ -449,10 +449,11 @@ class ProductsService:
     @classmethod
     async def invalidate_products_cache(cls):
         # TODO: this is just a hotfix to avoid stale information
-        for m in [
-            cls.get_all_products_response,
-            cls.get_product,
-            cls.get_searched_products_response,
-        ]:
-
-            await redis_db_helper.cache.invalidate(m, invalidate_all=True)
+        await redis_db_helper.cache.remove_all_cache_keys()
+        # for m in [
+        #     cls.get_all_products_response,
+        #     cls.get_product,
+        #     cls.get_searched_products_response,
+        # ]:
+        #
+        #     await redis_db_helper.cache.invalidate(m, invalidate_all=True)

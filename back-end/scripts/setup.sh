@@ -30,12 +30,12 @@ else
 fi
 
 # Build and run the Docker containers
-echo "Building and running Docker containers..."
-docker compose up -d --build
-
-# Step 2: Go into the container shell and run beanie migrations
-echo "Running Beanie migrations inside 'cheburek-shop-fastapi-1'..."
-docker exec -it cheburek-shop-fastapi-1 sh -c "PYTHONPATH=. beanie migrate -uri 'mongodb://mongo:27017/' -db cheburek_mongo_db -p ./beanie_migrations/"
+#echo "Building and running Docker containers..."
+#docker compose up -d --build
+#
+## Step 2: Go into the container shell and run beanie migrations
+#echo "Running Beanie migrations inside 'cheburek-shop-fastapi-1'..."
+#docker exec -it cheburek-shop-fastapi-1 sh -c "PYTHONPATH=. beanie migrate -uri 'mongodb://mongo:27017/' -db cheburek_mongo_db -p ./beanie_migrations/"
 
 # Step 3: Run Alembic migrations and populating products
 echo "Running Alembic migrations inside 'cheburek-shop-fastapi-1'..."
@@ -43,7 +43,7 @@ docker exec -it cheburek-shop-fastapi-1 sh -c "alembic upgrade head"
 docker exec -it cheburek-shop-fastapi-1 sh -c "PYTHONPATH=. python3 app/actions/migrate_all_database.py"
 
 # Step 4: Run the script to create a superuser
-echo "Creating superuser..."
-docker exec -it cheburek-shop-fastapi-1 sh -c "PYTHONPATH=. python3 app/actions/create_super_user.py"
+#echo "Creating superuser..."
+#docker exec -it cheburek-shop-fastapi-1 sh -c "PYTHONPATH=. python3 app/actions/create_super_user.py"
 
 echo "Setup complete!"

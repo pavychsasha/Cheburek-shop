@@ -23,7 +23,7 @@ class RedisCache:
     @classmethod
     async def generate_key(
         cls, func: Callable, args: Tuple[Any], kwargs: Dict[str, Any]
-    ) -> bytes:
+    ) -> str:
 
         module_name = inspect.getmodule(func).__name__
         sig = inspect.signature(func)
@@ -78,10 +78,11 @@ class RedisCache:
             # Get the module and function name.
             module_name = inspect.getmodule(func).__name__
             func_name = func.__name__
+            logger.warning("INVALIDATE_ALL HIT")
             async for key in self.redis.scan_iter(f"{module_name}.{func_name}:*"):
 
                 await self.redis.delete(key)
-                logger.info(f"Invalidated cache for key: {key}")
+                logger.warning(f"Invalidated cache for key: {key}")
             return
 
         # Generate the cache key for the specific arguments.
