@@ -1,6 +1,6 @@
 import styles from './Card.module.scss'
 import {FaMinus, FaPlus} from "react-icons/fa";
-import {addItem, addItemToBackend, removeItem} from "../../../redux/slices/cartSLice.ts";
+import {addItemToBackend, subtractItemFromBackend} from "../../../redux/slices/cartSLice.ts";
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../../../redux/store.ts";
 import React from "react";
@@ -16,7 +16,6 @@ interface ICardProps {
 const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
     const cartItem = useSelector((state: RootState) =>
         state.cart.items.find((item) => item.product_id === product_id));
-    const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized);
 
     const dispatch = useDispatch();
 
@@ -32,15 +31,11 @@ const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
             price: price,
             count: 0
         }
-        if (isAuthorized) {
-            dispatch(addItemToBackend(newItem));
-        } else {
-            dispatch(addItem(newItem));
-        }
+        dispatch(addItemToBackend(newItem));
     }, [dispatch, product_id, image_src, name, price]);
 
     const handleClickMinus = React.useCallback(() => {
-        dispatch(removeItem(product_id));
+        dispatch(subtractItemFromBackend(product_id));
     }, [dispatch, product_id]);
 
     return (
