@@ -9,7 +9,7 @@ from app.core.dependencies.authentication.fastapi_users_dependency import (
     current_active_superuser,
 )
 
-from . import services
+from .services import ProductsService
 from app.core.dependencies.products import product_by_id
 from app.core.schemas.products import (
     Product,
@@ -35,7 +35,7 @@ async def get_products(
     current_language: Annotated[str, Depends(current_language)],
     pagination_params: Annotated[Pagination, Depends(pagination_params)],
 ):
-    return await services.get_all_products_response(
+    return await ProductsService.get_all_products_response(
         session=session,
         pagination_params=pagination_params,
         current_language=current_language,
@@ -54,7 +54,7 @@ async def get_product_by_query(
     sort_by: Annotated[str | None, Query(max_length=30)] = None,
     order: Annotated[str | None, Query(max_length=30)] = None,
 ):
-    return await services.get_searched_products_response(
+    return await ProductsService.get_searched_products_response(
         session=session,
         category=category,
         sort_by=sort_by,
@@ -75,7 +75,7 @@ async def create_product(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     superuser: Annotated[User, Security(current_active_superuser)],
 ):
-    return await services.create_product(session=session, product_in=product_in)
+    return await ProductsService.create_product(session=session, product_in=product_in)
 
 
 @router.post(
@@ -88,7 +88,7 @@ async def create_bulk_product(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     superuser: Annotated[User, Security(current_active_superuser)],
 ):
-    return await services.bulk_create_product(
+    return await ProductsService.bulk_create_product(
         session=session,
         products_in=products_in,
     )
@@ -115,7 +115,7 @@ async def update_product(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     superuser: Annotated[User, Security(current_active_superuser)],
 ):
-    return await services.update_product(
+    return await ProductsService.update_product(
         product_id=product_id,
         product_update=product_update,
         session=session,
@@ -132,7 +132,7 @@ async def update_product_partial(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     superuser: Annotated[User, Security(current_active_superuser)],
 ):
-    return await services.update_product(
+    return await ProductsService.update_product(
         session=session,
         product_id=product_id,  # type: ignore
         product_update=product_update,
@@ -149,7 +149,7 @@ async def delete_product(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     superuser: Annotated[User, Security(current_active_superuser)],
 ) -> None:
-    await services.delete_product(session=session, product_id=product_id)
+    await ProductsService.delete_product(session=session, product_id=product_id)
 
 
 @router.delete(
@@ -161,4 +161,4 @@ async def delete_products(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     superuser: Annotated[User, Security(current_active_superuser)],
 ) -> None:
-    await services.delete_products(session=session, product_ids=product_ids)
+    await ProductsService.delete_products(session=session, product_ids=product_ids)

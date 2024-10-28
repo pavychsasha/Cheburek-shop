@@ -107,7 +107,7 @@ class RedisDbHelper:
     async def dispose(self):
         """Closes the Redis connection."""
         if self.redis:
-            await self.redis.close()
+            await self.redis.aclose()
             print("Redis connection closed.")
 
 

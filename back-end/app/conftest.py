@@ -7,10 +7,10 @@ settings.db.url = settings.db.test_url  # noqa
 settings.mongo_db.url = settings.mongo_db.test_url  # noqa
 settings.mongo_db.database_name = settings.mongo_db.test_database_name  # noqa
 settings.cookie_transport_settings.cookie_secure = False  # noqa
-
+settings.redis.db = 1  # noqa
 
 from app.core.schemas.products import ProductBulkCreate, ProductCreate
-from app.api.v1.products.services import bulk_create_product, get_products
+from app.api.v1.products.services import ProductsService
 import pytest
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +18,12 @@ from httpx import AsyncClient
 
 from app.core.models import Base, User
 from app.main import app as main_app
-from app.core.models import SQLDatabaseHelper, MongoDbHelper, sql_db_helper
+from app.core.models import (
+    SQLDatabaseHelper,
+    MongoDbHelper,
+    sql_db_helper,
+    redis_db_helper,
+)
 
 
 @pytest.fixture(scope="function")
@@ -73,6 +78,13 @@ async def session(test_sql_db: SQLDatabaseHelper) -> AsyncGenerator[AsyncSession
     async with test_sql_db.session_factory() as session:
         yield session
         await session.close()
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def enable_redis():
+    await redis_db_helper.connect()
+    yield redis_db_helper
+    await redis_db_helper.dispose()
 
 
 @pytest.fixture(scope="function")
@@ -206,5 +218,5 @@ async def products(session: AsyncSession):
     product_bulk = ProductBulkCreate(
         products=[ProductCreate(**product_obj) for product_obj in products_lst]
     )
-    await bulk_create_product(session=session, products_in=product_bulk)
-    return await get_products(session=session)
+    await ProductsService.bulk_create_product(session=session, products_in=product_bulk)
+    return await ProductsService.get_products(session=session)

@@ -9,15 +9,7 @@ from app.core.exceptions import (
     InvalidSortFieldError,
     InvalidProductOrderError,
 )
-from app.api.v1.products.services import (
-    get_products,
-    get_product,
-    search_products,
-    create_product,
-    bulk_create_product,
-    update_product,
-    delete_product,
-)
+from app.api.v1.products.services import ProductsService
 from app.core.schemas.products import (
     ProductCreate,
     ProductPartialUpdate,
@@ -32,7 +24,9 @@ from app.core.schemas.products import (
 async def test_get_products(session: AsyncSession, products):
     """Test fetching products with pagination."""
     # Assuming products are already added in setup
-    products = await get_products(session, Pagination(per_page=5, page=1))
+    products = await ProductsService.get_products(
+        session, Pagination(per_page=5, page=1)
+    )
 
     assert len(products) <= 5
     assert all(isinstance(product, Product) for product in products)
@@ -56,10 +50,12 @@ async def test_get_product(session: AsyncSession):
         stock_quantity=100,
         image_src="test_image.png",
     )
-    created_product = await create_product(session, product_data)
+    created_product = await ProductsService.create_product(session, product_data)
 
     # Fetch the product
-    fetched_product = await get_product(session, created_product.product_id)
+    fetched_product = await ProductsService.get_product(
+        session, created_product.product_id
+    )
 
     assert fetched_product.product_id == created_product.product_id
     assert fetched_product.translations[0].product_name == "Test Product"
@@ -77,7 +73,7 @@ async def test_get_product_not_found(session: AsyncSession):
     non_existent_product_id = uuid.uuid4()
 
     with pytest.raises(ProductNotFoundError):
-        await get_product(session, non_existent_product_id)
+        await ProductsService.get_product(session, non_existent_product_id)
 
 
 @pytest.mark.asyncio
@@ -98,7 +94,7 @@ async def test_create_product(session: AsyncSession):
         image_src="new_image.png",
     )
 
-    product = await create_product(session, product_data)
+    product = await ProductsService.create_product(session, product_data)
 
     assert product.translations[0].product_name == "New Product"
     assert product.price == 12.99
@@ -124,11 +120,11 @@ async def test_create_product_duplicate_name(session: AsyncSession):
     )
 
     # First product creation should succeed
-    await create_product(session, product_data)
+    await ProductsService.create_product(session, product_data)
 
     # Second product with the same name should raise ProductNameDuplicationError
     with pytest.raises(ProductNameDuplicationError):
-        await create_product(session, product_data)
+        await ProductsService.create_product(session, product_data)
 
 
 @pytest.mark.asyncio
@@ -167,7 +163,9 @@ async def test_bulk_create_products(session: AsyncSession):
         ]
     )
 
-    bulk_products = await bulk_create_product(session, bulk_product_data)
+    bulk_products = await ProductsService.bulk_create_product(
+        session, bulk_product_data
+    )
 
     assert len(bulk_products.products) == 2
     assert bulk_products.products[0].translations[0].product_name == "Bulk Product 1"
@@ -198,7 +196,7 @@ async def test_bulk_create_products_duplicate(session: AsyncSession):
         stock_quantity=30,
         image_src="existing_image.png",
     )
-    await create_product(session, product_data)
+    await ProductsService.create_product(session, product_data)
 
     # Now attempt to bulk create with a duplicate name
     bulk_product_data = ProductBulkCreate(
@@ -221,7 +219,7 @@ async def test_bulk_create_products_duplicate(session: AsyncSession):
     )
 
     with pytest.raises(ProductNameDuplicationError):
-        await bulk_create_product(session, bulk_product_data)
+        await ProductsService.bulk_create_product(session, bulk_product_data)
 
 
 @pytest.mark.asyncio
@@ -243,7 +241,7 @@ async def test_update_product(session: AsyncSession):
         stock_quantity=30,
         image_src="update_image.png",
     )
-    created_product = await create_product(session, product_data)
+    created_product = await ProductsService.create_product(session, product_data)
 
     product_translations_update = [
         ProductTranslations(
@@ -261,7 +259,7 @@ async def test_update_product(session: AsyncSession):
         stock_quantity=20,
         image_src="updated_image.png",
     )
-    updated_product = await update_product(
+    updated_product = await ProductsService.update_product(
         session, created_product.product_id, update_data
     )
 
@@ -288,14 +286,14 @@ async def test_delete_product(session: AsyncSession):
         stock_quantity=100,
         image_src="delete_image.png",
     )
-    created_product = await create_product(session, product_data)
+    created_product = await ProductsService.create_product(session, product_data)
 
     # Now delete the product
-    await delete_product(session, created_product.product_id)
+    await ProductsService.delete_product(session, created_product.product_id)
 
     # Attempting to get the deleted product should raise ProductNotFoundError
     with pytest.raises(ProductNotFoundError):
-        await get_product(session, created_product.product_id)
+        await ProductsService.get_product(session, created_product.product_id)
 
 
 @pytest.mark.asyncio
@@ -316,7 +314,7 @@ async def test_search_products(session: AsyncSession):
             product_description="Product 2 description",
         ),
     ]
-    await create_product(
+    await ProductsService.create_product(
         session,
         ProductCreate(
             translations=product_translations_1,
@@ -326,7 +324,7 @@ async def test_search_products(session: AsyncSession):
             image_src="search1.png",
         ),
     )
-    await create_product(
+    await ProductsService.create_product(
         session,
         ProductCreate(
             translations=product_translations_2,
@@ -338,12 +336,16 @@ async def test_search_products(session: AsyncSession):
     )
 
     # Search by name
-    products_by_name = await search_products(session, name="Search Product 1")
+    products_by_name = await ProductsService.search_products(
+        session, name="Search Product 1"
+    )
     assert len(products_by_name) == 1
     assert products_by_name[0].translations[0].product_name == "Search Product 1"
 
     # Search by category
-    products_by_category = await search_products(session, category="Electronics")
+    products_by_category = await ProductsService.search_products(
+        session, category="Electronics"
+    )
     assert len(products_by_category) == 1
     assert products_by_category[0].category == "Electronics"
 
@@ -352,14 +354,16 @@ async def test_search_products(session: AsyncSession):
 async def test_search_products_invalid_sort_field(session: AsyncSession):
     """Test searching products with an invalid sort field."""
     with pytest.raises(InvalidSortFieldError):
-        await search_products(session, sort_by="invalid_field")
+        await ProductsService.search_products(session, sort_by="invalid_field")
 
 
 @pytest.mark.asyncio
 async def test_search_products_invalid_order_raises_exception(session: AsyncSession):
     """Test searching products with an invalid order parameter."""
     with pytest.raises(InvalidProductOrderError):
-        await search_products(session, sort_by="price", order="invalid_order")
+        await ProductsService.search_products(
+            session, sort_by="price", order="invalid_order"
+        )
 
 
 @pytest.mark.asyncio
@@ -375,7 +379,7 @@ async def test_get_products_pagination(session: AsyncSession):
                 product_description=f"Description for product {i}",
             )
         ]
-        await create_product(
+        await ProductsService.create_product(
             session,
             ProductCreate(
                 translations=product_translations,
@@ -387,13 +391,13 @@ async def test_get_products_pagination(session: AsyncSession):
         )
 
     # Fetch the first 5 products (with explicit ordering)
-    products_page_1 = await search_products(
+    products_page_1 = await ProductsService.search_products(
         session, pagination_params=Pagination(per_page=5, page=1), sort_by="name"
     )
     assert len(products_page_1) == 5
 
     # Fetch the next set (remaining product)
-    products_page_2 = await search_products(
+    products_page_2 = await ProductsService.search_products(
         session, pagination_params=Pagination(per_page=5, page=2), sort_by="name"
     )
     assert len(products_page_2) == 1
@@ -421,7 +425,7 @@ async def test_update_product_partial(session: AsyncSession):
         stock_quantity=150,
         image_src="partial_update.png",
     )
-    created_product = await create_product(session, product_data)
+    created_product = await ProductsService.create_product(session, product_data)
 
     # Now partially update the product (only change the name)
     partial_update_data = ProductPartialUpdate(
@@ -429,7 +433,7 @@ async def test_update_product_partial(session: AsyncSession):
             {"language_code": "en", "product_name": "Partially Updated Product"}
         ],
     )
-    updated_product = await update_product(
+    updated_product = await ProductsService.update_product(
         session, created_product.product_id, partial_update_data, partial=True
     )
 
@@ -448,13 +452,13 @@ async def test_delete_non_existent_product_raises_exception(session: AsyncSessio
 
     # Attempting to delete a non-existent product should raise ProductNotFoundError
     with pytest.raises(ProductNotFoundError):
-        await delete_product(session, non_existent_product_id)
+        await ProductsService.delete_product(session, non_existent_product_id)
 
 
 @pytest.mark.asyncio
 async def test_get_products_no_results(session: AsyncSession):
     """Test fetching products when none exist."""
-    products = await get_products(session)
+    products = await ProductsService.get_products(session)
     assert products == []
 
 
@@ -476,11 +480,13 @@ async def test_search_products_invalid_order(session: AsyncSession):
         stock_quantity=50,
         image_src="valid_product.png",
     )
-    await create_product(session, product_data)
+    await ProductsService.create_product(session, product_data)
 
     # Now test an invalid order
     with pytest.raises(InvalidProductOrderError):
-        await search_products(session, sort_by="price", order="invalid_order")
+        await ProductsService.search_products(
+            session, sort_by="price", order="invalid_order"
+        )
 
 
 @pytest.mark.asyncio
@@ -513,7 +519,7 @@ async def test_bulk_create_duplicate_names_in_same_request(session: AsyncSession
     )
 
     with pytest.raises(ProductNameDuplicationError):
-        await bulk_create_product(session, bulk_product_data)
+        await ProductsService.bulk_create_product(session, bulk_product_data)
 
 
 @pytest.mark.asyncio
@@ -534,11 +540,11 @@ async def test_update_product_partial_update(session: AsyncSession):
         stock_quantity=30,
         image_src="original_image.png",
     )
-    created_product = await create_product(session, product_data)
+    created_product = await ProductsService.create_product(session, product_data)
 
     # Now update only the price
     partial_update_data = ProductPartialUpdate(price=25.99)  # type: ignore
-    updated_product = await update_product(
+    updated_product = await ProductsService.update_product(
         session, created_product.product_id, partial_update_data, partial=True
     )
 
@@ -566,18 +572,18 @@ async def test_delete_product_and_check_exclusion_from_listings(session: AsyncSe
         stock_quantity=50,
         image_src="to_delete.png",
     )
-    created_product = await create_product(session, product_data)
+    created_product = await ProductsService.create_product(session, product_data)
 
     # Soft delete the product
-    await delete_product(session, created_product.product_id)
+    await ProductsService.delete_product(session, created_product.product_id)
 
     # Ensure it is excluded from listings
-    products = await get_products(session)
+    products = await ProductsService.get_products(session)
     assert not any(p.product_id == created_product.product_id for p in products)
 
     # Ensure fetching the deleted product raises an error
     with pytest.raises(ProductNotFoundError):
-        await get_product(session, created_product.product_id)
+        await ProductsService.get_product(session, created_product.product_id)
 
 
 @pytest.mark.asyncio
@@ -585,7 +591,7 @@ async def test_get_product_with_invalid_uuid(session: AsyncSession):
     """Test fetching a product with an invalid UUID."""
     invalid_product_id = "invalid-uuid-string"
     with pytest.raises(InvalidUuidError):
-        await get_product(session, invalid_product_id)  # type: ignore
+        await ProductsService.get_product(session, invalid_product_id)  # type: ignore
 
 
 @pytest.mark.asyncio
@@ -593,7 +599,7 @@ async def test_delete_product_with_invalid_uuid(session: AsyncSession):
     """Test deleting a product with an invalid UUID."""
     invalid_product_id = "invalid-uuid-string"
     with pytest.raises(InvalidUuidError):
-        await delete_product(session, invalid_product_id)  # type: ignore
+        await ProductsService.delete_product(session, invalid_product_id)  # type: ignore
 
 
 @pytest.mark.asyncio
@@ -603,4 +609,4 @@ async def test_delete_non_existent_product(session: AsyncSession):
 
     # Attempting to delete a non-existent product should raise ProductNotFoundError
     with pytest.raises(ProductNotFoundError):
-        await delete_product(session, non_existent_product_id)
+        await ProductsService.delete_product(session, non_existent_product_id)
