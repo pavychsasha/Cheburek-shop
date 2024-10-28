@@ -64,7 +64,7 @@ class ProductOrder(BaseModel):
 
 # OrderProductAssociation model with nested Product
 class OrderProductModel(BaseModel):
-    product: ProductOrder
+    product: Optional[ProductOrder] = None  # in case order has been deleted
     quantity: int
 
     model_config = ConfigDict(from_attributes=True)
@@ -75,8 +75,9 @@ class OrderModel(BaseModel):
     created_at: datetime
     user_id: Optional[uuid.UUID] = None
     products: List[OrderProductModel]
-    total_price: float
-    total_count: int
+    # TODO: SAVE PRODUCTS NAME, ORDERS TOTAL PRICE AND COUNT IN CASE PRODUCT HAS BEEN DELETED
+    total_price: Optional[float] = None
+    total_count: Optional[int] = None
     address: OrderAddress
 
     model_config = ConfigDict(from_attributes=True)

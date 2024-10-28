@@ -4,9 +4,14 @@ import uuid
 
 
 from beanie import DeleteRules, WriteRules
+from beanie.operators import In
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.schemas.products import ProductResponse
+from app.core.schemas.products import (
+    ProductResponse,
+    ProductUpdate,
+    ProductPartialUpdate,
+)
 from app.core.exceptions import ProductCartNotFoundError, ProductNotFoundError
 
 from app.core.schemas.cart import (
@@ -259,9 +264,67 @@ class CartService:
 
     @classmethod
     async def remove_cart_item_references(cls, product_ids: list[uuid.UUID]):
-        cart_items_to_delete: list[CartItemModel] = await CartItem.find(
-            CartItem.product_id == product_id
+        cart_items_to_delete: list[CartItem] = await CartItem.find(
+            In(CartItem.product_id, product_ids)
         ).to_list()
 
         cart_item_ids = [item.id for item in cart_items_to_delete]
-        await CartItem.find(CartItem.product_id == product_id).delete()
+        await CartItem.find(In(CartItem.product_id, product_ids)).delete(
+            link_rule=DeleteRules.DELETE_LINKS
+        )
+
+        if cart_item_ids:
+            carts_with_items = await Cart.find(In(Cart.items, cart_item_ids)).to_list()
+
+            for cart in carts_with_items:
+                for product_id in product_ids:
+                    await cls.delete_product_from_cart(cart=cart, product_id=product_id)
+
+    @classmethod
+    async def update_cart_products_info(
+        cls, products: list[ProductUpdate | ProductPartialUpdate]
+    ):
+        """
+        Update CartItems and recalculate total_price for all Carts that contain the updated items.
+
+        Args:
+            products (list[ProductUpdate | ProductPartialUpdate]): List of product updates with product_id and new price.
+        """
+        affected_cart_ids = set()
+
+        # Step 1: Update CartItems with matching product_id
+        for product in products:
+            if product.price:
+                # Find CartItems with the matching product_id
+                cart_items_to_update = await CartItem.find(
+                    CartItem.product_id == product.product_id
+                ).to_list()
+
+                # Update each CartItem's price and total_price
+                for cart_item in cart_items_to_update:
+                    cart_item.price = product.price
+                    cart_item.total_price = cart_item.count * product.price
+                    await cart_item.save(link_rule=WriteRules.WRITE)
+
+                    # Step 2: Find all Carts containing this updated CartItem
+                    carts = await Cart.find(
+                        In(
+                            [item.product_id for item in Cart.items],
+                            [product.product_id],
+                        )
+                    ).to_list()
+
+                    # Collect affected cart IDs
+                    for cart in carts:
+                        affected_cart_ids.add(cart.id)
+
+        # Step 3: Recalculate total_price for each affected Cart
+        for cart_id in affected_cart_ids:
+            cart = await Cart.get(cart_id)
+            if cart:
+                # Recalculate total_price by summing up the total_price of all items in the cart
+                cart_items = await CartItem.find(
+                    In(CartItem.id, [item.id for item in cart.items])
+                ).to_list()
+                cart.total_price = sum(item.total_price for item in cart_items)
+                await cart.save(link_rule=WriteRules.WRITE)
