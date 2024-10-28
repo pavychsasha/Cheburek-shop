@@ -18,7 +18,7 @@ const App = () => {
     React.useEffect(() => {
         axios.get('http://localhost:8000/api/v1/users/me', {withCredentials: true}).then(response => {
             if (response.status === 200) {
-                setIsAuth(true);
+                dispatch(setIsAuth(true));
             }
         })
     }, [])
