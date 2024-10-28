@@ -36,12 +36,10 @@ class RedisCache:
             if not isinstance(value, cls.OMITTED_INSTANCES)
         }
         bound_args = str(sorted(bound_args.items()))
-        logger.warning(f"BOUND_ARGS: {bound_args}")
-
         """Generate a unique cache key based on the function, module name, and arguments."""
         key_data = f"{module_name}.{func.__name__}:{bound_args}"
         hashed_key = hashlib.md5(key_data.encode()).hexdigest()
-        full_key = f"{module_name}.{__name__}:{hashed_key}"
+        full_key = f"{module_name}.{func.__name__}:{hashed_key}"
         return full_key
 
     async def get(self, key: str) -> Any:
