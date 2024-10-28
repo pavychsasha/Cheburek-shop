@@ -51,7 +51,7 @@ const Header = () => {
                         <a>
                             <RiLogoutCircleRFill onClick={() =>
                             {
-                                axios.post("http://localhost:8000/api/v1/auth/logout");
+                                axios.post("http://localhost:8000/api/v1/auth/logout", {},{withCredentials: true});
                                 dispatch(setIsAuth(false));
                             }} className={styles.user}/>
                         </a>

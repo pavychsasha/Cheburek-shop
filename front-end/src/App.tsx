@@ -6,14 +6,17 @@ import NotFound from "./components/pages/NotFound/NotFound.tsx";
 import Cart from "./components/pages/Cart/Cart.tsx";
 import Login from "./components/pages/Auth/Login/Login.tsx";
 import Register from "./components/pages/Auth/Register/Register.tsx";
-import {useDispatch} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import React from "react";
 import {fetchCart} from "./redux/slices/cartSLice.ts";
 import axios from "axios";
 import {setIsAuth} from "./redux/slices/authSlice.ts";
+import {RootState} from "./redux/store.ts";
 
 const App = () => {
     const dispatch = useDispatch();
+
+    const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized);
 
     React.useEffect(() => {
         axios.get('http://localhost:8000/api/v1/users/me', {withCredentials: true}).then(response => {
@@ -25,7 +28,7 @@ const App = () => {
 
     React.useEffect(() => {
         dispatch(fetchCart());
-    }, [dispatch]);
+    }, [dispatch, isAuthorized]);
 
     const location = useLocation();
 
