@@ -94,7 +94,7 @@ class CookieTransportSettings(BaseModel):
     cookie_http_only: bool = True
     cookie_name: str = "userauth"
     cookie_samesite: str = "none"
-    cookie_secure: bool = False
+    cookie_secure: bool = True
 
 
 class Settings(BaseSettings):
