@@ -9,10 +9,13 @@ import {setSearchValue} from "../../../redux/slices/filterSlice.ts";
 import {FaUserCircle} from "react-icons/fa";
 import {useTranslation} from "react-i18next";
 import LangSelector from "../LangSelector/LangSelector.tsx";
-
+import {RiLogoutBoxRLine, RiLogoutCircleRFill} from "react-icons/ri";
+import axios from "axios";
+import {setIsAuth} from "../../../redux/slices/authSlice.ts";
 
 
 const Header = () => {
+    const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized)
     const searchValue = useSelector((state: RootState) => state.filter.searchValue);
     const {total_price, total_count} = useSelector((state: RootState) => state.cart)
 
@@ -42,9 +45,22 @@ const Header = () => {
             />}
             <div className={styles.left}>
                 <LangSelector/>
-                <NavLink className={styles.link} to="/register">
-                    <FaUserCircle className={styles.user}/>
-                </NavLink>
+                {
+                    isAuthorized
+                        ?
+                        <a>
+                            <RiLogoutCircleRFill onClick={() =>
+                            {
+                                axios.post("http://localhost:8000/api/v1/auth/logout");
+                                dispatch(setIsAuth(false));
+                            }} className={styles.user}/>
+                        </a>
+                        :
+                        <NavLink className={styles.link} to="/register">
+                            <FaUserCircle className={styles.user}/>
+                        </NavLink>
+                }
+
                 <div className={styles.btn}>
                     <NavLink className={styles.link} to="/cart">
                         <span>{total_price} ₴</span>
