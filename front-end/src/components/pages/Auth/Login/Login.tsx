@@ -60,10 +60,10 @@ const Login = () => {
     };
 
     React.useEffect(() => {
-      if (isAuthorized) {
-          navigate('/');
-      }
-    })
+        if (isAuthorized) {
+            navigate('/');
+        }
+    }, [isAuthorized])
 
     return (
         <main className={styles.container}>

@@ -4,8 +4,10 @@ import InputField from '../../../common/InputField/InputField.tsx';
 import useSubmitForm from '../../../../hooks/useSubmitForm.ts';
 import {setIsAuth} from "../../../../redux/slices/authSlice.ts";
 import {NavLink, useNavigate} from "react-router-dom";
-import {useDispatch} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import {useTranslation} from "react-i18next";
+import React from "react";
+import {RootState} from "../../../../redux/store.ts";
 
 //Type(interface) of register form
 interface IFormRegister {
@@ -30,6 +32,8 @@ const Register = () => {
     const {submitForm: submitLoginForm} = useSubmitForm('http://localhost:8000/api/v1/auth/login');
 
     const dispatch = useDispatch();
+
+    const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized);
 
     const navigate = useNavigate();
 
@@ -74,6 +78,12 @@ const Register = () => {
             });
         }
     };
+
+    React.useEffect(() => {
+        if (isAuthorized) {
+            navigate('/');
+        }
+    }, [isAuthorized])
 
     return (
         <main className={styles.container}>
