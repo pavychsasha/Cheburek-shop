@@ -13,7 +13,7 @@ http_bearer = HTTPBearer(auto_error=False)
 
 router = APIRouter(
     prefix=settings.api.v1.prefix,
-    # dependencies=[Depends(http_bearer)],
+    dependencies=[Depends(http_bearer)],
 )
 router.include_router(router=products_router, prefix=settings.api.v1.products)
 router.include_router(router=auth_router, prefix=settings.api.v1.auth)
