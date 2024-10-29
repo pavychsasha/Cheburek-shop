@@ -2,6 +2,7 @@ import {useTranslation} from "react-i18next";
 import styles from './LangSelector.module.scss';
 import {RiArrowDropDownLine} from "react-icons/ri";
 import React, {useRef} from "react";
+import axios from "axios";
 
 const LangSelector = () => {
     const [isOpen, setIsOpen] = React.useState(false);
@@ -15,10 +16,14 @@ const LangSelector = () => {
         {label: 'English', code: 'en'}
     ];
 
-    const handleOnClickLang = (langCode: string) => {
+    const handleOnClickLang = async (langCode: string) => {
+        await axios.post(`http://localhost:8000/api/v1/languages/change_language?language=${langCode}`, {}, {withCredentials: true})
+        await axios.get('http://localhost:8000/api/v1/languages/current_language', {withCredentials: true});
         i18n.changeLanguage(langCode);
-        setIsOpen(false)
+        setIsOpen(false);
     };
+
+    console.log(i18n.language);
 
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
