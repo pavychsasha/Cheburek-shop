@@ -51,6 +51,25 @@ class OrderService:
         return result.unique().scalars().all()
 
     @classmethod
+    async def get_order(cls, session: AsyncSession, order_id: uuid.UUID):
+        stmt = (
+            select(Order)
+            .options(
+                joinedload(Order.products)
+                .selectinload(OrderProductAssociation.product)
+                .selectinload(Product.translations),
+                joinedload(Order.address)
+                .joinedload(Address.city)
+                .joinedload(City.state)
+                .joinedload(State.country),  # Load Address for the Order
+            )
+            .order_by(Order.created_at)
+            .filter_by(order_id=order_id)
+        )
+        result = await session.execute(stmt)
+        return result.unique().scalar_one_or_none()
+
+    @classmethod
     async def get_orders_response(
         cls, session: AsyncSession, language: str = "en"
     ) -> OrderResponse:
@@ -104,18 +123,18 @@ class OrderService:
         cls, session: AsyncSession, order: Order, address: OrderAddress
     ):
         country = await helpers.get_or_create(
-            session=session, model=Country, country_name=address.country
+            session=session, model=Country, country_name=address.country.lower()
         )
         state = await helpers.get_or_create(
             session=session,
             model=State,
-            state_name=address.state,
+            state_name=address.state.lower(),
             country_id=country.country_id,
         )
         city = await helpers.get_or_create(
             session=session,
             model=City,
-            city_name=address.city,
+            city_name=address.city.lower(),
             state_id=state.state_id,
         )
 
@@ -164,6 +183,21 @@ class OrderService:
         await session.commit()
 
     @classmethod
+    async def reduce_products_stock_quantity_after_order(
+        cls,
+        session: AsyncSession,
+        order_id: uuid.UUID,
+    ):
+        updated_products = []
+        order = await cls.get_order(session, order_id)
+        for order_product_association in order.products:
+            product = order_product_association.product
+            product.stock_quantity -= order_product_association.quantity
+            updated_products.append(product)
+        session.add_all(updated_products)
+        await session.commit()
+
+    @classmethod
     async def make_order(
         cls,
         contact_data: ContactData,
@@ -188,8 +222,12 @@ class OrderService:
             products=mongo_cart.items,  # noqa
             order=new_order,
         )
+        await cls.reduce_products_stock_quantity_after_order(
+            session=session, order_id=new_order.order_id
+        )
         # cleaning up purchased cart
         await CartService.delete_cart_items(cart=mongo_cart)
+        await ProductsService.invalidate_products_cache()
 
     @classmethod
     async def delete_order(
