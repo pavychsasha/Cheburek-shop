@@ -4,7 +4,7 @@ import {IFilterState} from "../../types/filter.ts";
 const initialState: IFilterState = {
     category: 'All',
     sort: {
-        nameUa: 'алфавітом',
+        nameUkr: 'алфавітом',
         nameEn: 'alphabet',
         sortType: 'name',
         sortOrder: 'asc'

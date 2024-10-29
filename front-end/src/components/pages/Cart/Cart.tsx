@@ -4,13 +4,12 @@ import {FaTrash} from "react-icons/fa";
 import CartItem from "../../common/CartItem/CartItem.tsx";
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../../../redux/store.ts";
-import {clearCart, clearCartFromBackend} from "../../../redux/slices/cartSLice.ts";
+import {clearCartFromBackend} from "../../../redux/slices/cartSLice.ts";
 import {useTranslation} from "react-i18next";
 
 const Cart = () => {
     //Getting variables from state
     const {items, total_price, total_count} = useSelector((state: RootState) => state.cart);
-    const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized)
 
     const dispatch = useDispatch();
 
@@ -18,11 +17,7 @@ const Cart = () => {
 
     //Handlers for cart actions
     const handleClickClear = () => {
-        if (isAuthorized) {
-            dispatch(clearCartFromBackend());
-        } else {
-            dispatch(clearCart());
-        }
+        dispatch(clearCartFromBackend());
     }
 
     return (

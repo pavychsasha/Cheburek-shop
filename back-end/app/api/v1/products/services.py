@@ -458,7 +458,7 @@ class ProductsService:
 
     @classmethod
     async def invalidate_products_cache(cls):
-        # TODO: this is just a hotfix to avoid stale information
+
         for m in [
             cls.get_all_products_response,
             cls.get_product,

@@ -77,30 +77,7 @@ const cartSlice = createSlice({
     name: 'cart',
     initialState,
     reducers: {
-        addItem(state, action) {
-            const existingItem = findItem(state.items, action.payload.product_id);
-            if (existingItem) {
-                existingItem.count += 1;
-            } else {
-                state.items.push({...action.payload, count: 1});
-            }
-            updateTotals(state);
-        },
-        removeItem(state, action) {
-            const existingItem = findItem(state.items, action.payload);
-            if (existingItem) {
-                existingItem.count > 1 ? existingItem.count -= 1 : state.items = state.items.filter(item => item.product_id !== action.payload);
-                updateTotals(state);
-            }
-        },
-        deleteItem(state, action) {
-            state.items = state.items.filter(item => item.product_id !== action.payload);
-            updateTotals(state);
-        },
-        clearCart(state) {
-            state.items = [];
-            updateTotals(state);
-        }
+
     },
     extraReducers: (builder) => {
         // Fetch Cart
@@ -162,10 +139,7 @@ const cartSlice = createSlice({
 });
 
 export const {
-    addItem,
-    removeItem,
-    deleteItem,
-    clearCart
+
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

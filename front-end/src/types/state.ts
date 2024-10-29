@@ -5,3 +5,14 @@ export interface IItemsState {
     status: string;
     pagesCount: number
 }
+
+export interface ICartState {
+    total_price: number;
+    total_count: number;
+    items: IItem[];
+    fetchCartStatus: string;
+    addItemStatus: string;
+    subtractItemStatus: string;
+    deleteItemStatus: string;
+    clearCartStatus: string;
+}

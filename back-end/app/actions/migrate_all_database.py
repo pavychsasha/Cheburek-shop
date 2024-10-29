@@ -3,7 +3,7 @@ import asyncio
 from sqlalchemy import text, inspect
 
 from app.core.models import sql_db_helper
-from app.api.v1.products.services import bulk_create_product, ProductBulkCreate
+from app.api.v1.products.services import ProductsService, ProductBulkCreate
 
 
 # Data to be used for bulk creation
@@ -287,7 +287,7 @@ async def truncate_products_databases():
 async def run_bulk_create():
     async with sql_db_helper.session_factory() as session:
         products_in = ProductBulkCreate(**PRODUCTS_DATA)
-        result = await bulk_create_product(session, products_in)
+        result = await ProductsService.bulk_create_product(session, products_in)
         print(f"Bulk creation of products completed: {result}")
 
 

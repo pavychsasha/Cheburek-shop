@@ -21,3 +21,11 @@ export interface ISortProps {
     };
     onChangeSort: (sort: { nameUkr: string; sortType: string }) => void;
 }
+
+export interface ICartItemProps {
+    product_id: string;
+    name: string;
+    image_src: string;
+    count: number;
+    price: number;
+}
