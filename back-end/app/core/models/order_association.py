@@ -28,7 +28,9 @@ class OrderProductAssociation(Base):
     order_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("Orders.order_id", ondelete="CASCADE"),
     )
-    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("Products.product_id"))
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("Products.product_id", ondelete="SET NULL"), nullable=True
+    )
 
     quantity: Mapped[int] = mapped_column(default=1, server_default="1")
 

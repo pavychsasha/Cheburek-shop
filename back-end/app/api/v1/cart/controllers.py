@@ -86,7 +86,7 @@ async def subtract_item_to_cart(
     # Use the CartService class method to add the item to the cart
     await CartService.subtract_product_from_cart(
         cart=cart,
-        substract_product=product,
+        subtract_product=product,
     )
 
 

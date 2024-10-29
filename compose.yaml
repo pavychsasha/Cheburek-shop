@@ -33,6 +33,8 @@ services:
     depends_on:
       - postgres
       - mongo
+    stdin_open: true
+    tty: true
 
   react:
     build: ./front-end

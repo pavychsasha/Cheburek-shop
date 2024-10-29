@@ -395,6 +395,8 @@ class ProductsService:
         product_update: ProductUpdate | ProductPartialUpdate,
         partial: bool = False,
     ) -> Product:
+        from app.api.v1.cart.services import CartService
+
         """Update an existing product, raising an error if it doesn't exist."""
         product = await cls.get_product(session, product_id)
         # Ensure all DB calls are awaited properly
@@ -416,6 +418,8 @@ class ProductsService:
             else:
                 setattr(product, name, value)
         await session.commit()
+
+        await CartService.update_cart_products_info(products=[product])
         await cls.invalidate_products_cache()
         return product
 
@@ -426,10 +430,13 @@ class ProductsService:
         product_id: uuid.UUID,
     ) -> None:
         """Delete a product by its ID. Perform soft deletion by default."""
-        await cls.get_product(session, product_id)  # checking for product's existance
+        from app.api.v1.cart.services import CartService
+
+        await cls.get_product(session, product_id)  # checking for product's existence
         await session.execute(delete(Product).where(Product.product_id == product_id))
 
         await session.commit()
+        await CartService.remove_cart_item_references([product_id])
         await cls.invalidate_products_cache()
 
     @classmethod
@@ -438,10 +445,13 @@ class ProductsService:
         session: AsyncSession,
         product_ids: list[uuid.UUID],
     ) -> None:
+        from app.api.v1.cart.services import CartService
+
         """Delete a product by its ID. Perform soft deletion by default."""
         await session.execute(
             delete(Product).where(Product.product_id.in_(product_ids))
         )
+        await CartService.remove_cart_item_references(product_ids)
 
         await session.commit()
         await cls.invalidate_products_cache()

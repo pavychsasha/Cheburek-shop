@@ -4,9 +4,14 @@ import uuid
 
 
 from beanie import DeleteRules, WriteRules
+from beanie.operators import In
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.schemas.products import ProductResponse
+from app.core.schemas.products import (
+    ProductResponse,
+    ProductUpdate,
+    ProductPartialUpdate,
+)
 from app.core.exceptions import ProductCartNotFoundError, ProductNotFoundError
 
 from app.core.schemas.cart import (
@@ -20,6 +25,13 @@ from app.api.v1.products.services import ProductsService
 
 
 class CartService:
+
+    @classmethod
+    async def _calculate_cart_totals(cls, cart: Cart):
+        """Calculate total count and price for the cart."""
+        cart.total_count = sum(item.count for item in cart.items)
+        cart.total_price = sum(item.total_price for item in cart.items)
+        await cart.save(link_rule=WriteRules.WRITE)
 
     @classmethod
     async def merge_carts(cls, session_cart: Cart, user_cart: Cart):
@@ -38,10 +50,8 @@ class CartService:
             else:
                 user_cart.items.append(session_item)
 
-        user_cart.total_count = sum(item.count for item in user_cart.items)
-        user_cart.total_price = sum(item.total_price for item in user_cart.items)
+        await cls._calculate_cart_totals(user_cart)
 
-        await user_cart.save()
         await session_cart.delete(link_rule=DeleteRules.DELETE_LINKS)
         logging.info(f"Cart merged successfully.")
         return user_cart
@@ -51,6 +61,8 @@ class CartService:
         cls,
         session_id: Optional[uuid.UUID] = None,
     ) -> Optional[Cart]:
+        """Get cart by session ID."""
+
         if session_id:
             return await Cart.find_one(
                 Cart.session_id == session_id,
@@ -62,6 +74,8 @@ class CartService:
         cls,
         user_id: Optional[uuid.UUID] = None,
     ) -> Optional[Cart]:
+        """Get cart by user ID."""
+
         if user_id:
             return await Cart.find_one(
                 Cart.user_id == user_id,
@@ -74,15 +88,15 @@ class CartService:
         session_id: uuid.UUID,
         user_id: Optional[uuid.UUID] = None,
     ) -> Cart:
+        """Retrieve the session or user cart, creating or merging as necessary."""
 
         session_cart: Optional[Cart] = await cls.get_session_cart(session_id=session_id)
 
         if not session_cart:
             # trying to find user cart first
-            if user_id:
-                user_cart = await cls.get_users_cart(user_id)
-                if user_cart is not None:
-                    return user_cart
+            user_cart = await cls.get_users_cart(user_id)
+            if user_cart is not None:
+                return user_cart
 
             cart = Cart(session_id=session_id, items=[], total_count=0, total_price=0)
             await cart.save(link_rule=WriteRules.WRITE)
@@ -208,26 +222,24 @@ class CartService:
     async def subtract_product_from_cart(
         cls,
         cart: Cart,
-        substract_product: CartItemModify,
+        subtract_product: CartItemModify,
     ):
         product: CartItem | None = await cls.find_product_in_cart(
             cart,
-            product_id=substract_product.product_id,
+            product_id=subtract_product.product_id,
         )
         if product:
-            if product.count <= substract_product.count:
+            if product.count <= subtract_product.count:
                 return await cls.delete_product_from_cart(
-                    cart=cart,
-                    product_id=substract_product.product_id,
+                    cart, subtract_product.product_id
                 )
+            subtract_count: int = subtract_product.count
+            subtract_price: float = subtract_count * product.price
 
-            sub_count = substract_product.count
-            sub_total_price = sub_count * product.price
-
-            product.count -= sub_count
-            product.total_price -= sub_total_price
-            cart.total_count -= sub_count
-            cart.total_price -= sub_total_price
+            product.count -= subtract_count
+            product.total_price -= subtract_price
+            cart.total_count -= subtract_count
+            cart.total_price -= subtract_price
 
             await product.save()
             await cart.save()
@@ -246,9 +258,8 @@ class CartService:
             cart.total_price -= product.total_price
             await product.delete()
             await cart.save()
-            return
-
-        raise ProductCartNotFoundError(product_id=product_id)
+        else:
+            raise ProductCartNotFoundError(product_id=product_id)
 
     @classmethod
     async def delete_cart_items(
@@ -259,9 +270,49 @@ class CartService:
 
     @classmethod
     async def remove_cart_item_references(cls, product_ids: list[uuid.UUID]):
-        cart_items_to_delete: list[CartItemModel] = await CartItem.find(
-            CartItem.product_id == product_id
+        cart_items_to_delete: list[CartItem] = await CartItem.find(
+            In(CartItem.product_id, product_ids)
         ).to_list()
 
         cart_item_ids = [item.id for item in cart_items_to_delete]
-        await CartItem.find(CartItem.product_id == product_id).delete()
+        await CartItem.find(In(CartItem.product_id, product_ids)).delete()
+        if cart_item_ids:
+            carts_with_items = await Cart.find(In(Cart.items, cart_item_ids)).to_list()
+
+            for cart in carts_with_items:
+                for product_id in product_ids:
+                    await cls.delete_product_from_cart(cart=cart, product_id=product_id)
+
+    @classmethod
+    async def update_cart_products_info(
+        cls, products: list[ProductUpdate | ProductPartialUpdate]
+    ):
+        """
+        Update CartItems and recalculate totals for carts containing updated products.
+
+        Args:
+            products (list[ProductUpdate | ProductPartialUpdate]): List of product updates with product_id and new price.
+        """
+        affected_cart_items = list()
+
+        for product in products:
+            if product.price:
+                # Find CartItems with the matching product_id
+                cart_items_to_update: list[CartItem] = await CartItem.find(
+                    CartItem.product_id == product.product_id, fetch_links=True
+                ).to_list()
+
+                # Update each CartItem's price and total_price
+                for cart_item in cart_items_to_update:
+                    cart_item.price = product.price
+                    cart_item.total_price = cart_item.count * product.price
+                    await cart_item.save(link_rule=WriteRules.WRITE)
+                carts_affected = await Cart.find(
+                    {"items.product_id": {"$eq": product.product_id}}, fetch_links=True
+                ).to_list()
+                affected_cart_items.append(*carts_affected)
+
+        # Update carts total prices
+        for cart in affected_cart_items:
+            cart.total_price = sum(item.total_price for item in cart.items)
+            await cart.save(link_rule=WriteRules.WRITE)
