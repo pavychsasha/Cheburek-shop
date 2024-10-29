@@ -1,6 +1,6 @@
 import uuid
-from typing import Annotated
 
+from app.api.v1.products.services import ProductsService
 from app.core.exceptions import ZeroProductsOrderError
 from sqlalchemy import select, delete
 from sqlalchemy.orm import joinedload
@@ -19,7 +19,15 @@ from app.core.models import (
 )
 from app.core import helpers
 from app.api.v1.cart.services import CartService
-from app.core.schemas.orders import OrderAddress
+
+from app.core.schemas.orders import (
+    OrderAddress,
+    ContactData,
+    OrderResponseModel,
+    OrderResponse,
+    OrderProductResponseModel,
+    OrderAddressInfo,
+)
 
 
 class OrderService:
@@ -41,6 +49,55 @@ class OrderService:
         )
         result = await session.execute(stmt)
         return result.unique().scalars().all()
+
+    @classmethod
+    async def get_orders_response(
+        cls, session: AsyncSession, language: str = "en"
+    ) -> OrderResponse:
+        orders = await cls.get_orders(session)
+        order_response = list()
+        for order in orders:
+            product_response = []
+            for product_order_association in order.products:
+                product = product_order_association.product
+                localized_product = await ProductsService.localize_product(
+                    product, language
+                )
+                product_response.append(
+                    OrderProductResponseModel(
+                        product_id=product.product_id,
+                        image_src=product.image_src,
+                        price=product.price,
+                        category=product.category,
+                        name=localized_product.name,
+                        quantity=product_order_association.quantity,
+                    )
+                )
+            address = order.address
+            address_response = OrderAddressInfo(
+                street_name=address.street_name,
+                street_number=address.street_number,
+                apartment_number=address.apartment_number,
+                zip_code=address.zip_code,
+                city=address.city.city_name,
+                state=address.city.state.state_name,
+                country=address.city.state.country.country_name,
+                products=product_response,
+            )
+            order_response.append(
+                OrderResponseModel(
+                    created_at=order.created_at,
+                    user_id=order.user_id,
+                    status=order.status,
+                    email=order.email,
+                    total_price=order.total_price,
+                    total_count=order.total_count,
+                    products=product_response,
+                    address=address_response,
+                )
+            )
+
+        return order_response
 
     @classmethod
     async def add_address_to_order(
@@ -108,11 +165,15 @@ class OrderService:
 
     @classmethod
     async def make_order(
-        cls, address: OrderAddress, session: AsyncSession, mongo_cart: Cart
+        cls,
+        contact_data: ContactData,
+        address: OrderAddress,
+        session: AsyncSession,
+        mongo_cart: Cart,
     ):
-        new_order = Order()
         if not mongo_cart.items:
             raise ZeroProductsOrderError()
+        new_order = Order(email=contact_data.email)
         session.add(new_order)
         await session.commit()  # generating order_id
 
@@ -127,7 +188,6 @@ class OrderService:
             products=mongo_cart.items,  # noqa
             order=new_order,
         )
-
         # cleaning up purchased cart
         await CartService.delete_cart_items(cart=mongo_cart)
 

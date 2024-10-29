@@ -41,6 +41,8 @@ class Order(Base):
     address: Mapped["Address"] = relationship(
         back_populates="order", uselist=False, cascade="all, delete, delete-orphan"
     )
+    email: Mapped[str]
+    status: Mapped[str] = mapped_column(default="PENDING")
 
     def __str__(self) -> str:
         return f"Order<(order_id='{self.order_id!s}')>"

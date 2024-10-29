@@ -4,6 +4,7 @@ import uuid
 from fastapi import APIRouter, status, Depends, Security, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.dependencies.session import current_language
 from app.core.models import sql_db_helper
 from app.core.dependencies.cart import mongo_cart
 from app.core.schemas.cart import CartOrder
@@ -11,7 +12,14 @@ from app.core.dependencies.authentication.fastapi_users_dependency import (
     current_active_superuser,
 )
 
-from app.core.schemas.orders import OrderModel, OrderAddress, order_address_params
+from app.core.schemas.orders import (
+    OrderModel,
+    order_address_params,
+    OrderAddressInfo,
+    ContactData,
+    contact_data_params,
+    OrderResponseModel,
+)
 from .services import OrderService
 
 router = APIRouter(tags=["Orders"])
@@ -19,14 +27,15 @@ router = APIRouter(tags=["Orders"])
 
 @router.get(
     "/",
-    response_model=list[OrderModel],
+    response_model=list[OrderResponseModel],
     status_code=status.HTTP_200_OK,
 )
 async def get_orders(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    language: Annotated[str, Depends(current_language)],
     superuser: Annotated[AsyncSession, Security(current_active_superuser)],
 ):
-    orders = await OrderService.get_orders(session=session)
+    orders = await OrderService.get_orders_response(session=session, language=language)
     return orders
 
 
@@ -35,12 +44,13 @@ async def get_orders(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def make_order(
-    address: Annotated[OrderAddress, Depends(order_address_params)],
+    contact_data: Annotated[ContactData, Depends(contact_data_params)],
+    address: Annotated[OrderAddressInfo, Depends(order_address_params)],
     cart: Annotated[CartOrder, Depends(mongo_cart)],
     session: Annotated[AsyncSession, Security(sql_db_helper.session_dependency)],
 ):
     return await OrderService.make_order(
-        address=address, session=session, mongo_cart=cart
+        contact_data=contact_data, address=address, session=session, mongo_cart=cart
     )
 
 

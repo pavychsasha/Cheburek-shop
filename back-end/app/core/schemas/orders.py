@@ -1,10 +1,9 @@
 from typing import Optional, List, Annotated
 from datetime import datetime
 import uuid
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, ValidationError
 
-from fastapi import Query
-
-from pydantic import BaseModel, Field, ConfigDict
+from fastapi import Query, HTTPException
 
 
 # Country model
@@ -41,6 +40,16 @@ class OrderAddress(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class OrderAddressInfo(BaseModel):
+    street_name: str
+    street_number: str
+    apartment_number: str
+    zip_code: str
+    city: str
+    state: str
+    country: str
+
+
 # Product translation model
 class ProductTranslation(BaseModel):
     product_name: str
@@ -74,13 +83,44 @@ class OrderProductModel(BaseModel):
 class OrderModel(BaseModel):
     created_at: datetime
     user_id: Optional[uuid.UUID] = None
+    status: str
+    email: EmailStr
     products: List[OrderProductModel]
+
     # TODO: SAVE PRODUCTS NAME, ORDERS TOTAL PRICE AND COUNT IN CASE PRODUCT HAS BEEN DELETED
     total_price: Optional[float] = None
     total_count: Optional[int] = None
-    address: OrderAddress
+    address: OrderAddressInfo
 
-    model_config = ConfigDict(from_attributes=True)
+
+class OrderProductResponseModel(BaseModel):
+    product_id: uuid.UUID
+    name: str
+    price: float
+    category: str
+    image_src: str
+    quantity: int
+
+
+class OrderResponseModel(BaseModel):
+    created_at: datetime
+    user_id: Optional[uuid.UUID] = None
+    status: str
+    email: EmailStr
+    # TODO: SAVE PRODUCTS NAME, ORDERS TOTAL PRICE AND COUNT IN CASE PRODUCT HAS BEEN DELETED
+    total_price: Optional[float] = None
+    total_count: Optional[int] = None
+    products: List[OrderProductResponseModel]
+
+    address: OrderAddressInfo
+
+
+class OrderResponse(BaseModel):
+    orders: List[Optional[OrderModel]] = []
+
+
+class ContactData(BaseModel):
+    email: EmailStr
 
 
 # Utility function for handling address parameters in API routes
@@ -93,7 +133,7 @@ async def order_address_params(
     state: Annotated[str, Query(max_length=150)],
     country: Annotated[str, Query(max_length=150)],
 ):
-    return OrderAddress(
+    return OrderAddressInfo(
         street_name=street_name,
         street_number=street_number,
         apartment_number=apartment_number,
@@ -102,3 +142,14 @@ async def order_address_params(
         state=state,
         country=country,
     )
+
+
+async def contact_data_params(
+    email: Annotated[str, Query(max_length=150)]
+) -> ContactData:
+    # Validate the email within the ContactData model
+    try:
+        return ContactData(email=email)
+    except ValidationError as e:
+        # Raise a 422 HTTPException with details if validation fails
+        raise HTTPException(status_code=422, detail=e.errors())
