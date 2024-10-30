@@ -194,6 +194,10 @@ class OrderService:
             product_in_database = await ProductsService.get_product(
                 session=session, product_id=product.product_id
             )
+            # We prevent this behaviour in CartService, so raising exception on the first possible case
+            CartService.check_products_quantity(
+                product=product_in_database, cart_item_count=product.count
+            )
             localized_product = await ProductsService.localize_product(
                 product_in_database, "en"
             )
@@ -242,6 +246,7 @@ class OrderService:
     ):
         if not mongo_cart.items:
             raise ZeroProductsOrderError()
+
         new_order = Order(email=contact_data.email)
         session.add(new_order)
         await session.flush()  # generating order_id
