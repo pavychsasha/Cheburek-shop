@@ -1,4 +1,5 @@
 import logging
+from itertools import product
 from typing import Optional
 import uuid
 
@@ -12,7 +13,11 @@ from app.core.schemas.products import (
     ProductUpdate,
     ProductPartialUpdate,
 )
-from app.core.exceptions import ProductCartNotFoundError, ProductNotFoundError
+from app.core.exceptions import (
+    ProductCartNotFoundError,
+    ProductNotFoundError,
+    QuantityExceedsStockException,
+)
 
 from app.core.schemas.cart import (
     CartItemModel,
@@ -25,6 +30,13 @@ from app.api.v1.products.services import ProductsService
 
 
 class CartService:
+
+    @classmethod
+    def check_products_quantity(cls, product: Product, cart_item_count: int):
+        if product.stock_quantity < cart_item_count:
+            raise QuantityExceedsStockException(
+                product_id=product.product_id, available_quantity=product.stock_quantity
+            )
 
     @classmethod
     async def _calculate_cart_totals(cls, cart: Cart):
@@ -188,24 +200,33 @@ class CartService:
         sql_session: AsyncSession,
     ):
         cart_product_id: uuid.UUID = cart_item_model.product_id
+        product_from_db: Product | None = await ProductsService.get_product(
+            session=sql_session, product_id=cart_product_id
+        )
 
+        if not product_from_db:
+            raise ProductNotFoundError(product_id=cart_product_id)
         existing_product_in_cart = await cls.find_product_in_cart(cart, cart_product_id)
+
+        new_cart_item_count = (
+            cart_item_model.count + existing_product_in_cart.count
+            if existing_product_in_cart
+            else cart_item_model.count
+        )
+
+        cls.check_products_quantity(
+            product=product_from_db, cart_item_count=new_cart_item_count
+        )
+
         if existing_product_in_cart:
             existing_product_in_cart.count += cart_item_model.count
             existing_product_in_cart.total_price += (
                 cart_item_model.count * existing_product_in_cart.price
             )
         else:
-            product_from_db: Product | None = await ProductsService.get_product(
-                session=sql_session, product_id=cart_product_id
-            )
-
-            if not product_from_db:
-                raise ProductNotFoundError(product_id=cart_product_id)
-
             new_item = CartItem(
                 product_id=cart_product_id,
-                count=cart_item_model.count,
+                count=new_cart_item_count,
                 price=product_from_db.price,
                 total_price=cart_item_model.count * product_from_db.price,
             )
