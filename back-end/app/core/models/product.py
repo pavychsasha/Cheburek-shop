@@ -36,7 +36,7 @@ class Product(Base):
     orders: Mapped[list["OrderProductAssociation"]] = relationship(
         back_populates="product", cascade="all, delete, delete-orphan"
     )
-    translations: Mapped[list["ProductTranslation"]] = relationship()
+    translations: Mapped[list["ProductTranslation"]] = relationship(uselist=True)
 
     __table_args__ = (
         Index("ix_product_category", "category"),
