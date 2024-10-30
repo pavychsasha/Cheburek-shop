@@ -94,7 +94,8 @@ class OrderModel(BaseModel):
 
 
 class OrderProductResponseModel(BaseModel):
-    product_id: uuid.UUID
+    product_id: Optional[uuid.UUID] = None  # in case a product has been deleted
+    product_status: str
     name: str
     price: float
     category: str
@@ -116,7 +117,7 @@ class OrderResponseModel(BaseModel):
 
 
 class OrderResponse(BaseModel):
-    orders: List[Optional[OrderModel]] = []
+    orders: List[Optional[OrderResponseModel]] = []
 
 
 class ContactData(BaseModel):
