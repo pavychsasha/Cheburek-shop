@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 import uuid
 
-from sqlalchemy import ForeignKey, func, Float, Integer
+from sqlalchemy import ForeignKey, func, Float, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class Order(Base):
     __tablename__ = "Orders"
-
+    __table_args__ = (UniqueConstraint("address_id", name="uq_order_address_id"),)
     order_id: Mapped[uuid.UUID] = mapped_column(
         primary_key=True,
         default=uuid.uuid4,
@@ -37,8 +37,11 @@ class Order(Base):
     )
     user: Mapped["User"] = relationship(back_populates="orders")
 
+    address_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("Address.address_id"), nullable=False, unique=False
+    )
     address: Mapped["Address"] = relationship(
-        back_populates="order", uselist=False, cascade="all, delete, delete-orphan"
+        back_populates="orders", uselist=False, single_parent=True
     )
     email: Mapped[str]
     status: Mapped[str] = mapped_column(default="PENDING")

@@ -1,7 +1,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 
 class Address(Base):
     __tablename__ = "Address"
-    __table_args__ = (UniqueConstraint("order_id"),)
 
     address_id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
 
@@ -31,12 +30,8 @@ class Address(Base):
         single_parent=True,
     )
 
-    order_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("Orders.order_id", ondelete="CASCADE"), unique=True
-    )
-    order: Mapped["Order"] = relationship(
+    orders: Mapped[list["Order"]] = relationship(
+        uselist=True,
         back_populates="address",
-        single_parent=True,
-        uselist=False,
         cascade="all, delete, delete-orphan",
     )
