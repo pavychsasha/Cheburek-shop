@@ -34,9 +34,11 @@ class ProductCartNotFoundError(HTTPException):
 
 class QuantityExceedsStockException(HTTPException):
     def __init__(self, product_id: uuid.UUID, available_quantity: int):
-        # Using status code 404 (Not Found) for missing resources
-        super().__init__(status_code=409, detail=f"Quantity exceeds available stock for product '{
-            product_id}'. Only {available_quantity} units left.", )
+        super().__init__(
+            status_code=409,
+            detail=f"Quantity exceeds available stock for product '{
+                product_id}'. Only {available_quantity} units left.",
+        )
         self.product_id = product_id
         self.available_quantity = available_quantity
 

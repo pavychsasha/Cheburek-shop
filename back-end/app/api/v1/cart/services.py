@@ -1,5 +1,4 @@
 import logging
-from itertools import product
 from typing import Optional
 import uuid
 
