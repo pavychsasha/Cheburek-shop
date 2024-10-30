@@ -2,9 +2,8 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 import uuid
 
-from sqlalchemy import ForeignKey, UniqueConstraint, select, func
+from sqlalchemy import ForeignKey, func, Float, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.ext.hybrid import hybrid_property
 
 from .base import Base
 from .product import Product
@@ -44,34 +43,8 @@ class Order(Base):
     email: Mapped[str]
     status: Mapped[str] = mapped_column(default="PENDING")
 
+    total_price: Mapped[float] = mapped_column(Float, default=0)
+    total_count: Mapped[int] = mapped_column(Integer, default=0)
+
     def __str__(self) -> str:
         return f"Order<(order_id='{self.order_id!s}')>"
-
-    @hybrid_property
-    def total_price(self):
-        return sum(
-            product.product.price * product.quantity for product in self.products
-        )
-
-    @total_price.expression
-    def total_price(cls):
-        return (
-            select(func.sum(OrderProductAssociation.quantity * Product.price))
-            .join(Product)
-            .where(OrderProductAssociation.order_id == cls.order_id)
-            .correlate(cls)
-            .label("total_price")
-        )
-
-    @hybrid_property
-    def total_count(self):
-        return sum(product.quantity for product in self.products)
-
-    @total_count.expression
-    def total_count(cls):
-        return (
-            select(func.sum(OrderProductAssociation.quantity))
-            .where(OrderProductAssociation.order_id == cls.order_id)
-            .correlate(cls)
-            .label("total_count")
-        )

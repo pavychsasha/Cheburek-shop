@@ -83,7 +83,10 @@ class OrderService:
                 category = product_order_association.category
 
                 # deleted products
-                if product_status == "deleted":
+                if (
+                    product_status == "deleted"
+                    or product_order_association.product is None
+                ):
                     product_id = None
                     name = product_order_association.name
                     image_src = product_order_association.image_src
@@ -188,14 +191,30 @@ class OrderService:
         """
         association_list = []
         for product in products:
+            product_in_database = await ProductsService.get_product(
+                session=session, product_id=product.product_id
+            )
+            localized_product = await ProductsService.localize_product(
+                product_in_database, "en"
+            )
             association_list.append(
                 OrderProductAssociation(
                     order_id=order.order_id,
                     product_id=product.product_id,
                     quantity=product.count,
+                    name=localized_product.name,
+                    price=product_in_database.price,
+                    category=product_in_database.category,
+                    image_src=product_in_database.image_src,
                 )
             )
+
         session.add_all(association_list)
+        await session.flush()
+
+        order.total_count = sum(product.count for product in products)
+        order.total_price = sum(product.price * product.count for product in products)
+        session.add(order)
         await session.commit()
 
     @classmethod
@@ -225,7 +244,13 @@ class OrderService:
             raise ZeroProductsOrderError()
         new_order = Order(email=contact_data.email)
         session.add(new_order)
-        await session.commit()  # generating order_id
+        await session.flush()  # generating order_id
+
+        await cls.add_products_to_order(
+            session=session,
+            products=mongo_cart.items,  # noqa
+            order=new_order,
+        )
 
         await cls.add_address_to_order(
             session=session,
@@ -233,11 +258,6 @@ class OrderService:
             address=address,
         )
 
-        await cls.add_products_to_order(
-            session=session,
-            products=mongo_cart.items,  # noqa
-            order=new_order,
-        )
         await cls.reduce_products_stock_quantity_after_order(
             session=session, order_id=new_order.order_id
         )

@@ -310,7 +310,8 @@ class CartService:
                 carts_affected = await Cart.find(
                     {"items.product_id": {"$eq": product.product_id}}, fetch_links=True
                 ).to_list()
-                affected_cart_items.append(*carts_affected)
+                if carts_affected:
+                    affected_cart_items.append(*carts_affected)
 
         # Update carts total prices
         for cart in affected_cart_items:
