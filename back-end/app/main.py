@@ -7,6 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 import uvicorn
 
+from app.core.events import register_product_event_listeners
 from app.core.config import settings
 from app.core.models import sql_db_helper, mongo_db_helper, redis_db_helper
 from app.api import router as router_v1
@@ -17,6 +18,8 @@ async def lifespan(app: FastAPI):
     await mongo_db_helper.connect()
     await redis_db_helper.connect()
     # startup
+    register_product_event_listeners(sql_db_helper.session_factory)
+
     yield
     # shutdown
     await mongo_db_helper.dispose()

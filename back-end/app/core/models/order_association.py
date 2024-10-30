@@ -2,7 +2,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import ForeignKey, UniqueConstraint, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -31,6 +31,13 @@ class OrderProductAssociation(Base):
     product_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("Products.product_id", ondelete="SET NULL"), nullable=True
     )
+
+    product_status: Mapped[str] = mapped_column(default="active")
+
+    name: Mapped[str]
+    price: Mapped[float]
+    category: Mapped[str]
+    image_src: Mapped[str]
 
     quantity: Mapped[int] = mapped_column(default=1, server_default="1")
 

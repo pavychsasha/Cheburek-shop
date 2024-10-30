@@ -78,20 +78,36 @@ class OrderService:
         for order in orders:
             product_response = []
             for product_order_association in order.products:
-                product = product_order_association.product
-                localized_product = await ProductsService.localize_product(
-                    product, language
-                )
+                price = product_order_association.price
+                product_status = product_order_association.product_status
+                category = product_order_association.category
+
+                # deleted products
+                if product_status == "deleted":
+                    product_id = None
+                    name = product_order_association.name
+                    image_src = product_order_association.image_src
+                else:
+                    product = product_order_association.product
+                    localized_product = await ProductsService.localize_product(
+                        product, language
+                    )
+                    product_id = product.product_id
+                    image_src = product.image_src
+                    name = localized_product.name
+
                 product_response.append(
                     OrderProductResponseModel(
-                        product_id=product.product_id,
-                        image_src=product.image_src,
-                        price=product.price,
-                        category=product.category,
-                        name=localized_product.name,
+                        product_id=product_id,
+                        product_status=product_status,
+                        image_src=image_src,
+                        price=price,  # allways keeping the same price as was during ordering
+                        category=category,  # allways keeping the same category as was during ordering
+                        name=name,
                         quantity=product_order_association.quantity,
                     )
                 )
+
             address = order.address
             address_response = OrderAddressInfo(
                 street_name=address.street_name,
