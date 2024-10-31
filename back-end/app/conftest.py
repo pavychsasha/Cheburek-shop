@@ -1,3 +1,5 @@
+import asyncio
+from http.client import responses
 from typing import Any, AsyncGenerator
 
 from app.core.config import settings  # noqa
@@ -7,16 +9,15 @@ settings.db.url = settings.db.test_url  # noqa
 settings.mongo_db.url = settings.mongo_db.test_url  # noqa
 settings.mongo_db.database_name = settings.mongo_db.test_database_name  # noqa
 settings.cookie_transport_settings.cookie_secure = False  # noqa
-settings.redis.db = 1  # noqa
 
 from app.core.schemas.products import ProductBulkCreate, ProductCreate
 from app.api.v1.products.services import ProductsService
 import pytest
-from sqlalchemy import update
+from sqlalchemy import update, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from httpx import AsyncClient
 
-from app.core.models import Base, User
+from app.core.models import Base, User, Address, Order
 from app.main import app as main_app
 from app.core.models import (
     SQLDatabaseHelper,
@@ -56,8 +57,16 @@ async def reset_databases(
 ):
     """Fixture to drop and recreate all databases before each test."""
     async with test_sql_db.engine.begin() as conn:
-        # Drop and recreate SQL database tables
+        # Temporarily disable foreign key checks
+        await conn.execute(text("SET session_replication_role = 'replica';"))
+
+        # Drop all tables without dependency checks
         await conn.run_sync(Base.metadata.drop_all)
+
+        # Re-enable foreign key checks
+        await conn.execute(text("SET session_replication_role = 'origin';"))
+
+        # Recreate all tables
         await conn.run_sync(Base.metadata.create_all)
 
     await test_mongo_db.connect()
@@ -77,14 +86,17 @@ async def session(test_sql_db: SQLDatabaseHelper) -> AsyncGenerator[AsyncSession
     """
     async with test_sql_db.session_factory() as session:
         yield session
+        await session.rollback()
         await session.close()
 
 
-@pytest.fixture(scope="session", autouse=True)
-async def enable_redis():
-    await redis_db_helper.connect()
-    yield redis_db_helper
-    await redis_db_helper.dispose()
+@pytest.fixture(scope="function", autouse=True)
+async def setup_test_redis():
+    # Adjust singleton Redis instance to use the test database
+    redis_db_helper.db = 2
+    await redis_db_helper.connect()  # Reinitialize connection to use the test DB
+    yield
+    await redis_db_helper.dispose()  # Ensure closure after tests
 
 
 @pytest.fixture(scope="function")
@@ -130,12 +142,13 @@ async def superuser_client(session: AsyncSession, client: AsyncClient) -> AsyncC
     await session.execute(stmt)
     await session.commit()
 
-    await client.post(
+    response = await client.post(
         "/api/v1/auth/login",
         data={"username": "somemail@mail.com", "password": "PASSWORD"},
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
-
+    access_token = response.json()["access_token"]
+    client.headers["Authorization"] = f"Bearer {access_token}"
     yield client
 
 

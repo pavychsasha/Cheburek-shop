@@ -1,10 +1,9 @@
-import urllib.parse
 import uuid
-from gettext import translation
 
 import pytest
 from httpx import AsyncClient
-import urllib
+
+from app.core.models import Product
 
 
 class TestMongoService:
@@ -347,7 +346,10 @@ class TestMongoService:
             data=login_payload,
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
-        assert login_response.status_code == 204
+        assert login_response.status_code == 200
+        client.headers["Authorization"] = (
+            "Bearer " + login_response.json()["access_token"]
+        )
 
         cart_response = await client.get("/api/v1/cart/")
         cart_dict = cart_response.json()
@@ -392,7 +394,10 @@ class TestMongoService:
             data=login_payload,
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
-        assert login_response.status_code == 204
+        assert login_response.status_code == 200
+        client.headers["Authorization"] = (
+            "Bearer " + login_response.json()["access_token"]
+        )
 
         cart_response = await client.get("/api/v1/cart/")
         cart_dict = cart_response.json()
@@ -402,3 +407,42 @@ class TestMongoService:
             cart_dict["total_price"] == products[3].price * 10 + products[0].price * 3
         )
         assert cart_dict["total_count"] == 13
+
+    @pytest.mark.asyncio
+    async def test_cart_with_updated_product_info(
+        self, superuser_client: AsyncClient, products: list[Product]
+    ):
+        product_id = str(products[0].product_id)
+        # Add the product to the cart
+        await superuser_client.patch(
+            "/api/v1/cart/add", json={"product_id": product_id, "count": 2}
+        )
+
+        # Update the product price
+        await superuser_client.patch(
+            f"/api/v1/products/{product_id}/", json={"price": 30.0}
+        )
+
+        # Verify the cart reflects the updated price
+        cart_response = await superuser_client.get("/api/v1/cart/")
+        cart_product = cart_response.json()["items"][0]
+        assert cart_product["price"] == 30.0
+
+    @pytest.mark.asyncio
+    async def test_cart_handles_deleted_product_gracefully(
+        self, superuser_client, products
+    ):
+        product_id = str(products[0].product_id)
+        # Add product to cart
+        await superuser_client.patch(
+            "/api/v1/cart/add", json={"product_id": product_id, "count": 1}
+        )
+
+        # Delete the product
+        await superuser_client.delete(f"/api/v1/products/{product_id}/")
+
+        # Check cart for handling of deleted product
+        cart_response = await superuser_client.get("/api/v1/cart/")
+        for item in cart_response.json()["items"]:
+            if item["product_id"] == product_id:
+                assert item["status"] == "unavailable"
