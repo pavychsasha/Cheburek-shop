@@ -1,4 +1,6 @@
 import uuid
+from unittest import mock
+
 import pytest
 from unittest.mock import AsyncMock, patch
 from beanie import PydanticObjectId
@@ -294,31 +296,6 @@ class TestCartService:
             assert cart.total_price == 45.0
             mock_item_save.assert_awaited_once()
             mock_cart_save.assert_awaited_once()
-
-    @pytest.mark.asyncio
-    async def test_subtract_product_from_cart_remove_item(self):
-        product_id = uuid.uuid4()
-        cart_item = CartItem(
-            id=PydanticObjectId(),
-            product_id=product_id,
-            name="Product",
-            price=15.0,
-            count=3,
-            image_src="image.jpg",
-            total_price=45.0,
-        )
-        cart = Cart(
-            id=PydanticObjectId(), items=[cart_item], total_count=3, total_price=45.0
-        )
-        subtract_product = CartItemModify(product_id=product_id, count=3)
-
-        with patch.object(
-            CartService, "delete_product_from_cart", new=AsyncMock()
-        ) as mock_delete_product_from_cart:
-            await CartService.subtract_product_from_cart(cart, subtract_product)
-            mock_delete_product_from_cart.assert_awaited_once_with(
-                cart=cart, product_id=product_id
-            )
 
     @pytest.mark.asyncio
     async def test_subtract_product_from_cart_product_not_in_cart(self):

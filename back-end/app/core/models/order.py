@@ -38,10 +38,15 @@ class Order(Base):
     user: Mapped["User"] = relationship(back_populates="orders")
 
     address_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("Address.address_id"), nullable=False, unique=False
+        ForeignKey("Address.address_id", ondelete="CASCADE"),
+        nullable=False,
+        unique=False,
     )
     address: Mapped["Address"] = relationship(
-        back_populates="orders", uselist=False, single_parent=True
+        back_populates="orders",
+        uselist=False,
+        single_parent=True,
+        cascade="all, delete",
     )
     email: Mapped[str]
     status: Mapped[str] = mapped_column(default="PENDING")

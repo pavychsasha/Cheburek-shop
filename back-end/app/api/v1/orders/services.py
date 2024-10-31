@@ -135,38 +135,54 @@ class OrderService:
                 )
             )
 
-        return order_response
+        return OrderResponse(orders=order_response)
 
     @classmethod
     async def add_address_to_order(
         cls, session: AsyncSession, order: Order, address: OrderAddress
     ):
+        # Retrieve or create the Country, State, and City with immediate flushes
         country = await helpers.get_or_create(
             session=session, model=Country, country_name=address.country.lower()
         )
+        await session.flush()  # Ensure country_id is available
+
         state = await helpers.get_or_create(
             session=session,
             model=State,
             state_name=address.state.lower(),
             country_id=country.country_id,
         )
+        await session.flush()  # Ensure state_id is available
+
         city = await helpers.get_or_create(
             session=session,
             model=City,
             city_name=address.city.lower(),
             state_id=state.state_id,
         )
+        await session.flush()  # Ensure city_id is available
 
-        address = Address(
+        # Create Address instance with the newly generated city_id
+        new_address = Address(
             street_name=address.street_name,
             street_number=address.street_number,
             apartment_number=address.apartment_number,
             zip_code=address.zip_code,
             city_id=city.city_id,
-            order_id=order.order_id,
         )
-        session.add(address)
-        await session.commit()
+
+        # Add and flush the new Address instance to get its address_id
+        session.add(new_address)
+        await session.flush()  # Address is flushed, so address_id is now set
+
+        # Now assign the address_id to the Order
+        order.address_id = new_address.address_id
+        order.address = new_address  # Associate the Order with the Address object
+
+        # Add and commit the Order to persist the relationship
+        session.add(order)
+        await session.commit()  # Commit all changes to ensure data integrity
 
     @classmethod
     async def add_products_to_order(
@@ -247,28 +263,65 @@ class OrderService:
         if not mongo_cart.items:
             raise ZeroProductsOrderError()
 
-        new_order = Order(email=contact_data.email)
-        session.add(new_order)
-        await session.flush()  # generating order_id
+        # Step 1: Create Address and flush to get address_id
+        country = await helpers.get_or_create(
+            session=session, model=Country, country_name=address.country.lower()
+        )
+        await session.flush()  # Ensure country_id is available
 
+        state = await helpers.get_or_create(
+            session=session,
+            model=State,
+            state_name=address.state.lower(),
+            country_id=country.country_id,
+        )
+        await session.flush()  # Ensure state_id is available
+
+        city = await helpers.get_or_create(
+            session=session,
+            model=City,
+            city_name=address.city.lower(),
+            state_id=state.state_id,
+        )
+        await session.flush()  # Ensure city_id is available
+
+        new_address = Address(
+            street_name=address.street_name,
+            street_number=address.street_number,
+            apartment_number=address.apartment_number,
+            zip_code=address.zip_code,
+            city_id=city.city_id,
+        )
+        session.add(new_address)
+        await session.flush()  # Address is flushed, so address_id is now set
+
+        # Step 2: Now create the Order with the generated address_id
+        new_order = Order(
+            order_id=uuid.uuid4(),
+            email=contact_data.email,
+            address_id=new_address.address_id,
+        )
+        session.add(new_order)
+        await session.flush()  # Generate order_id
+
+        # Step 3: Add products to the order
         await cls.add_products_to_order(
             session=session,
-            products=mongo_cart.items,  # noqa
+            products=mongo_cart.items,
             order=new_order,
         )
 
-        await cls.add_address_to_order(
-            session=session,
-            order=new_order,
-            address=address,
-        )
-
+        # Step 4: Reduce product stock quantities
         await cls.reduce_products_stock_quantity_after_order(
             session=session, order_id=new_order.order_id
         )
-        # cleaning up purchased cart
+
+        # Step 5: Clean up purchased cart and invalidate product cache
         await CartService.delete_cart_items(cart=mongo_cart)
         await ProductsService.invalidate_products_cache()
+
+        # Commit everything at the end
+        await session.commit()
 
     @classmethod
     async def delete_order(

@@ -31,7 +31,5 @@ class Address(Base):
     )
 
     orders: Mapped[list["Order"]] = relationship(
-        uselist=True,
-        back_populates="address",
-        cascade="all, delete, delete-orphan",
+        uselist=True, back_populates="address", cascade="all, delete-orphan"
     )
