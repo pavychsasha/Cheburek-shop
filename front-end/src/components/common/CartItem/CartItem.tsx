@@ -9,7 +9,7 @@ import {
 import React from "react";
 import {ICartItemProps} from "../../../types/props.ts";
 
-const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count, price}) => {
+const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count, price, isOrder}) => {
     const dispatch = useDispatch();
 
     const handleClickPlus = () => {
@@ -34,16 +34,33 @@ const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count,
     return (
         <div className={styles.cart__item}>
             <div className={styles.info}>
-                <img src={image_src} alt=""/>
-                <h3>{name}</h3>
+                {
+                    !isOrder && <img src={image_src} alt=""/>
+                }
+                <h3 style={isOrder ? {fontSize: '1rem'} : undefined}>{name}</h3>
             </div>
-            <p>{price * count}₴</p>
-            <div className={styles.count}>
-                <span className={styles.action} onClick={handleClickMinus}>-</span>
-                <p>{count}</p>
-                <span className={styles.action} onClick={handleClickPlus}>+</span>
-            </div>
-            <ImCross onClick={handleClickDelete}/>
+
+            {!isOrder
+                ?
+                <>
+                    <p>{price * count}₴</p>
+                    <div className={styles.count}>
+                        <span className={styles.action} onClick={handleClickMinus}>-</span>
+                        <p>{count}</p>
+                        <span className={styles.action} onClick={handleClickPlus}>+</span>
+                    </div>
+                    <ImCross onClick={handleClickDelete}/>
+                </>
+
+                :
+                <>
+                    <p style={{color: '#aaa', fontSize: '1rem', margin: '0 auto 0 1rem'}}>x{count}</p>
+                    <p style={{fontSize: '1rem'}}>{price * count}₴</p>
+                </>
+
+            }
+
+
         </div>
     )
 }

@@ -49,7 +49,8 @@ const updateStatus = (state: ICartState, field: keyof ICartState, status: string
 
 // Async Thunks for API calls
 export const fetchCart = createAsyncThunk('cart/fetchCart', async () => {
-    const {data} = await axios.get(baseUrl + '/cart/', {withCredentials: true});
+    const token = localStorage.getItem('token');
+    const {data} = await axios.get(baseUrl + '/cart/', { headers: { Authorization: `Bearer ${token}`}});
     return data;
 });
 

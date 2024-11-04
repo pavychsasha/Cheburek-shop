@@ -9,7 +9,7 @@ import {setSearchValue} from "../../../redux/slices/filterSlice.ts";
 import {FaUserCircle} from "react-icons/fa";
 import {useTranslation} from "react-i18next";
 import LangSelector from "../LangSelector/LangSelector.tsx";
-import {RiLogoutBoxRLine, RiLogoutCircleRFill} from "react-icons/ri";
+import {RiLogoutCircleRFill} from "react-icons/ri";
 import axios from "axios";
 import {setIsAuth} from "../../../redux/slices/authSlice.ts";
 
@@ -24,6 +24,8 @@ const Header = () => {
     const location = useLocation();
 
     const [t] = useTranslation('global');
+
+    const shouldShowSearchbar = !['/cart', '/order'].includes(location.pathname);
 
     const onChangeSearch = (value: string) => {
         dispatch(setSearchValue(value));
@@ -40,7 +42,7 @@ const Header = () => {
                     </div>
                 </div>
             </NavLink>
-            {location.pathname !== '/cart' && <Searchbar searchValue={searchValue}
+            {shouldShowSearchbar && <Searchbar searchValue={searchValue}
                                                          onChangeSearch={onChangeSearch}
             />}
             <div className={styles.left}>
@@ -51,7 +53,8 @@ const Header = () => {
                         <a>
                             <RiLogoutCircleRFill onClick={() =>
                             {
-                                axios.post("http://localhost:8000/api/v1/auth/logout", {},{withCredentials: true});
+                                const token = localStorage.getItem('token');
+                                axios.post("http://localhost:8000/api/v1/auth/logout", {},{ headers: { Authorization: `Bearer ${token}`}});
                                 dispatch(setIsAuth(false));
                             }} className={styles.user}/>
                         </a>

@@ -6,12 +6,16 @@ import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../../../redux/store.ts";
 import {clearCartFromBackend} from "../../../redux/slices/cartSLice.ts";
 import {useTranslation} from "react-i18next";
+import Button from "../../common/Button/Button.tsx";
+import {useNavigate} from "react-router-dom";
 
 const Cart = () => {
     //Getting variables from state
     const {items, total_price, total_count} = useSelector((state: RootState) => state.cart);
 
     const dispatch = useDispatch();
+
+    const navigate = useNavigate();
 
     const [t] = useTranslation('global');
 
@@ -49,7 +53,19 @@ const Cart = () => {
                     <p>{t('cart.totalPrice')}: <span className={styles.total__price}>{total_price}₴</span></p>
                 </div>
                 <div className={styles.buttons}>
-
+                    <Button
+                        label="Back home"
+                        type="button"
+                        variant="secondary"
+                        onClick={() => navigate('/')}
+                    />
+                    <Button
+                        label="Go to paymnet"
+                        type="button"
+                        variant="primary"
+                        disabled={total_count === 0}
+                        onClick={() => navigate('/order')}
+                    />
                 </div>
             </div>
         </main>

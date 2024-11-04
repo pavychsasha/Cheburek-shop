@@ -7,13 +7,14 @@ import Cart from "./components/pages/Cart/Cart.tsx";
 import Login from "./components/pages/Auth/Login/Login.tsx";
 import Register from "./components/pages/Auth/Register/Register.tsx";
 import {useDispatch, useSelector} from "react-redux";
-import React, {useRef} from "react";
+import React, {useEffect} from "react";
 import {fetchCart} from "./redux/slices/cartSLice.ts";
 import axios from "axios";
 import {setIsAuth} from "./redux/slices/authSlice.ts";
 import {RootState} from "./redux/store.ts";
 import {useTranslation} from "react-i18next";
 import {setIsLanguageSet} from "./redux/slices/langSlice.ts";
+import Order from "./components/pages/Order/Order.tsx";
 
 const App = () => {
     const dispatch = useDispatch();
@@ -41,13 +42,32 @@ const App = () => {
         fetchLanguage();
     }, []);
 
-    React.useEffect(() => {
-        axios.get('http://localhost:8000/api/v1/users/me', {withCredentials: true}).then(response => {
-            if (response.status === 200) {
-                dispatch(setIsAuth(true));
+    useEffect(() => {
+        const checkAuth = async () => {
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                dispatch(setIsAuth(false));
+                return;
             }
-        })
-    }, [])
+
+            try {
+                const res = await axios.get('http://localhost:8000/api/v1/users/me', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.data) {
+                    dispatch(setIsAuth(true));
+                } else {
+                    dispatch(setIsAuth(false));
+                }
+            } catch (error) {
+                console.error('Authentication check failed', error);
+                dispatch(setIsAuth(false));
+            }
+        };
+
+        checkAuth();
+    }, [dispatch]);
 
     React.useEffect(() => {
         if (isLanguageSet) {
@@ -67,6 +87,7 @@ const App = () => {
                 <Route path={'/cart'} element={<Cart/>}/>
                 <Route path={'/login'} element={<Login/>}/>
                 <Route path={'/register'} element={<Register/>}/>
+                <Route path={'/order'} element={<Order/>}/>
                 <Route path={'*'} element={<NotFound/>}/>
             </Routes>
         </div>

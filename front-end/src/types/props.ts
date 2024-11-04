@@ -28,4 +28,5 @@ export interface ICartItemProps {
     image_src: string;
     count: number;
     price: number;
+    isOrder?: boolean;
 }

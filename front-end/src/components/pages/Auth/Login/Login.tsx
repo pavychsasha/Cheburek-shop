@@ -48,7 +48,9 @@ const Login = () => {
         });
 
         //Checking for response auth/login
-        if (response && response.status === 204) {
+        if (response && response.status === 200) {
+            const token = response.data.access_token;
+            localStorage.setItem('token', token);
             dispatch(setIsAuth(true));
             navigate('/');
         } else if (error) {

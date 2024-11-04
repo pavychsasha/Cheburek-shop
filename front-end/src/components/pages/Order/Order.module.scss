@@ -1,0 +1,56 @@
+$border-order: 1px solid rgba(143, 143, 143, 0.2);
+
+.order__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-column-gap: 1.5rem;
+
+  .container {
+    width: 360px;
+
+    h2 {
+      margin: 1.5rem 0;
+    }
+  }
+
+  aside {
+
+    h2 {
+      margin: 1.5rem 0;
+    }
+
+    .subtotal {
+      padding: 0 1.5rem;
+
+      .price {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        border-top: $border-order;
+      }
+
+      .price:last-child {
+        border-bottom: $border-order;
+      }
+    }
+    .total {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      margin: 1.5rem 0;
+      padding: 0 1.5rem 0 0;
+
+      h2 {
+        margin: 0;
+        color: #d56550;
+      }
+      span {
+        color: #d56550;
+        font-size: 1.5rem;
+        font-weight: bold;
+      }
+    }
+  }
+}

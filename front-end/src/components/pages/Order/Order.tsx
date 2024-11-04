@@ -1,0 +1,188 @@
+import {SubmitHandler, useForm} from 'react-hook-form';
+import InputField from '../../common/InputField/InputField.tsx';
+import {useNavigate} from 'react-router-dom';
+import {useTranslation} from "react-i18next";
+import styles from './Order.module.scss'
+import {useSelector} from "react-redux";
+import CartItem from "../../common/CartItem/CartItem.tsx";
+import {RootState} from "../../../redux/store.ts";
+import Button from "../../common/Button/Button.tsx";
+import axios from "axios";
+
+// Define the type for the order form
+interface IFormOrder {
+    email: string;
+    street_name: string;
+    street_number: string;
+    apartment_number: string;
+    zip_code: string;
+    city: string;
+    state: string;
+    country: string;
+}
+
+const Order = () => {
+    const {
+        register,
+        handleSubmit,
+        setError,
+        formState: {errors, isSubmitting},
+    } = useForm<IFormOrder>({mode: 'onChange'});
+
+    const items = useSelector((state: RootState) => state.cart.items);
+    const totalPrice = useSelector((state: RootState) => state.cart.total_price);
+
+    const navigate = useNavigate();
+    const [t] = useTranslation('global');
+
+    const onSubmit: SubmitHandler<IFormOrder> = async (data) => {
+
+        const token = localStorage.getItem('token');
+
+        const response = await axios.post(`http://localhost:8000/api/v1/orders/
+        ?email=${data.email}
+        &street_name=${data.street_name}
+        &street_number=${data.street_number}
+        &apartment_number=${data.apartment_number}
+        &zip_code=${data.zip_code}
+        &city=${data.city}
+        &state=${data.state}
+        &country=${data.country}`, null, { headers: { Authorization: `Bearer ${token}`}});
+
+        if (response && response.status === 201) {
+            navigate('/');
+        } else {
+            setError('email', {
+                type: 'manual',
+                message: t('order.error'),
+            });
+        }
+    };
+
+    return (
+        <div className={styles.order__grid}>
+            <main className={styles.container}>
+                <div className={styles.order__box}>
+                    <h2>{t('order.deliveryTitle')}</h2>
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                        {/* Email Field */}
+                        <InputField
+                            label={t('order.email.label')}
+                            type="text"
+                            placeholder={t('order.email.placeholder')}
+                            register={register('email', {
+                                required: t('order.email.required'),
+                                pattern: {
+                                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
+                                    message: t('order.email.message'),
+                                },
+                            })}
+                            error={errors.email}
+                        />
+
+                        {/* Street Name Field */}
+                        <InputField
+                            label={t('order.street_name.label')}
+                            type="text"
+                            placeholder={t('order.street_name.placeholder')}
+                            register={register('street_name', {required: t('order.street_name.required')})}
+                            error={errors.street_name}
+                        />
+
+                        {/* Street Number Field */}
+                        <InputField
+                            label={t('order.street_number.label')}
+                            type="text"
+                            placeholder={t('order.street_number.placeholder')}
+                            register={register('street_number', {required: t('order.street_number.required')})}
+                            error={errors.street_number}
+                        />
+
+                        {/* Apartment Number Field */}
+                        <InputField
+                            label={t('order.apartment_number.label')}
+                            type="text"
+                            placeholder={t('order.apartment_number.placeholder')}
+                            register={register('apartment_number', {required: t('order.apartment_number.required')})}
+                            error={errors.apartment_number}
+                        />
+
+                        {/* Zip Code Field */}
+                        <InputField
+                            label={t('order.zip_code.label')}
+                            type="text"
+                            placeholder={t('order.zip_code.placeholder')}
+                            register={register('zip_code', {required: t('order.zip_code.required')})}
+                            error={errors.zip_code}
+                        />
+
+                        {/* City Field */}
+                        <InputField
+                            label={t('order.city.label')}
+                            type="text"
+                            placeholder={t('order.city.placeholder')}
+                            register={register('city', {required: t('order.city.required')})}
+                            error={errors.city}
+                        />
+
+                        {/* State Field */}
+                        <InputField
+                            label={t('order.state.label')}
+                            type="text"
+                            placeholder={t('order.state.placeholder')}
+                            register={register('state', {required: t('order.state.required')})}
+                            error={errors.state}
+                        />
+
+                        {/* Country Field */}
+                        <InputField
+                            label={t('order.country.label')}
+                            type="text"
+                            placeholder={t('order.country.placeholder')}
+                            register={register('country', {required: t('order.country.required')})}
+                            error={errors.country}
+                        />
+                        <Button
+                            label="Submit order"
+                            type="submit"
+                            variant="primary"
+                            disabled={isSubmitting}
+                            onClick={() => alert('nice!')}
+                        />
+
+                    </form>
+                </div>
+            </main>
+            <aside>
+                <h2>{t('order.orderTitle')}</h2>
+                {
+                    items.map((item) =>
+                        <CartItem key={item.product_id}
+                                  product_id={item.product_id}
+                                  name={item.name}
+                                  price={item.price}
+                                  count={item.count}
+                                  image_src={item.image_src}
+                                  isOrder={true}/>)
+                }
+                <h2>{t('order.subtotal.title')}</h2>
+                <div className={styles.subtotal}>
+                    <div className={styles.price}>
+                        <p>{t('order.subtotal.items')}:</p>
+                        <span>{totalPrice}₴</span>
+                    </div>
+                    <div className={styles.price}>
+                        <p>{t('order.subtotal.shipping')}:</p>
+                        <span>35₴</span>
+                    </div>
+                </div>
+                <div className={styles.total}>
+                    <h2>{t('order.total')}: </h2>
+                    <span>{totalPrice + 35}₴</span>
+                </div>
+            </aside>
+        </div>
+    );
+};
+
+export default Order;

@@ -1,0 +1,31 @@
+.button {
+  padding: 8px 16px;
+  width: 100%;
+  min-height: 44px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  box-sizing: border-box;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.primary {
+  background-color: #d56550;
+  color: white;
+}
+
+.secondary {
+  background-color: #fff;
+  color: #d56550;
+  border: #d56550 2px solid;
+}
+
+.button:hover:not(:disabled) {
+  opacity: 0.9;
+}

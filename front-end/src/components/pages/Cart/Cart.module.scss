@@ -71,5 +71,21 @@
         }
       }
     }
+
+    .buttons {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1.5rem;
+
+      button {
+        margin: 0 12px 0 0;
+      }
+
+      button:last-child {
+        margin: 0 0 0 12px;
+      }
+    }
   }
 }

@@ -65,5 +65,61 @@
   },
   "errorPage": {
     "errorText": "Page was not found"
+  },
+  "order": {
+    "deliveryTitle": "Delivery and payment",
+    "orderTitle": "Your order",
+    "subtotal": {
+      "title": "Subtotal",
+      "items": "Items",
+      "shipping": "Shipping"
+    },
+    "total": "Total",
+    "email": {
+      "label": "Email",
+      "placeholder": "Enter your email",
+      "required": "This field is required",
+      "message": "Invalid email format"
+    },
+    "street_name": {
+      "label": "Street Name",
+      "placeholder": "Enter your street name",
+      "required": "This field is required"
+    },
+    "street_number": {
+      "label": "Street Number",
+      "placeholder": "Enter your street number",
+      "required": "This field is required"
+    },
+    "apartment_number": {
+      "label": "Apartment Number",
+      "placeholder": "Enter your apartment number",
+      "required": "This field is required"
+    },
+    "zip_code": {
+      "label": "ZIP Code",
+      "placeholder": "Enter your ZIP code",
+      "required": "This field is required"
+    },
+    "city": {
+      "label": "City",
+      "placeholder": "Enter your city",
+      "required": "This field is required"
+    },
+    "state": {
+      "label": "State",
+      "placeholder": "Enter your state",
+      "required": "This field is required"
+    },
+    "country": {
+      "label": "Country",
+      "placeholder": "Enter your country",
+      "required": "This field is required"
+    },
+    "button": {
+      "submit": "Submit Order",
+      "loading": "Submitting..."
+    },
+    "error": "An error occurred while submitting the order"
   }
 }

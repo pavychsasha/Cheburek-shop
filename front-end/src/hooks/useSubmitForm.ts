@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const useSubmitForm = (url: string) => {
-    const contentTypeHeader: string = url.includes('register') ? 'application/json' : 'application/x-www-form-urlencoded'
+    const contentTypeHeader: string = !url.includes('login') ? 'application/json' : 'application/x-www-form-urlencoded'
 
     const submitForm = async (data: Record<string, any>) => {
         try {
