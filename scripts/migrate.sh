@@ -6,5 +6,6 @@ cd "$ROOT_DIR"
 
 docker compose up -d postgres mongo redis
 docker compose run --rm fastapi alembic upgrade head
+docker compose run --rm fastapi python -m app.actions.seed_products
 
-echo "Database migrations complete."
+echo "Database migrations and product seed complete."

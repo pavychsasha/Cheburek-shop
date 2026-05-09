@@ -15,6 +15,7 @@ FRONTEND_PORT="${FRONTEND_PORT:-5178}"
 BACKEND_PORT="${BACKEND_PORT:-8091}"
 LOCAL_FRONTEND_DOMAIN="${LOCAL_FRONTEND_DOMAIN:-app.local.cheburek-shop.com}"
 LOCAL_BACKEND_DOMAIN="${LOCAL_BACKEND_DOMAIN:-api.local.cheburek-shop.com}"
+LOCAL_ADMIN_DOMAIN="${LOCAL_ADMIN_DOMAIN:-admin.local.cheburek-shop.com}"
 
 resolves_to_local() {
   local hostname="$1"
@@ -34,14 +35,18 @@ PY
 
 BACKEND_URL="http://localhost:${BACKEND_PORT}/health"
 FRONTEND_URL="http://localhost:${FRONTEND_PORT}"
+ADMIN_URL=""
 
-if resolves_to_local "$LOCAL_BACKEND_DOMAIN" && resolves_to_local "$LOCAL_FRONTEND_DOMAIN"; then
+if resolves_to_local "$LOCAL_BACKEND_DOMAIN" \
+  && resolves_to_local "$LOCAL_FRONTEND_DOMAIN" \
+  && resolves_to_local "$LOCAL_ADMIN_DOMAIN"; then
   BACKEND_URL="http://${LOCAL_BACKEND_DOMAIN}:${BACKEND_PORT}/health"
   FRONTEND_URL="http://${LOCAL_FRONTEND_DOMAIN}:${FRONTEND_PORT}"
+  ADMIN_URL="http://${LOCAL_ADMIN_DOMAIN}:${FRONTEND_PORT}"
 fi
 
-export NO_PROXY="${NO_PROXY:-},${LOCAL_FRONTEND_DOMAIN},${LOCAL_BACKEND_DOMAIN}"
-export no_proxy="${no_proxy:-},${LOCAL_FRONTEND_DOMAIN},${LOCAL_BACKEND_DOMAIN}"
+export NO_PROXY="${NO_PROXY:-},${LOCAL_FRONTEND_DOMAIN},${LOCAL_BACKEND_DOMAIN},${LOCAL_ADMIN_DOMAIN}"
+export no_proxy="${no_proxy:-},${LOCAL_FRONTEND_DOMAIN},${LOCAL_BACKEND_DOMAIN},${LOCAL_ADMIN_DOMAIN}"
 
 echo "Checking backend: $BACKEND_URL"
 curl -fsS "$BACKEND_URL"
@@ -50,3 +55,11 @@ echo
 echo "Checking frontend: $FRONTEND_URL"
 curl -fsS "$FRONTEND_URL" >/dev/null
 echo "Frontend responded"
+
+if [[ -n "$ADMIN_URL" ]]; then
+  echo "Checking admin portal: $ADMIN_URL"
+  curl -fsS "$ADMIN_URL" >/dev/null
+  echo "Admin portal responded"
+else
+  echo "Admin hostname is not configured in /etc/hosts; skipping admin portal hostname check."
+fi

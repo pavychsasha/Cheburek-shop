@@ -6,7 +6,7 @@ export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '')
   const port = Number(env.VITE_DEV_SERVER_PORT || 5178)
   const host = env.VITE_DEV_SERVER_HOST || '127.0.0.1'
-  const allowedHosts = (env.VITE_DEV_ALLOWED_HOSTS || 'app.local.cheburek-shop.com,localhost,127.0.0.1')
+  const allowedHosts = (env.VITE_DEV_ALLOWED_HOSTS || 'app.local.cheburek-shop.com,admin.local.cheburek-shop.com,localhost,127.0.0.1')
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean)

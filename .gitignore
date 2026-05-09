@@ -158,6 +158,8 @@ compose.local.yaml
 
 # Secrets
 certs/
+hosts.backup*
+*.hosts.bak
 *.pem
 *.key
 *.crt

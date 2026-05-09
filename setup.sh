@@ -146,10 +146,12 @@ append_csv_value_if_missing() {
 configure_hosts() {
   local frontend_domain="$1"
   local backend_domain="$2"
-  local hosts_entry="127.0.0.1 ${frontend_domain} ${backend_domain}"
+  local admin_domain="$3"
+  local hosts_entry="127.0.0.1 ${frontend_domain} ${backend_domain} ${admin_domain}"
 
   if grep -Eq "^[[:space:]]*127\\.0\\.0\\.1[[:space:]].*\\b${frontend_domain}\\b" /etc/hosts \
-    && grep -Eq "^[[:space:]]*127\\.0\\.0\\.1[[:space:]].*\\b${backend_domain}\\b" /etc/hosts; then
+    && grep -Eq "^[[:space:]]*127\\.0\\.0\\.1[[:space:]].*\\b${backend_domain}\\b" /etc/hosts \
+    && grep -Eq "^[[:space:]]*127\\.0\\.0\\.1[[:space:]].*\\b${admin_domain}\\b" /etc/hosts; then
     echo "Local hostnames are already configured."
     return
   fi
@@ -185,6 +187,7 @@ ensure_value ".env" "MONGO_PORT" "27018"
 ensure_value ".env" "REDIS_PORT" "6380"
 ensure_value ".env" "LOCAL_FRONTEND_DOMAIN" "app.local.cheburek-shop.com"
 ensure_value ".env" "LOCAL_BACKEND_DOMAIN" "api.local.cheburek-shop.com"
+ensure_value ".env" "LOCAL_ADMIN_DOMAIN" "admin.local.cheburek-shop.com"
 ensure_value ".env" "POSTGRES_USER" "postgres"
 ensure_value ".env" "POSTGRES_DB" "cheburek_db"
 ensure_value ".env" "POSTGRES_TEST_DB" "test_db"
@@ -196,6 +199,7 @@ ensure_secret ".env" "POSTGRES_PASSWORD"
 ensure_secret ".env" "RESET_PASSWORD_TOKEN_SECRET"
 ensure_secret ".env" "VERIFICATION_TOKEN_SECRET"
 ensure_secret ".env" "SESSION_SECRET_KEY"
+ensure_secret ".env" "ADMIN_PASSWORD"
 
 FRONTEND_PORT="$(read_env_value ".env" "FRONTEND_PORT")"
 BACKEND_PORT="$(read_env_value ".env" "BACKEND_PORT")"
@@ -204,6 +208,7 @@ MONGO_PORT="$(read_env_value ".env" "MONGO_PORT")"
 REDIS_PORT="$(read_env_value ".env" "REDIS_PORT")"
 LOCAL_FRONTEND_DOMAIN="$(read_env_value ".env" "LOCAL_FRONTEND_DOMAIN")"
 LOCAL_BACKEND_DOMAIN="$(read_env_value ".env" "LOCAL_BACKEND_DOMAIN")"
+LOCAL_ADMIN_DOMAIN="$(read_env_value ".env" "LOCAL_ADMIN_DOMAIN")"
 POSTGRES_USER="$(read_env_value ".env" "POSTGRES_USER")"
 POSTGRES_PASSWORD="$(read_env_value ".env" "POSTGRES_PASSWORD")"
 POSTGRES_DB="$(read_env_value ".env" "POSTGRES_DB")"
@@ -211,18 +216,28 @@ POSTGRES_TEST_DB="$(read_env_value ".env" "POSTGRES_TEST_DB")"
 RESET_PASSWORD_TOKEN_SECRET="$(read_env_value ".env" "RESET_PASSWORD_TOKEN_SECRET")"
 VERIFICATION_TOKEN_SECRET="$(read_env_value ".env" "VERIFICATION_TOKEN_SECRET")"
 SESSION_SECRET_KEY="$(read_env_value ".env" "SESSION_SECRET_KEY")"
+ADMIN_EMAIL="$(read_env_value ".env" "ADMIN_EMAIL")"
+if [[ -z "$ADMIN_EMAIL" || "$ADMIN_EMAIL" == "generated-by-setup" ]]; then
+  write_env_value ".env" "ADMIN_EMAIL" "admin@${LOCAL_ADMIN_DOMAIN}"
+  ADMIN_EMAIL="$(read_env_value ".env" "ADMIN_EMAIL")"
+fi
+ADMIN_PASSWORD="$(read_env_value ".env" "ADMIN_PASSWORD")"
 
 LOCAL_API_BASE_URL="http://${LOCAL_BACKEND_DOMAIN}:${BACKEND_PORT}/api/v1"
 LOCAL_FRONTEND_ORIGIN="http://${LOCAL_FRONTEND_DOMAIN}:${FRONTEND_PORT}"
-LOCAL_CORS_ORIGINS="${LOCAL_FRONTEND_ORIGIN},http://localhost:${FRONTEND_PORT},http://127.0.0.1:${FRONTEND_PORT},http://react:${FRONTEND_PORT}"
+LOCAL_ADMIN_ORIGIN="http://${LOCAL_ADMIN_DOMAIN}:${FRONTEND_PORT}"
+LOCAL_CORS_ORIGINS="${LOCAL_FRONTEND_ORIGIN},${LOCAL_ADMIN_ORIGIN},http://localhost:${FRONTEND_PORT},http://127.0.0.1:${FRONTEND_PORT},http://react:${FRONTEND_PORT}"
+LOCAL_ALLOWED_HOSTS="${LOCAL_FRONTEND_DOMAIN},${LOCAL_ADMIN_DOMAIN},localhost,127.0.0.1"
 
 replace_value_if_matches ".env" "VITE_API_BASE_URL" "http://localhost:8091/api/v1" "$LOCAL_API_BASE_URL"
 append_csv_value_if_missing ".env" "CORS_ALLOWED_ORIGINS" "$LOCAL_FRONTEND_ORIGIN" "$LOCAL_CORS_ORIGINS"
+append_csv_value_if_missing ".env" "CORS_ALLOWED_ORIGINS" "$LOCAL_ADMIN_ORIGIN" "$LOCAL_CORS_ORIGINS"
+write_env_value ".env" "VITE_DEV_ALLOWED_HOSTS" "$LOCAL_ALLOWED_HOSTS"
 
 write_env_value "front-end/.env" "VITE_API_BASE_URL" "$LOCAL_API_BASE_URL"
 write_env_value "front-end/.env" "VITE_DEV_SERVER_HOST" "0.0.0.0"
 write_env_value "front-end/.env" "VITE_DEV_SERVER_PORT" "$FRONTEND_PORT"
-write_env_value "front-end/.env" "VITE_DEV_ALLOWED_HOSTS" "${LOCAL_FRONTEND_DOMAIN},localhost,127.0.0.1"
+write_env_value "front-end/.env" "VITE_DEV_ALLOWED_HOSTS" "$LOCAL_ALLOWED_HOSTS"
 
 write_env_value "back-end/.env" "APP_CONFIG__RUN__HOST" "127.0.0.1"
 write_env_value "back-end/.env" "APP_CONFIG__RUN__PORT" "$BACKEND_PORT"
@@ -236,9 +251,11 @@ write_env_value "back-end/.env" "APP_CONFIG__REDIS__HOST" "localhost"
 write_env_value "back-end/.env" "APP_CONFIG__REDIS__PORT" "$REDIS_PORT"
 write_env_value "back-end/.env" "APP_CONFIG__SESSION__SECRET_KEY" "$SESSION_SECRET_KEY"
 write_env_value "back-end/.env" "APP_CONFIG__CORS__ALLOWED_ORIGINS" "$LOCAL_CORS_ORIGINS"
+write_env_value "back-end/.env" "ADMIN_EMAIL" "$ADMIN_EMAIL"
+write_env_value "back-end/.env" "ADMIN_PASSWORD" "$ADMIN_PASSWORD"
 
 if [[ "$SKIP_HOSTS" != "true" ]]; then
-  configure_hosts "$LOCAL_FRONTEND_DOMAIN" "$LOCAL_BACKEND_DOMAIN"
+  configure_hosts "$LOCAL_FRONTEND_DOMAIN" "$LOCAL_BACKEND_DOMAIN" "$LOCAL_ADMIN_DOMAIN"
 fi
 
 if command -v npm >/dev/null 2>&1; then

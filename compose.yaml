@@ -38,7 +38,9 @@ services:
       APP_CONFIG__REDIS__PORT: 6379
       APP_CONFIG__REDIS__DB: ${REDIS_DB:-0}
       APP_CONFIG__SESSION__SECRET_KEY: ${SESSION_SECRET_KEY:?Run ./setup.sh to generate local secrets before starting Compose}
-      APP_CONFIG__CORS__ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://app.local.cheburek-shop.com:5178,http://localhost:5178,http://127.0.0.1:5178,http://react:5178}
+      APP_CONFIG__CORS__ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://app.local.cheburek-shop.com:5178,http://admin.local.cheburek-shop.com:5178,http://localhost:5178,http://127.0.0.1:5178,http://react:5178}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Run ./setup.sh to generate local admin credentials before starting Compose}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Run ./setup.sh to generate local admin credentials before starting Compose}
     volumes:
       - ./back-end/app:/backend/app
       - ./back-end/migrations/alembic:/backend/migrations/alembic
@@ -46,6 +48,7 @@ services:
       - ./back-end/pyproject.toml:/backend/pyproject.toml
       - ./back-end/poetry.lock:/backend/poetry.lock
       - ./back-end/alembic.ini:/backend/alembic.ini
+      - ./back-end/.flake8:/backend/.flake8
     depends_on:
       - postgres
       - mongo
@@ -60,7 +63,7 @@ services:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://api.local.cheburek-shop.com:8091/api/v1}
       VITE_DEV_SERVER_HOST: 0.0.0.0
       VITE_DEV_SERVER_PORT: ${FRONTEND_PORT:-5178}
-      VITE_DEV_ALLOWED_HOSTS: ${VITE_DEV_ALLOWED_HOSTS:-app.local.cheburek-shop.com,localhost,127.0.0.1}
+      VITE_DEV_ALLOWED_HOSTS: ${VITE_DEV_ALLOWED_HOSTS:-app.local.cheburek-shop.com,admin.local.cheburek-shop.com,localhost,127.0.0.1}
     volumes:
       - ./front-end/src/:/app/src/
     stdin_open: true

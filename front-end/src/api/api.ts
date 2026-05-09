@@ -1,12 +1,32 @@
 import axios from "axios";
 
 const defaultApiHost =
-    window.location.hostname === "app.local.cheburek-shop.com"
+    window.location.hostname === "app.local.cheburek-shop.com" ||
+    window.location.hostname === "admin.local.cheburek-shop.com"
         ? "api.local.cheburek-shop.com"
         : "localhost";
 
-export const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ?? `http://${defaultApiHost}:8091/api/v1`;
+const resolveApiBaseUrl = () => {
+    const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+    if (!configuredApiBaseUrl) {
+        return `http://${defaultApiHost}:8091/api/v1`;
+    }
+
+    try {
+        const apiUrl = new URL(configuredApiBaseUrl);
+        const isLocalhostFallback =
+            window.location.hostname === "localhost" ||
+            window.location.hostname === "127.0.0.1";
+        if (isLocalhostFallback && apiUrl.hostname === "api.local.cheburek-shop.com") {
+            apiUrl.hostname = window.location.hostname;
+        }
+        return apiUrl.toString().replace(/\/$/, "");
+    } catch {
+        return configuredApiBaseUrl;
+    }
+};
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export const apiClient = axios.create({
     baseURL: API_BASE_URL,

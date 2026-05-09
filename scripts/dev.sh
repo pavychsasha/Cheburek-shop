@@ -9,4 +9,8 @@ if [[ ! -f .env || ! -f front-end/.env || ! -f back-end/.env ]] \
   ./setup.sh
 fi
 
+docker compose up -d postgres mongo redis
+./scripts/migrate.sh
+docker compose run --rm fastapi python -m app.actions.create_super_user
+
 docker compose up --build
