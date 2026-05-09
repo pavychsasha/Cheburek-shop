@@ -74,7 +74,7 @@ class ProductUpdate(ProductBase):
 class ProductPartialUpdate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    translations: Optional[list[ProductTranslationsPartial]] = Field(None, min_items=1)
+    translations: Optional[list[ProductTranslationsPartial]] = Field(None, min_length=1)
     price: Optional[float] = Field(None, gt=0)
     category: Optional[str] = Field(None, max_length=50)
     stock_quantity: Optional[int] = Field(None, ge=0)

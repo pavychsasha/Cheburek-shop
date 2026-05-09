@@ -15,7 +15,7 @@ from app.api.v1.products.services import ProductsService
 import pytest
 from sqlalchemy import update, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 
 from app.core.models import Base, User, Address, Order
 from app.main import app as main_app
@@ -100,7 +100,6 @@ async def setup_test_redis():
 
 
 @pytest.fixture(scope="function")
-@pytest.mark.usefixtures("reset_databases")
 async def client(test_sql_db: SQLDatabaseHelper):
     """Set up a FastAPI client for testing."""
 
@@ -110,7 +109,7 @@ async def client(test_sql_db: SQLDatabaseHelper):
     )
 
     async with AsyncClient(
-        app=main_app,
+        transport=ASGITransport(app=main_app),
         base_url="http://testserver",
     ) as ac:
         ac.cookies = {}
