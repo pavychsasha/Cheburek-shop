@@ -1,15 +1,16 @@
 services:
   postgres:
-    container_name: postgres
-    image: postgres:16.3-alpine3.20
+    image: postgres:16.8-alpine3.20
     env_file:
       - path: ./back-end/.env
-        required: true
+        required: false
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-55432}:5432"
     environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_DB: cheburek_db
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-cheburek_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
 
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -17,12 +18,27 @@ services:
   fastapi:
     build: ./back-end
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8091}:${BACKEND_PORT:-8091}"
     env_file:
       - path: ./back-end/.env
-        required: true
+        required: false
     environment:
-      POSTGRES_HOST: postgres
+      APP_CONFIG__RUN__HOST: 0.0.0.0
+      APP_CONFIG__RUN__PORT: ${BACKEND_PORT:-8091}
+      APP_CONFIG__DB__URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cheburek_db}
+      APP_CONFIG__DB__TEST_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_TEST_DB:-test_db}
+      APP_CONFIG__DB__ECHO: ${APP_CONFIG__DB__ECHO:-0}
+      APP_CONFIG__ACCESS_TOKEN__RESET_PASSWORD_TOKEN_SECRET: ${RESET_PASSWORD_TOKEN_SECRET:-local-reset-password-token-secret-change-me}
+      APP_CONFIG__ACCESS_TOKEN__VERIFICATION_TOKEN_SECRET: ${VERIFICATION_TOKEN_SECRET:-local-verification-token-secret-change-me}
+      APP_CONFIG__MONGO_DB__HOST: mongo
+      APP_CONFIG__MONGO_DB__PORT: 27017
+      APP_CONFIG__MONGO_DB__DATABASE_NAME: ${MONGO_DATABASE_NAME:-cheburek_mongo_db}
+      APP_CONFIG__MONGO_DB__TEST_DATABASE_NAME: ${MONGO_TEST_DATABASE_NAME:-test_cheburek_mongo_db}
+      APP_CONFIG__REDIS__HOST: redis
+      APP_CONFIG__REDIS__PORT: 6379
+      APP_CONFIG__REDIS__DB: ${REDIS_DB:-0}
+      APP_CONFIG__SESSION__SECRET_KEY: ${SESSION_SECRET_KEY:-local-session-secret-change-me}
+      APP_CONFIG__CORS__ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5178,http://127.0.0.1:5178,http://react:5178}
     volumes:
       - ./back-end/app:/backend/app
       - ./back-end/migrations/alembic:/backend/migrations/alembic
@@ -38,9 +54,12 @@ services:
 
   react:
     build: ./front-end
-    container_name: react-container
     ports:
-      - '5173:5173'
+      - "${FRONTEND_PORT:-5178}:${FRONTEND_PORT:-5178}"
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8091/api/v1}
+      VITE_DEV_SERVER_HOST: 0.0.0.0
+      VITE_DEV_SERVER_PORT: ${FRONTEND_PORT:-5178}
     volumes:
       - ./front-end/src/:/app/src/
     stdin_open: true
@@ -49,18 +68,16 @@ services:
       - fastapi
 
   mongo:
-    image: mongo:7.0.14
-    container_name: mongo
+    image: mongo:7.0.18
     ports:
-      - "27017:27017"
+      - "${MONGO_PORT:-27018}:27017"
     volumes:
       - mongo-data:/data/db
 
   redis:
-      image: redis:7.4.1-alpine
-      container_name: redis
+      image: redis:7.4.2-alpine
       ports:
-        - "6379:6379"
+        - "${REDIS_PORT:-6380}:6379"
       volumes:
         - redis-data:/data
 

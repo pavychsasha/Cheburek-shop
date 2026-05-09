@@ -120,7 +120,7 @@ sql_db_helper = SQLDatabaseHelper(
 )
 
 mongo_db_helper = MongoDbHelper(
-    db_url=settings.mongo_db.url,
+    db_url=settings.mongo_db.connection_url,
     db_name=settings.mongo_db.database_name,
 )
 

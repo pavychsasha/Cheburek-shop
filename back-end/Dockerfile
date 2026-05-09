@@ -1,5 +1,4 @@
-# The builder image, used to build the virtual environment
-FROM python:3.12.3-alpine3.20 as builder
+FROM python:3.12.3-alpine3.20 AS builder
 
 # Install build dependencies and poetry
 RUN apk add --no-cache gcc g++ musl-dev libffi-dev unixodbc-dev postgresql-dev
@@ -20,11 +19,12 @@ RUN touch README.md
 # Install project dependencies
 RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --no-root
 
-# The runtime image
-FROM python:3.12.3-alpine3.20 as runtime
+FROM python:3.12.3-alpine3.20 AS runtime
 
 ENV VIRTUAL_ENV=/backend/.venv \
-    PATH="/backend/.venv/bin:$PATH"
+    PATH="/backend/.venv/bin:$PATH" \
+    APP_CONFIG__RUN__HOST=0.0.0.0 \
+    APP_CONFIG__RUN__PORT=8091
 
 WORKDIR /backend
 
@@ -35,4 +35,6 @@ COPY . .
 # Set the working directory to where the app folder is located
 WORKDIR /backend
 
-ENTRYPOINT ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+EXPOSE 8091
+
+CMD ["sh", "-c", "uvicorn app.main:app --host ${APP_CONFIG__RUN__HOST:-0.0.0.0} --port ${APP_CONFIG__RUN__PORT:-8091} --reload"]

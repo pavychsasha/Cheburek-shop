@@ -1,13 +1,14 @@
-/*
 import axios from "axios";
 
-const instance = axios.create({
-    baseURL: "http://localhost:8000/api/v1",
-    withCredentials: true,
-})
+export const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8091/api/v1";
 
-export const productApi = {
-    getProducts {
-        return  instance.get('/products')
-    }
-}*/
+export const apiClient = axios.create({
+    baseURL: API_BASE_URL,
+    withCredentials: true,
+});
+
+export const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return token ? {Authorization: `Bearer ${token}`} : undefined;
+};
