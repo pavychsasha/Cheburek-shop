@@ -44,3 +44,7 @@ wait_for \
 wait_for \
   "Redis" \
   "docker compose exec -T redis redis-cli ping"
+
+wait_for \
+  "MinIO" \
+  "docker compose exec -T minio sh -c 'mc ready local >/dev/null 2>&1 || wget -q -O /dev/null http://127.0.0.1:9000/minio/health/live'"

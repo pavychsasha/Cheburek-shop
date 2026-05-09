@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import Response as StarletteResponse
 from sqlalchemy import text
 
 import uvicorn
@@ -10,6 +11,7 @@ import uvicorn
 from app.core.events import register_product_event_listeners
 from app.core.config import settings
 from app.core.models import sql_db_helper, mongo_db_helper, redis_db_helper
+from app.core.storage import check_media_storage, ensure_media_bucket, get_media_object
 from app.api import router as router_v1
 
 
@@ -17,6 +19,7 @@ from app.api import router as router_v1
 async def lifespan(app: FastAPI):
     await mongo_db_helper.connect()
     await redis_db_helper.connect()
+    await ensure_media_bucket()
     # startup
     register_product_event_listeners(sql_db_helper.session_factory)
 
@@ -69,6 +72,12 @@ async def health_check(response: Response):
     except Exception as exc:
         checks["redis"] = f"error: {exc.__class__.__name__}"
 
+    try:
+        await check_media_storage()
+        checks["minio"] = "ok"
+    except Exception as exc:
+        checks["minio"] = f"error: {exc.__class__.__name__}"
+
     is_healthy = all(value == "ok" for value in checks.values())
     if not is_healthy:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
@@ -76,6 +85,12 @@ async def health_check(response: Response):
         "status": "ok" if is_healthy else "degraded",
         "checks": checks,
     }
+
+
+@app.get("/media/{object_name:path}", status_code=status.HTTP_200_OK)
+async def get_public_media(object_name: str):
+    payload, content_type = await get_media_object(object_name)
+    return StarletteResponse(content=payload, media_type=content_type)
 
 
 if __name__ == "__main__":

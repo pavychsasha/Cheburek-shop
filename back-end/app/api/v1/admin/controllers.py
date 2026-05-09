@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Security, status
+from fastapi import APIRouter, Depends, File, Security, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,8 +8,31 @@ from app.actions.seed_products import seed_products
 from app.core.dependencies.authentication.fastapi_users_dependency import (
     current_active_superuser,
 )
-from app.core.models import Order, Product, User, sql_db_helper
-from app.core.schemas.admin import AdminSummary, ProductSeedResponse
+from app.core.models import (
+    Order,
+    OrderProductAssociation,
+    Product,
+    User,
+    sql_db_helper,
+)
+from app.core.models.product_translations import ProductTranslation
+from app.core.schemas.admin import (
+    AdminAnalytics,
+    AdminSummary,
+    LowStockProduct,
+    ProductSeedResponse,
+    RecentOrder,
+    StatusCount,
+    TimeSeriesPoint,
+    TopProduct,
+)
+from app.core.schemas.settings import (
+    CurrencySettings,
+    CurrencySettingsUpdate,
+    MediaUploadResponse,
+)
+from app.core.services.store_settings import update_currency_settings
+from app.core.storage import upload_product_image
 
 router = APIRouter(tags=["Admin"])
 
@@ -53,6 +76,130 @@ async def get_admin_summary(
     )
 
 
+@router.get(
+    "/analytics",
+    response_model=AdminAnalytics,
+    status_code=status.HTTP_200_OK,
+)
+async def get_admin_analytics(
+    session: Annotated[
+        AsyncSession,
+        Depends(sql_db_helper.session_dependency),
+    ],
+    superuser: Annotated[User, Security(current_active_superuser)],
+):
+    status_rows = (
+        await session.execute(
+            select(Order.status, func.count(Order.order_id))
+            .group_by(Order.status)
+            .order_by(Order.status)
+        )
+    ).all()
+
+    date_bucket = func.date(Order.created_at)
+    order_time_rows = (
+        await session.execute(
+            select(date_bucket, func.count(Order.order_id))
+            .group_by(date_bucket)
+            .order_by(date_bucket.desc())
+            .limit(14)
+        )
+    ).all()
+    revenue_time_rows = (
+        await session.execute(
+            select(date_bucket, func.coalesce(func.sum(Order.total_price), 0))
+            .group_by(date_bucket)
+            .order_by(date_bucket.desc())
+            .limit(14)
+        )
+    ).all()
+
+    low_stock_rows = (
+        await session.execute(
+            select(
+                Product.product_id,
+                ProductTranslation.product_name,
+                Product.stock_quantity,
+            )
+            .join(Product.translations)
+            .where(ProductTranslation.language_code == "en")
+            .order_by(Product.stock_quantity.asc(), ProductTranslation.product_name)
+            .limit(8)
+        )
+    ).all()
+
+    top_product_rows = (
+        await session.execute(
+            select(
+                OrderProductAssociation.name,
+                func.coalesce(func.sum(OrderProductAssociation.quantity), 0),
+                func.coalesce(
+                    func.sum(
+                        OrderProductAssociation.price
+                        * OrderProductAssociation.quantity
+                    ),
+                    0,
+                ),
+            )
+            .group_by(OrderProductAssociation.name)
+            .order_by(
+                func.coalesce(func.sum(OrderProductAssociation.quantity), 0).desc()
+            )
+            .limit(8)
+        )
+    ).all()
+
+    recent_order_rows = (
+        await session.execute(
+            select(Order)
+            .order_by(Order.created_at.desc())
+            .limit(8)
+        )
+    )
+
+    return AdminAnalytics(
+        orders_by_status=[
+            StatusCount(status=row[0], count=row[1] or 0)
+            for row in status_rows
+        ],
+        orders_over_time=[
+            TimeSeriesPoint(date=row[0], value=float(row[1] or 0))
+            for row in reversed(order_time_rows)
+        ],
+        revenue_over_time=[
+            TimeSeriesPoint(date=row[0], value=float(row[1] or 0))
+            for row in reversed(revenue_time_rows)
+        ],
+        low_stock_products=[
+            LowStockProduct(
+                product_id=row[0],
+                name=row[1],
+                stock_quantity=row[2] or 0,
+            )
+            for row in low_stock_rows
+        ],
+        top_products=[
+            TopProduct(
+                name=row[0],
+                quantity=row[1] or 0,
+                revenue=float(row[2] or 0),
+            )
+            for row in top_product_rows
+        ],
+        recent_orders=[
+            RecentOrder(
+                order_id=order.order_id,
+                created_at=order.created_at,
+                status=order.status,
+                email=order.email,
+                total_price=order.total_price,
+                total_count=order.total_count,
+            )
+            for order in recent_order_rows.scalars().all()
+        ],
+    )
+
+
 @router.post(
     "/seed/products",
     response_model=ProductSeedResponse,
@@ -72,4 +219,34 @@ async def seed_catalog_products(
         skipped=result.skipped,
         reset=result.reset,
         total_seed_products=result.total_seed_products,
+    )
+
+
+@router.patch(
+    "/settings/currency",
+    response_model=CurrencySettings,
+    status_code=status.HTTP_200_OK,
+)
+async def update_admin_currency_settings(
+    currency_settings: CurrencySettingsUpdate,
+    superuser: Annotated[User, Security(current_active_superuser)],
+):
+    return await update_currency_settings(currency_settings)
+
+
+@router.post(
+    "/media/products",
+    response_model=MediaUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_admin_product_media(
+    superuser: Annotated[User, Security(current_active_superuser)],
+    file: UploadFile = File(...),
+):
+    stored_object = await upload_product_image(file)
+    return MediaUploadResponse(
+        object_name=stored_object.object_name,
+        url=stored_object.url,
+        content_type=stored_object.content_type,
+        size=stored_object.size,
     )

@@ -1,6 +1,7 @@
 __all__ = (
     "Cart",
     "CartItem",
+    "StoreSettings",
     "all_document_models",
     "AccessToken",
     "Base",
@@ -21,7 +22,7 @@ __all__ = (
     "Country",
 )
 
-from .cart import all_document_models, Cart, CartItem
+from .cart import all_document_models, Cart, CartItem, StoreSettings
 from .access_token import AccessToken
 from .base import Base
 from .db_helper import (

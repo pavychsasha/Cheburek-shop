@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import dataclass
+import re
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import joinedload
@@ -9,6 +10,7 @@ from app.core.models.product_translations import (
     ProductTranslation as ProductTranslationModel,
 )
 from app.core.schemas.products import ProductBulkCreate
+from app.core.storage import put_media_object
 
 # Data to be used for bulk creation
 PRODUCTS_DATA = {
@@ -293,6 +295,44 @@ def _english_name(product) -> str:
     raise ValueError("Each seed product must include an English translation.")
 
 
+def _slugify_seed_name(name: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    return slug or "product"
+
+
+def _seed_svg(product_name: str, category: str | None) -> bytes:
+    category_colors = {
+        "Chebureks": ("#f7b34d", "#c94c3f"),
+        "Pies": ("#d9a45f", "#74624f"),
+        "Drinks": ("#75b6c9", "#234d59"),
+        "Other": ("#f3d27a", "#745132"),
+    }
+    primary, accent = category_colors.get(category or "Other", category_colors["Other"])
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="720" height="520" viewBox="0 0 720 520" role="img" aria-label="Seed product image">
+  <rect width="720" height="520" rx="42" fill="#fff8ee"/>
+  <circle cx="520" cy="128" r="92" fill="{primary}" opacity="0.22"/>
+  <circle cx="190" cy="398" r="118" fill="{accent}" opacity="0.13"/>
+  <g transform="translate(108 110)">
+    <path d="M55 205c58-154 250-205 403-94 29 21 43 62 25 94-56 99-308 121-428 0Z" fill="{primary}" stroke="{accent}" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M76 203c91 30 262 28 388-4" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round" opacity="0.72"/>
+    <path d="M136 174c35-35 77-53 124-59" fill="none" stroke="{accent}" stroke-width="10" stroke-linecap="round" opacity="0.55"/>
+    <path d="M312 112c39 7 75 24 109 52" fill="none" stroke="{accent}" stroke-width="10" stroke-linecap="round" opacity="0.45"/>
+  </g>
+</svg>"""
+    return svg.encode("utf-8")
+
+
+async def _ensure_seed_product_image(seed_product) -> str:
+    seed_name = _english_name(seed_product)
+    object_name = f"products/seed-{_slugify_seed_name(seed_name)}.svg"
+    stored = await put_media_object(
+        object_name=object_name,
+        payload=_seed_svg(seed_name, seed_product.category),
+        content_type="image/svg+xml",
+    )
+    return stored.url
+
+
 async def _get_existing_seed_products(
     session, seed_names: list[str]
 ) -> dict[str, Product]:
@@ -387,6 +427,7 @@ async def seed_products(session=None, *, reset: bool = False) -> ProductSeedResu
 
         for seed_product in products_in.products:
             seed_name = _english_name(seed_product)
+            seed_product.image_src = await _ensure_seed_product_image(seed_product)
             existing_product = existing_products.get(seed_name)
             if existing_product is None:
                 translations = [

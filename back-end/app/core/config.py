@@ -38,6 +38,7 @@ class ApiV1Prefix(BaseModel):
     orders: str = "/orders"
     admin: str = "/admin"
     languages: str = "/languages"
+    settings: str = "/settings"
 
 
 class ApiPrefix(BaseModel):
@@ -104,6 +105,66 @@ class RedisDatabaseConfig(BaseModel):
     db: int = 0
 
 
+class MediaConfig(BaseModel):
+    endpoint: str = "minio:9000"
+    access_key: str
+    secret_key: str
+    bucket: str = "cheburek-product-images"
+    public_base_url: str = "http://api.local.cheburek-shop.com/media"
+    secure: bool = False
+    max_image_upload_mb: int = 5
+
+    @property
+    def max_image_upload_bytes(self) -> int:
+        return self.max_image_upload_mb * 1024 * 1024
+
+
+class CurrencyConfig(BaseModel):
+    base_currency: str = "UAH"
+    default_currency: str = "UAH"
+    supported_currencies: str = "UAH,USD,EUR"
+    currency_rates: str = "UAH:1,USD:0.024,EUR:0.022"
+    currency_symbols: str = "UAH:\u20b4,USD:$,EUR:\u20ac"
+
+    @property
+    def supported_currency_codes(self) -> list[str]:
+        return [
+            currency.strip().upper()
+            for currency in self.supported_currencies.split(",")
+            if currency.strip()
+        ]
+
+    @staticmethod
+    def _parse_mapping(raw_value: str, value_type=str) -> dict[str, str | float]:
+        mapping: dict[str, str | float] = {}
+        for pair in raw_value.split(","):
+            if ":" not in pair:
+                continue
+            key, value = pair.split(":", 1)
+            normalized_key = key.strip().upper()
+            if normalized_key:
+                mapping[normalized_key] = value_type(value.strip())
+        return mapping
+
+    @property
+    def rate_mapping(self) -> dict[str, float]:
+        return {
+            currency: float(rate)
+            for currency, rate in self._parse_mapping(
+                self.currency_rates, float
+            ).items()
+        }
+
+    @property
+    def symbol_mapping(self) -> dict[str, str]:
+        return {
+            currency: str(symbol)
+            for currency, symbol in self._parse_mapping(
+                self.currency_symbols, str
+            ).items()
+        }
+
+
 class AccessToken(BaseModel):
     lifetime_seconds: int = 3600
     reset_password_token_secret: str
@@ -136,6 +197,8 @@ class Settings(BaseSettings):
     access_token: AccessToken
     mongo_db: MongoDatabaseConfig = MongoDatabaseConfig()
     redis: RedisDatabaseConfig = RedisDatabaseConfig()
+    media: MediaConfig
+    currency: CurrencyConfig = CurrencyConfig()
     session: Session
 
 

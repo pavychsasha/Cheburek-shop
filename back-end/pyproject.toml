@@ -21,6 +21,7 @@ fastapi-users = {extras = ["sqlalchemy"], version = "^15.0.5"}
 motor = "^3.7.1"
 beanie = "^1.30.0"
 redis = "^5.3.1"
+minio = "^7.2.20"
 dill = "^0.3.9"
 pydantic-settings = "^2.14.1"
 orjson = "^3.11.9"
