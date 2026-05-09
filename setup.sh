@@ -6,6 +6,7 @@ cd "$ROOT_DIR"
 
 REGENERATE_SECRETS=false
 SKIP_HOSTS=false
+PROVISION=true
 
 for arg in "$@"; do
   case "$arg" in
@@ -15,8 +16,11 @@ for arg in "$@"; do
     --skip-hosts)
       SKIP_HOSTS=true
       ;;
+    --no-provision)
+      PROVISION=false
+      ;;
     --help|-h)
-      echo "Usage: ./setup.sh [--regenerate-secrets] [--skip-hosts]"
+      echo "Usage: ./setup.sh [--regenerate-secrets] [--skip-hosts] [--no-provision]"
       exit 0
       ;;
     *)
@@ -268,8 +272,18 @@ fi
 if command -v docker >/dev/null 2>&1; then
   echo "Validating Docker Compose configuration"
   docker compose config >/dev/null
+  if [[ "$PROVISION" == "true" ]]; then
+    echo "Provisioning local databases"
+    ./scripts/migrate.sh
+    echo "Bootstrapping local admin user"
+    docker compose run --rm fastapi python -m app.actions.create_super_user
+  fi
 else
+  if [[ "$PROVISION" == "true" ]]; then
+    echo "Docker is required to provision local services. Install Docker or rerun with --no-provision." >&2
+    exit 1
+  fi
   echo "Docker is not installed; skipping Compose validation"
 fi
 
-echo "Setup complete. Run ./scripts/dev.sh to start the full stack."
+echo "Setup complete. Run ./start.sh to start the full stack."

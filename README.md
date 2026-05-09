@@ -37,10 +37,10 @@ Ports are intentionally offset from common defaults. Override them in `.env` if 
 
 ```bash
 ./setup.sh
-./scripts/dev.sh
+./start.sh
 ```
 
-`setup.sh` creates local env files, generates local-only secrets, installs frontend dependencies when npm is available, validates Docker Compose, and offers to add these hostnames to `/etc/hosts`:
+`setup.sh` creates local env files, generates local-only secrets, installs frontend dependencies when npm is available, validates Docker Compose, starts PostgreSQL, MongoDB, and Redis, waits for them to become healthy, runs migrations, seeds the product catalog idempotently, bootstraps the local admin user, and offers to add these hostnames to `/etc/hosts`:
 
 ```text
 127.0.0.1 app.local.cheburek-shop.com api.local.cheburek-shop.com admin.local.cheburek-shop.com
@@ -54,7 +54,19 @@ If you do not want the script to touch `/etc/hosts`, run:
 
 Then add the hosts entry manually or use the storefront localhost fallback URL.
 
-`scripts/dev.sh` runs setup when needed, starts PostgreSQL, MongoDB, and Redis, runs migrations, seeds the product catalog idempotently, bootstraps the local admin user, and then starts the API and frontend.
+If you only want env generation and dependency installation without starting Docker services, run:
+
+```bash
+./setup.sh --no-provision
+```
+
+`start.sh` is the simple app runner. It provisions missing setup automatically, keeps migrations/seeding/admin bootstrap idempotent, and starts the API plus frontend with Docker Compose health checks. `scripts/dev.sh` is kept as a compatibility alias for `start.sh`.
+
+To run the full stack in the background:
+
+```bash
+./start.sh --detached
+```
 
 Run migrations and the idempotent product seed after services are available:
 
@@ -171,6 +183,7 @@ docker compose run --rm fastapi python -m app.actions.create_super_user
 - Storefront works on localhost but local domains fail: rerun `./setup.sh` in a terminal and accept or manually add the printed hosts entry.
 - CORS errors: add the frontend origin to `CORS_ALLOWED_ORIGINS`.
 - Health check returns `degraded`: PostgreSQL, MongoDB, or Redis is not reachable from the backend container.
+- Compose waits indefinitely or reports an unhealthy service: inspect logs with `docker compose logs <service>` and rerun `./setup.sh`.
 - Backend tests require PostgreSQL, MongoDB, and Redis. Start dependencies before running the full pytest suite.
 - After rotating local secrets, reset local volumes if database authentication no longer works.
 - Admin login fails after rotating secrets: rerun `docker compose run --rm fastapi python -m app.actions.create_super_user` so the local admin password matches the generated env value.
