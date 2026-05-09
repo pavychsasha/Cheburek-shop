@@ -14,8 +14,11 @@ import {setIsLanguageSet} from "./redux/slices/langSlice.ts";
 import Order from "./components/pages/Order/Order.tsx";
 import {apiClient, getAuthHeaders} from "./api/api.ts";
 import {useAppDispatch, useAppSelector} from "./redux/hooks.ts";
+import AdminApp from "./admin/AdminApp.tsx";
 
-const App = () => {
+const isAdminHost = window.location.hostname === "admin.local.cheburek-shop.com";
+
+const StorefrontApp = () => {
     const dispatch = useAppDispatch();
 
     const {i18n} = useTranslation();
@@ -89,6 +92,14 @@ const App = () => {
             </Routes>
         </div>
     );
+};
+
+const App = () => {
+    if (isAdminHost) {
+        return <AdminApp/>;
+    }
+
+    return <StorefrontApp/>;
 };
 
 export default App;
