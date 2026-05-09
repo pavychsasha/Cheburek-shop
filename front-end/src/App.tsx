@@ -6,7 +6,7 @@ import NotFound from "./components/pages/NotFound/NotFound.tsx";
 import Cart from "./components/pages/Cart/Cart.tsx";
 import Login from "./components/pages/Auth/Login/Login.tsx";
 import Register from "./components/pages/Auth/Register/Register.tsx";
-import React, {useEffect} from "react";
+import React, {Suspense, useEffect} from "react";
 import {fetchCart} from "./redux/slices/cartSLice.ts";
 import {setIsAuth} from "./redux/slices/authSlice.ts";
 import {useTranslation} from "react-i18next";
@@ -14,9 +14,10 @@ import {setIsLanguageSet} from "./redux/slices/langSlice.ts";
 import Order from "./components/pages/Order/Order.tsx";
 import {apiClient, getAuthHeaders} from "./api/api.ts";
 import {useAppDispatch, useAppSelector} from "./redux/hooks.ts";
-import AdminApp from "./admin/AdminApp.tsx";
+import {fetchPublicSettings} from "./redux/slices/settingsSlice.ts";
 
 const isAdminHost = window.location.hostname === "admin.local.cheburek-shop.com";
+const AdminApp = React.lazy(() => import("./admin/AdminApp.tsx"));
 
 const StorefrontApp = () => {
     const dispatch = useAppDispatch();
@@ -95,8 +96,18 @@ const StorefrontApp = () => {
 };
 
 const App = () => {
+    const dispatch = useAppDispatch();
+
+    useEffect(() => {
+        dispatch(fetchPublicSettings());
+    }, [dispatch]);
+
     if (isAdminHost) {
-        return <AdminApp/>;
+        return (
+            <Suspense fallback={<div className="app__loading">Loading admin portal.</div>}>
+                <AdminApp/>
+            </Suspense>
+        );
     }
 
     return <StorefrontApp/>;

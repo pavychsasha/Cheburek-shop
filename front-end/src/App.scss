@@ -9,3 +9,13 @@
     padding: 16px 0 40px;
   }
 }
+
+.app__loading {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  color: var(--color-ink);
+  background: #f4f6f5;
+  font-weight: 800;
+}

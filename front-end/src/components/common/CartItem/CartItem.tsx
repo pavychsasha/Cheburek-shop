@@ -8,9 +8,11 @@ import {
 import React from "react";
 import {ICartItemProps} from "../../../types/props.ts";
 import {useAppDispatch} from "../../../redux/hooks.ts";
+import {useCurrencyFormatter} from "../../../hooks/useCurrencyFormatter.ts";
 
 const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count, price, isOrder}) => {
     const dispatch = useAppDispatch();
+    const formatPrice = useCurrencyFormatter();
 
     const handleClickPlus = () => {
         const itemToAdd = {
@@ -37,13 +39,13 @@ const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count,
                 {
                     !isOrder && <img src={image_src} alt=""/>
                 }
-                <h3 style={isOrder ? {fontSize: '1rem'} : undefined}>{name}</h3>
+                <h3 className={isOrder ? styles.orderTitle : undefined}>{name}</h3>
             </div>
 
             {!isOrder
                 ?
                 <>
-                    <p>{price * count}₴</p>
+                    <p>{formatPrice(price * count)}</p>
                     <div className={styles.count} aria-label={`${name} quantity`}>
                         <button className={styles.action} type="button" onClick={handleClickMinus} aria-label={`Remove one ${name}`}>-</button>
                         <p>{count}</p>
@@ -56,8 +58,8 @@ const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count,
 
                 :
                 <>
-                    <p style={{color: '#aaa', fontSize: '1rem', margin: '0 auto 0 1rem'}}>x{count}</p>
-                    <p style={{fontSize: '1rem'}}>{price * count}₴</p>
+                    <p className={styles.orderQuantity}>x{count}</p>
+                    <p className={styles.orderPrice}>{formatPrice(price * count)}</p>
                 </>
 
             }

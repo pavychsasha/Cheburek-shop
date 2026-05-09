@@ -4,6 +4,7 @@ import authSlice from "./slices/authSlice.ts";
 import cartSLice from "./slices/cartSLice.ts";
 import itemsSLice from "./slices/itemsSlice.ts";
 import langSlice from "./slices/langSlice.ts";
+import settingsSlice from "./slices/settingsSlice.ts";
 
 export const store = configureStore({
     reducer: {
@@ -11,7 +12,8 @@ export const store = configureStore({
         auth: authSlice,
         cart: cartSLice,
         items: itemsSLice,
-        lang: langSlice
+        lang: langSlice,
+        settings: settingsSlice
     },
 })
 

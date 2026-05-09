@@ -4,6 +4,7 @@ import {addItemToBackend, subtractItemFromBackend} from "../../../redux/slices/c
 import React from "react";
 import {useTranslation} from "react-i18next";
 import {useAppDispatch, useAppSelector} from "../../../redux/hooks.ts";
+import {useCurrencyFormatter} from "../../../hooks/useCurrencyFormatter.ts";
 
 interface ICardProps {
     product_id: string;
@@ -19,6 +20,7 @@ const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
     const dispatch = useAppDispatch();
 
     const [t] = useTranslation('global');
+    const formatPrice = useCurrencyFormatter();
 
     const itemCount = cartItem ? cartItem.count : 0;
 
@@ -44,7 +46,7 @@ const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
                      alt={name}/>
                 <h3>{name}</h3>
                 <div className={styles.bottom}>
-                    <p>{t('card.price')}: {price}₴</p>
+                    <p>{t('card.price')}: {formatPrice(price)}</p>
                     {itemCount === 0 ? (
                         <button className={styles.button} type="button" onClick={handleClickPlus}>
                             {t('card.button')}

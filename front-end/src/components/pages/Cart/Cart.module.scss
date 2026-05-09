@@ -16,8 +16,9 @@
 
     h2 {
       margin: 0;
-      font-size: clamp(28px, 5vw, 40px);
+      font-size: 36px;
       line-height: 1.1;
+      overflow-wrap: anywhere;
     }
 
     .cart__heading {
@@ -79,7 +80,9 @@
       font-weight: 500;
 
       p {
+        min-width: 0;
         margin: 0;
+        overflow-wrap: anywhere;
 
         span {
           font-weight: 700;
@@ -138,6 +141,10 @@
       align-items: stretch;
       flex-direction: column;
       gap: 14px;
+    }
+
+    .top h2 {
+      font-size: 30px;
     }
 
     .bottom .buttons button,

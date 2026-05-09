@@ -7,6 +7,7 @@ import CartItem from "../../common/CartItem/CartItem.tsx";
 import Button from "../../common/Button/Button.tsx";
 import {apiClient, getAuthHeaders} from "../../../api/api.ts";
 import {useAppSelector} from "../../../redux/hooks.ts";
+import {useCurrencyFormatter} from "../../../hooks/useCurrencyFormatter.ts";
 
 // Define the type for the order form
 interface IFormOrder {
@@ -33,6 +34,7 @@ const Order = () => {
 
     const navigate = useNavigate();
     const [t] = useTranslation('global');
+    const formatPrice = useCurrencyFormatter();
 
     const onSubmit: SubmitHandler<IFormOrder> = async (data) => {
 
@@ -165,16 +167,16 @@ const Order = () => {
                 <div className={styles.subtotal}>
                     <div className={styles.price}>
                         <p>{t('order.subtotal.items')}:</p>
-                        <span>{totalPrice}₴</span>
+                        <span>{formatPrice(totalPrice)}</span>
                     </div>
                     <div className={styles.price}>
                         <p>{t('order.subtotal.shipping')}:</p>
-                        <span>35₴</span>
+                        <span>{formatPrice(35)}</span>
                     </div>
                 </div>
                 <div className={styles.total}>
                     <h2>{t('order.total')}: </h2>
-                    <span>{totalPrice + 35}₴</span>
+                    <span>{formatPrice(totalPrice + 35)}</span>
                 </div>
             </aside>
         </div>

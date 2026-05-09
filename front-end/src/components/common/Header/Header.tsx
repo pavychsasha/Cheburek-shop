@@ -7,16 +7,19 @@ import {setSearchValue} from "../../../redux/slices/filterSlice.ts";
 import {FaUserCircle} from "react-icons/fa";
 import {useTranslation} from "react-i18next";
 import LangSelector from "../LangSelector/LangSelector.tsx";
+import CurrencySelector from "../CurrencySelector/CurrencySelector.tsx";
 import {RiLogoutCircleRFill} from "react-icons/ri";
 import {setIsAuth} from "../../../redux/slices/authSlice.ts";
 import {apiClient, getAuthHeaders} from "../../../api/api.ts";
 import {useAppDispatch, useAppSelector} from "../../../redux/hooks.ts";
+import {useCurrencyFormatter} from "../../../hooks/useCurrencyFormatter.ts";
 
 
 const Header = () => {
     const isAuthorized = useAppSelector((state) => state.auth.isAuthorized)
     const searchValue = useAppSelector((state) => state.filter.searchValue);
     const {total_price, total_count} = useAppSelector((state) => state.cart)
+    const formatPrice = useCurrencyFormatter();
 
     const dispatch = useAppDispatch();
 
@@ -55,6 +58,7 @@ const Header = () => {
             />}
             <div className={styles.left}>
                 <LangSelector/>
+                <CurrencySelector/>
                 {
                     isAuthorized
                         ?
@@ -69,7 +73,7 @@ const Header = () => {
 
                 <div className={styles.btn}>
                     <NavLink className={styles.link} to="/cart">
-                        <span>{total_price} ₴</span>
+                        <span className={styles.cartPrice}>{formatPrice(total_price)}</span>
                         <span className={styles.delim}>|</span>
                         <span>{total_count}</span>
                         <CiShoppingCart/>

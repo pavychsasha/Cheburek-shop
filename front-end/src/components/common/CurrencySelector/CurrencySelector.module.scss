@@ -1,0 +1,31 @@
+.selector {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+
+  span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  select {
+    min-height: 40px;
+    max-width: 86px;
+    padding: 8px 26px 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-panel);
+    color: var(--color-ink);
+    font-weight: 800;
+    cursor: pointer;
+
+    &:focus-visible {
+      border-color: var(--color-primary);
+      outline: 3px solid rgba(200, 79, 63, 0.16);
+    }
+  }
+}

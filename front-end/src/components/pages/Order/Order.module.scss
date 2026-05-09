@@ -5,6 +5,7 @@ $border-order: 1px solid rgba(143, 143, 143, 0.2);
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
   gap: 28px;
   align-items: start;
+  min-width: 0;
 
   .container {
     width: 100%;
@@ -24,6 +25,7 @@ $border-order: 1px solid rgba(143, 143, 143, 0.2);
   }
 
   aside {
+    min-width: 0;
     padding: 24px;
     background: var(--color-panel);
     border: 1px solid var(--color-border);
@@ -43,7 +45,14 @@ $border-order: 1px solid rgba(143, 143, 143, 0.2);
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
+        gap: 12px;
         border-top: $border-order;
+
+        p,
+        span {
+          min-width: 0;
+          overflow-wrap: anywhere;
+        }
       }
 
       .price:last-child {
@@ -56,15 +65,19 @@ $border-order: 1px solid rgba(143, 143, 143, 0.2);
       align-items: center;
       justify-content: space-between;
       margin: 1.5rem 0 0;
+      gap: 12px;
 
       h2 {
+        min-width: 0;
         margin: 0;
         color: var(--color-primary);
       }
       span {
+        min-width: 0;
         color: var(--color-primary);
         font-size: 1.5rem;
         font-weight: bold;
+        overflow-wrap: anywhere;
       }
     }
 
@@ -76,5 +89,18 @@ $border-order: 1px solid rgba(143, 143, 143, 0.2);
 
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
+  }
+
+  @media (max-width: 560px) {
+    .container .order__box,
+    aside {
+      padding: 18px;
+    }
+
+    aside .total,
+    aside .subtotal .price {
+      align-items: flex-start;
+      flex-direction: column;
+    }
   }
 }
