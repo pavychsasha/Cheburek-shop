@@ -27,6 +27,7 @@ from app.core.schemas.orders import (
     OrderResponse,
     OrderProductResponseModel,
     OrderAddressInfo,
+    OrderStatus,
 )
 
 
@@ -124,6 +125,7 @@ class OrderService:
             )
             order_response.append(
                 OrderResponseModel(
+                    order_id=order.order_id,
                     created_at=order.created_at,
                     user_id=order.user_id,
                     status=order.status,
@@ -332,6 +334,22 @@ class OrderService:
         stmt = delete(Order).filter(Order.order_id == order_id)
         await session.execute(stmt)
         await session.commit()
+
+    @classmethod
+    async def update_order_status(
+        cls,
+        session: AsyncSession,
+        order_id: uuid.UUID,
+        status: OrderStatus,
+    ) -> Order:
+        order = await cls.get_order(session=session, order_id=order_id)
+        if order is None:
+            raise ValueError("Order not found")
+        order.status = status
+        session.add(order)
+        await session.commit()
+        await session.refresh(order)
+        return order
 
     @classmethod
     async def delete_all_products(cls, session: AsyncSession):

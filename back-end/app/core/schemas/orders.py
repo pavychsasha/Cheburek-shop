@@ -1,9 +1,18 @@
-from typing import Optional, List, Annotated
+from typing import Literal, Optional, List, Annotated
 from datetime import datetime
 import uuid
-from pydantic import BaseModel, Field, ConfigDict, EmailStr, ValidationError
+from pydantic import BaseModel, ConfigDict, EmailStr, ValidationError
 
 from fastapi import Query, HTTPException
+
+OrderStatus = Literal[
+    "PENDING",
+    "CONFIRMED",
+    "PREPARING",
+    "READY",
+    "DELIVERED",
+    "CANCELLED",
+]
 
 
 # Country model
@@ -104,9 +113,10 @@ class OrderProductResponseModel(BaseModel):
 
 
 class OrderResponseModel(BaseModel):
+    order_id: uuid.UUID
     created_at: datetime
     user_id: Optional[uuid.UUID] = None
-    status: str
+    status: OrderStatus | str
     email: EmailStr
     # TODO: SAVE PRODUCTS NAME, ORDERS TOTAL PRICE AND COUNT IN CASE PRODUCT HAS BEEN DELETED
     total_price: Optional[float] = None
@@ -122,6 +132,15 @@ class OrderResponse(BaseModel):
 
 class ContactData(BaseModel):
     email: EmailStr
+
+
+class OrderStatusUpdate(BaseModel):
+    status: OrderStatus
+
+
+class OrderStatusResponse(BaseModel):
+    order_id: uuid.UUID
+    status: OrderStatus
 
 
 # Utility function for handling address parameters in API routes
@@ -146,7 +165,7 @@ async def order_address_params(
 
 
 async def contact_data_params(
-    email: Annotated[str, Query(max_length=150)]
+    email: Annotated[str, Query(max_length=150)],
 ) -> ContactData:
     # Validate the email within the ContactData model
     try:

@@ -21,7 +21,6 @@ from app.core.schemas.products import (
     pagination_params,
     ProductPaginatedResponse,
 )
-from ..cart.services import CartService
 
 router = APIRouter(tags=["Products"])
 
@@ -166,5 +165,7 @@ async def delete_products(
 
 
 @router.post("/invalidate_all_cache")
-async def invalidate_all_cache():
+async def invalidate_all_cache(
+    superuser: Annotated[User, Security(current_active_superuser)],
+):
     await redis_db_helper.cache.remove_all_cache_keys()

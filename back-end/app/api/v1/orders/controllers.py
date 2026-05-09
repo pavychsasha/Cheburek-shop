@@ -1,7 +1,7 @@
 from typing import Annotated
 import uuid
 
-from fastapi import APIRouter, status, Depends, Security, Form
+from fastapi import APIRouter, HTTPException, status, Depends, Security
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies.session import current_language
@@ -13,12 +13,13 @@ from app.core.dependencies.authentication.fastapi_users_dependency import (
 )
 
 from app.core.schemas.orders import (
-    OrderModel,
     order_address_params,
     OrderAddressInfo,
     ContactData,
     contact_data_params,
     OrderResponseModel,
+    OrderStatusResponse,
+    OrderStatusUpdate,
 )
 from .services import OrderService
 
@@ -75,3 +76,28 @@ async def delete_order(
     superuser: Annotated[AsyncSession, Security(current_active_superuser)],
 ):
     return await OrderService.delete_order(session=session, order_id=order_id)
+
+
+@router.patch(
+    "/{order_id}/status",
+    response_model=OrderStatusResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_order_status(
+    order_id: uuid.UUID,
+    status_update: OrderStatusUpdate,
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    superuser: Annotated[AsyncSession, Security(current_active_superuser)],
+):
+    try:
+        order = await OrderService.update_order_status(
+            session=session,
+            order_id=order_id,
+            status=status_update.status,
+        )
+        return OrderStatusResponse(order_id=order.order_id, status=order.status)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc

@@ -13,6 +13,7 @@ class RunConfig(BaseModel):
 class CorsConfig(BaseModel):
     allowed_origins: str = (
         "http://app.local.cheburek-shop.com:5178,"
+        "http://admin.local.cheburek-shop.com:5178,"
         "http://localhost:5178,"
         "http://127.0.0.1:5178"
     )
@@ -33,6 +34,7 @@ class ApiV1Prefix(BaseModel):
     products: str = "/products"
     cart: str = "/cart"
     orders: str = "/orders"
+    admin: str = "/admin"
     languages: str = "/languages"
 
 
