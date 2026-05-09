@@ -32,8 +32,11 @@ Important variables:
 - `APP_CONFIG__ACCESS_TOKEN__RESET_PASSWORD_TOKEN_SECRET`: reset-token secret
 - `APP_CONFIG__ACCESS_TOKEN__VERIFICATION_TOKEN_SECRET`: verification-token secret
 - `APP_CONFIG__SESSION__SECRET_KEY`: session middleware secret
+- `ADMIN_EMAIL`: generated local admin email for bootstrap
+- `ADMIN_PASSWORD`: generated local admin password for bootstrap
 
 `back-end/.env` is local-only and ignored by Git. Keep real local values out of commits.
+Do not print, screenshot, or commit generated admin values.
 
 ## Commands
 
@@ -54,6 +57,28 @@ Run migrations:
 ```bash
 poetry run alembic upgrade head
 ```
+
+With Docker Compose, use the root migration helper so catalog seeding is included:
+
+```bash
+../scripts/migrate.sh
+```
+
+Seed products without deleting unrelated data:
+
+```bash
+docker compose run --rm fastapi python -m app.actions.seed_products
+```
+
+Known seed products are matched by English product name. The seed creates missing products, updates known seed fields and translations, and leaves unrelated catalog records, carts, and orders untouched. Use `--reset` only for an explicit local seed-product reset.
+
+Bootstrap or refresh the generated local admin user:
+
+```bash
+docker compose run --rm fastapi python -m app.actions.create_super_user
+```
+
+The bootstrap command reads admin credentials from ignored local env files and does not print the password.
 
 Verify:
 
@@ -91,6 +116,8 @@ Default API URLs:
 - `http://localhost:8091/health`
 - `http://localhost:8091/api/v1`
 
+Admin endpoints are under `/api/v1/admin` and require an active superuser token. Product, order, and user management endpoints also rely on backend superuser checks.
+
 ## Troubleshooting
 
 - Settings validation fails: run root `./setup.sh` to generate local env files.
@@ -99,6 +126,9 @@ Default API URLs:
 - Browser CORS errors: make sure the frontend origin is listed in `APP_CONFIG__CORS__ALLOWED_ORIGINS`.
 - Local-domain URLs do not resolve: add the hosts entry printed by root `./setup.sh`.
 - After rotating local secrets, reset local volumes if database authentication no longer works.
+- Admin login fails after rotating local secrets: rerun the admin bootstrap command so the database user matches the generated env values.
+- Product seed creates duplicates: confirm seed products still have unique English names before running the seed.
+- Admin status updates fail with validation errors: use one of `PENDING`, `CONFIRMED`, `PREPARING`, `READY`, `DELIVERED`, or `CANCELLED`.
 
 ## Dependency And Security Notes
 
