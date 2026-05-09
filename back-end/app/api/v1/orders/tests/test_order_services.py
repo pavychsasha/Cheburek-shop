@@ -1,10 +1,7 @@
 import pytest
-import uuid
 from app.api.v1.orders.services import OrderService
-from app.api.v1.products.services import ProductsService
-from app.core.models import Product, Cart, CartItem
+from app.core.models import Cart, CartItem
 from app.core.schemas.orders import ContactData, OrderAddressInfo
-from app.core.schemas.cart import CartOrder, CartItemModel
 
 
 class TestOrderService:
@@ -40,7 +37,7 @@ class TestOrderService:
         ]
         cart = Cart(
             items=cart_items,
-            total_count=sum(item.count for item in cart_items),
+            total_count=sum(item.quantity for item in cart_items),
             total_price=sum(item.total_price for item in cart_items),
         )
 

@@ -96,7 +96,9 @@ class ProductsService:
         cls, session: AsyncSession, per_page: int, stmt=None
     ) -> int:
         if stmt is not None:
-            count_products_stmt = select(func.count()).select_from(stmt)
+            count_products_stmt = select(func.count()).select_from(
+                stmt.order_by(None).subquery()
+            )
         else:
             count_products_stmt = select(func.count()).select_from(Product)
 

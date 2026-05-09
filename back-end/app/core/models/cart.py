@@ -1,13 +1,15 @@
-from typing import Annotated, List, Optional
+from typing import List, Optional
 import uuid
-from pydantic import Field
-from beanie import BackLink, Document, Link
+from pydantic import ConfigDict, Field
+from beanie import Document, Link
 
 
 class CartItem(Document):
+    model_config = ConfigDict(populate_by_name=True)
+
     product_id: uuid.UUID
     price: float = Field(..., ge=0)
-    count: int = Field(..., ge=0)
+    quantity: int = Field(..., ge=0, alias="count")
     total_price: float = Field(..., ge=0)
 
     class Settings:

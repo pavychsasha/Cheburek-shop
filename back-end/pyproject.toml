@@ -45,3 +45,9 @@ line-length = 88
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 addopts = "--cov=. --cov-report=term-missing"
+filterwarnings = [
+    # Beanie 1.30 pins lazy-model 0.2.0, which emits this Pydantic 2.11
+    # deprecation during linked-document parsing. Keep this scoped until the
+    # project is ready for a Beanie 2.x migration.
+    "ignore:Accessing the 'model_fields' attribute on the instance is deprecated.*:pydantic.warnings.PydanticDeprecatedSince211:lazy_model.parser.new",
+]

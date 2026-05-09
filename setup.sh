@@ -186,6 +186,7 @@ copy_example "back-end/.env.example" "back-end/.env"
 
 ensure_value ".env" "FRONTEND_PORT" "5178"
 ensure_value ".env" "BACKEND_PORT" "8091"
+ensure_value ".env" "LOCAL_HTTP_PORT" "80"
 ensure_value ".env" "POSTGRES_PORT" "55432"
 ensure_value ".env" "MONGO_PORT" "27018"
 ensure_value ".env" "REDIS_PORT" "6380"
@@ -207,6 +208,7 @@ ensure_secret ".env" "ADMIN_PASSWORD"
 
 FRONTEND_PORT="$(read_env_value ".env" "FRONTEND_PORT")"
 BACKEND_PORT="$(read_env_value ".env" "BACKEND_PORT")"
+LOCAL_HTTP_PORT="$(read_env_value ".env" "LOCAL_HTTP_PORT")"
 POSTGRES_PORT="$(read_env_value ".env" "POSTGRES_PORT")"
 MONGO_PORT="$(read_env_value ".env" "MONGO_PORT")"
 REDIS_PORT="$(read_env_value ".env" "REDIS_PORT")"
@@ -227,13 +229,21 @@ if [[ -z "$ADMIN_EMAIL" || "$ADMIN_EMAIL" == "generated-by-setup" ]]; then
 fi
 ADMIN_PASSWORD="$(read_env_value ".env" "ADMIN_PASSWORD")"
 
-LOCAL_API_BASE_URL="http://${LOCAL_BACKEND_DOMAIN}:${BACKEND_PORT}/api/v1"
-LOCAL_FRONTEND_ORIGIN="http://${LOCAL_FRONTEND_DOMAIN}:${FRONTEND_PORT}"
-LOCAL_ADMIN_ORIGIN="http://${LOCAL_ADMIN_DOMAIN}:${FRONTEND_PORT}"
-LOCAL_CORS_ORIGINS="${LOCAL_FRONTEND_ORIGIN},${LOCAL_ADMIN_ORIGIN},http://localhost:${FRONTEND_PORT},http://127.0.0.1:${FRONTEND_PORT},http://react:${FRONTEND_PORT}"
+LOCAL_HTTP_PORT_SUFFIX=""
+if [[ "$LOCAL_HTTP_PORT" != "80" ]]; then
+  LOCAL_HTTP_PORT_SUFFIX=":${LOCAL_HTTP_PORT}"
+fi
+
+LOCAL_API_BASE_URL="http://${LOCAL_BACKEND_DOMAIN}${LOCAL_HTTP_PORT_SUFFIX}/api/v1"
+LOCAL_FRONTEND_ORIGIN="http://${LOCAL_FRONTEND_DOMAIN}${LOCAL_HTTP_PORT_SUFFIX}"
+LOCAL_ADMIN_ORIGIN="http://${LOCAL_ADMIN_DOMAIN}${LOCAL_HTTP_PORT_SUFFIX}"
+LOCAL_DIRECT_FRONTEND_ORIGIN="http://${LOCAL_FRONTEND_DOMAIN}:${FRONTEND_PORT}"
+LOCAL_DIRECT_ADMIN_ORIGIN="http://${LOCAL_ADMIN_DOMAIN}:${FRONTEND_PORT}"
+LOCAL_CORS_ORIGINS="${LOCAL_FRONTEND_ORIGIN},${LOCAL_ADMIN_ORIGIN},${LOCAL_DIRECT_FRONTEND_ORIGIN},${LOCAL_DIRECT_ADMIN_ORIGIN},http://localhost:${FRONTEND_PORT},http://127.0.0.1:${FRONTEND_PORT},http://react:${FRONTEND_PORT}"
 LOCAL_ALLOWED_HOSTS="${LOCAL_FRONTEND_DOMAIN},${LOCAL_ADMIN_DOMAIN},localhost,127.0.0.1"
 
 replace_value_if_matches ".env" "VITE_API_BASE_URL" "http://localhost:8091/api/v1" "$LOCAL_API_BASE_URL"
+replace_value_if_matches ".env" "VITE_API_BASE_URL" "http://${LOCAL_BACKEND_DOMAIN}:${BACKEND_PORT}/api/v1" "$LOCAL_API_BASE_URL"
 append_csv_value_if_missing ".env" "CORS_ALLOWED_ORIGINS" "$LOCAL_FRONTEND_ORIGIN" "$LOCAL_CORS_ORIGINS"
 append_csv_value_if_missing ".env" "CORS_ALLOWED_ORIGINS" "$LOCAL_ADMIN_ORIGIN" "$LOCAL_CORS_ORIGINS"
 write_env_value ".env" "VITE_DEV_ALLOWED_HOSTS" "$LOCAL_ALLOWED_HOSTS"

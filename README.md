@@ -15,10 +15,10 @@ Preferred local-domain URLs:
 
 | Service | Default URL |
 | --- | --- |
-| Frontend | `http://app.local.cheburek-shop.com:5178` |
-| Admin portal | `http://admin.local.cheburek-shop.com:5178` |
-| Backend API | `http://api.local.cheburek-shop.com:8091/api/v1` |
-| Backend health | `http://api.local.cheburek-shop.com:8091/health` |
+| Frontend | `http://app.local.cheburek-shop.com` |
+| Admin portal | `http://admin.local.cheburek-shop.com` |
+| Backend API | `http://api.local.cheburek-shop.com/api/v1` |
+| Backend health | `http://api.local.cheburek-shop.com/health` |
 
 Localhost fallback URLs:
 
@@ -27,11 +27,12 @@ Localhost fallback URLs:
 | Frontend | `http://localhost:5178` |
 | Backend API | `http://localhost:8091/api/v1` |
 | Backend health | `http://localhost:8091/health` |
+| Local HTTP proxy | `80` |
 | PostgreSQL host port | `55432` |
 | MongoDB host port | `27018` |
 | Redis host port | `6380` |
 
-Ports are intentionally offset from common defaults. Override them in `.env` if needed.
+The friendly local-domain URLs are served through the local proxy on `LOCAL_HTTP_PORT=80`, so they do not need explicit ports. Direct service ports are intentionally offset from common defaults. Override them in `.env` if needed.
 
 ## Quick Start
 
@@ -103,6 +104,7 @@ Important root `.env` values:
 - `LOCAL_FRONTEND_DOMAIN`: local frontend hostname
 - `LOCAL_BACKEND_DOMAIN`: local API hostname
 - `LOCAL_ADMIN_DOMAIN`: local admin hostname
+- `LOCAL_HTTP_PORT`: local proxy HTTP port; use `80` for no-port URLs
 - `FRONTEND_PORT`: frontend dev server port
 - `BACKEND_PORT`: backend API port
 - `POSTGRES_PORT`: host PostgreSQL port
@@ -163,7 +165,7 @@ Backend through Docker Compose:
 ```bash
 docker compose build fastapi
 docker compose up -d postgres mongo redis fastapi
-curl http://api.local.cheburek-shop.com:8091/health
+curl http://localhost:8091/health
 ```
 
 Admin and seed helpers:
@@ -178,7 +180,7 @@ docker compose run --rm fastapi python -m app.actions.create_super_user
 - Compose reports a missing secret: run `./setup.sh` before starting services.
 - Local-domain URLs do not resolve: add the hosts entry shown by `./setup.sh`, then retry.
 - Admin portal does not open: confirm `admin.local.cheburek-shop.com` is in `/etc/hosts` and `VITE_DEV_ALLOWED_HOSTS`.
-- Port already in use: update `.env`, `front-end/.env`, and `back-end/.env` so ports, `VITE_API_BASE_URL`, and `CORS_ALLOWED_ORIGINS` stay aligned.
+- Port already in use: update `.env`, `front-end/.env`, and `back-end/.env` so ports, `VITE_API_BASE_URL`, and `CORS_ALLOWED_ORIGINS` stay aligned. If host port `80` is busy, set `LOCAL_HTTP_PORT` to another value and include that port in local-domain URLs.
 - Frontend cannot reach the API: confirm `VITE_API_BASE_URL` points to the backend URL visible from the browser.
 - Storefront works on localhost but local domains fail: rerun `./setup.sh` in a terminal and accept or manually add the printed hosts entry.
 - CORS errors: add the frontend origin to `CORS_ALLOWED_ORIGINS`.

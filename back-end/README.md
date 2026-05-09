@@ -91,7 +91,7 @@ poetry run pip-audit
 Health check:
 
 ```bash
-curl http://api.local.cheburek-shop.com:8091/health
+curl http://api.local.cheburek-shop.com/health
 ```
 
 Localhost fallback:
@@ -109,10 +109,12 @@ docker compose up -d postgres mongo redis fastapi
 docker compose run --rm fastapi alembic upgrade head
 ```
 
+Use root `./start.sh` when you want the no-port local-domain proxy as well.
+
 Default API URLs:
 
-- `http://api.local.cheburek-shop.com:8091/health`
-- `http://api.local.cheburek-shop.com:8091/api/v1`
+- `http://api.local.cheburek-shop.com/health`
+- `http://api.local.cheburek-shop.com/api/v1`
 - `http://localhost:8091/health`
 - `http://localhost:8091/api/v1`
 

@@ -40,7 +40,7 @@ class CartService:
     @classmethod
     async def _calculate_cart_totals(cls, cart: Cart):
         """Calculate total count and price for the cart."""
-        cart.total_count = sum(item.count for item in cart.items)
+        cart.total_count = sum(item.quantity for item in cart.items)
         cart.total_price = sum(item.total_price for item in cart.items)
         await cart.save(link_rule=WriteRules.WRITE)
 
@@ -56,7 +56,7 @@ class CartService:
         for session_item in session_cart.items:
             if session_item.product_id in items_map:
                 existing_item = items_map[session_item.product_id]
-                existing_item.count += session_item.count
+                existing_item.quantity += session_item.quantity
                 existing_item.total_price += session_item.total_price
             else:
                 user_cart.items.append(session_item)
@@ -64,7 +64,7 @@ class CartService:
         await cls._calculate_cart_totals(user_cart)
 
         await session_cart.delete(link_rule=DeleteRules.DELETE_LINKS)
-        logging.info(f"Cart merged successfully.")
+        logging.info("Cart merged successfully.")
         return user_cart
 
     @classmethod
@@ -165,7 +165,7 @@ class CartService:
                         name=localized_product.name,
                         image_src=localized_product.image_src,
                         price=cart_item.price,
-                        count=cart_item.count,
+                        count=cart_item.quantity,
                         total_price=cart_item.total_price,
                     )
                 )
@@ -208,7 +208,7 @@ class CartService:
         existing_product_in_cart = await cls.find_product_in_cart(cart, cart_product_id)
 
         new_cart_item_count = (
-            cart_item_model.count + existing_product_in_cart.count
+            cart_item_model.count + existing_product_in_cart.quantity
             if existing_product_in_cart
             else cart_item_model.count
         )
@@ -218,7 +218,7 @@ class CartService:
         )
 
         if existing_product_in_cart:
-            existing_product_in_cart.count += cart_item_model.count
+            existing_product_in_cart.quantity += cart_item_model.count
             existing_product_in_cart.total_price += (
                 cart_item_model.count * existing_product_in_cart.price
             )
@@ -233,7 +233,7 @@ class CartService:
             cart.items.append(new_item)  # type: ignore
 
         # Update the cart's total count and total price
-        cart.total_count = sum(item.count for item in cart.items)  # type: ignore
+        cart.total_count = sum(item.quantity for item in cart.items)  # type: ignore
         cart.total_price = sum(item.total_price for item in cart.items)  # type: ignore
 
         await cart.save(link_rule=WriteRules.WRITE)
@@ -249,14 +249,14 @@ class CartService:
             product_id=subtract_product.product_id,
         )
         if product:
-            if product.count <= subtract_product.count:
+            if product.quantity <= subtract_product.count:
                 return await cls.delete_product_from_cart(
                     cart, subtract_product.product_id
                 )
             subtract_count: int = subtract_product.count
             subtract_price: float = subtract_count * product.price
 
-            product.count -= subtract_count
+            product.quantity -= subtract_count
             product.total_price -= subtract_price
             cart.total_count -= subtract_count
             cart.total_price -= subtract_price
@@ -274,7 +274,7 @@ class CartService:
             cart, product_id=product_id
         )
         if product:
-            cart.total_count -= product.count
+            cart.total_count -= product.quantity
             cart.total_price -= product.total_price
             await product.delete()
             await cart.save()
@@ -311,7 +311,8 @@ class CartService:
         Update CartItems and recalculate totals for carts containing updated products.
 
         Args:
-            products (list[ProductUpdate | ProductPartialUpdate]): List of product updates with product_id and new price.
+            products (list[ProductUpdate | ProductPartialUpdate]): Product updates
+                with product IDs and new prices.
         """
         affected_cart_items = list()
 
@@ -325,7 +326,7 @@ class CartService:
                 # Update each CartItem's price and total_price
                 for cart_item in cart_items_to_update:
                     cart_item.price = product.price
-                    cart_item.total_price = cart_item.count * product.price
+                    cart_item.total_price = cart_item.quantity * product.price
                     await cart_item.save(link_rule=WriteRules.WRITE)
                 carts_affected = await Cart.find(
                     {"items.product_id": {"$eq": product.product_id}}, fetch_links=True

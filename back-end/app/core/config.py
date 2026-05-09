@@ -12,6 +12,8 @@ class RunConfig(BaseModel):
 
 class CorsConfig(BaseModel):
     allowed_origins: str = (
+        "http://app.local.cheburek-shop.com,"
+        "http://admin.local.cheburek-shop.com,"
         "http://app.local.cheburek-shop.com:5178,"
         "http://admin.local.cheburek-shop.com:5178,"
         "http://localhost:5178,"

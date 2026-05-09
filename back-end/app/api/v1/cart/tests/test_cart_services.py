@@ -1,5 +1,4 @@
 import uuid
-from unittest import mock
 
 import pytest
 from unittest.mock import AsyncMock, patch
@@ -130,7 +129,7 @@ class TestCartService:
             # Assertions
             assert len(merged_cart.items) == 1
             item = merged_cart.items[0]
-            assert item.count == 5  # 2 + 3
+            assert item.quantity == 5  # 2 + 3
             assert item.total_price == 75.0  # 15.0 * 5
             assert merged_cart.total_count == 5
             assert merged_cart.total_price == 75.0
@@ -290,7 +289,7 @@ class TestCartService:
             await CartService.subtract_product_from_cart(cart, subtract_product)
 
             # Assertions
-            assert cart_item.count == 3
+            assert cart_item.quantity == 3
             assert cart_item.total_price == 45.0  # 15.0 * 3
             assert cart.total_count == 3
             assert cart.total_price == 45.0

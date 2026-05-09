@@ -214,7 +214,7 @@ class OrderService:
             )
             # We prevent this behaviour in CartService, so raising exception on the first possible case
             CartService.check_products_quantity(
-                product=product_in_database, cart_item_count=product.count
+                product=product_in_database, cart_item_count=product.quantity
             )
             localized_product = await ProductsService.localize_product(
                 product_in_database, "en"
@@ -223,7 +223,7 @@ class OrderService:
                 OrderProductAssociation(
                     order_id=order.order_id,
                     product_id=product.product_id,
-                    quantity=product.count,
+                    quantity=product.quantity,
                     name=localized_product.name,
                     price=product_in_database.price,
                     category=product_in_database.category,
@@ -234,8 +234,10 @@ class OrderService:
         session.add_all(association_list)
         await session.flush()
 
-        order.total_count = sum(product.count for product in products)
-        order.total_price = sum(product.price * product.count for product in products)
+        order.total_count = sum(product.quantity for product in products)
+        order.total_price = sum(
+            product.price * product.quantity for product in products
+        )
         session.add(order)
         await session.commit()
 

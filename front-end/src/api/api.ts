@@ -9,7 +9,9 @@ const defaultApiHost =
 const resolveApiBaseUrl = () => {
     const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
     if (!configuredApiBaseUrl) {
-        return `http://${defaultApiHost}:8091/api/v1`;
+        return defaultApiHost === "localhost"
+            ? "http://localhost:8091/api/v1"
+            : `http://${defaultApiHost}/api/v1`;
     }
 
     try {
@@ -19,6 +21,9 @@ const resolveApiBaseUrl = () => {
             window.location.hostname === "127.0.0.1";
         if (isLocalhostFallback && apiUrl.hostname === "api.local.cheburek-shop.com") {
             apiUrl.hostname = window.location.hostname;
+            if (!apiUrl.port) {
+                apiUrl.port = "8091";
+            }
         }
         return apiUrl.toString().replace(/\/$/, "");
     } catch {
