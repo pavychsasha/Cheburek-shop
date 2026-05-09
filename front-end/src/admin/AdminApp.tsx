@@ -1,4 +1,18 @@
 import {FormEvent, ReactNode, useCallback, useEffect, useMemo, useState} from "react";
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from "recharts";
 
 import {
     ADMIN_TOKEN_KEY,
@@ -8,29 +22,38 @@ import {
     deleteOrder,
     deleteProduct,
     deleteUser,
+    fetchAdminAnalytics,
     fetchAdminMe,
     fetchAdminSummary,
     fetchOrders,
     fetchProduct,
     fetchProducts,
+    fetchPublicSettings as fetchAdminPublicSettings,
     fetchUsers,
     getAdminErrorMessage,
     loginAdmin,
     seedProducts,
+    updateCurrencySettings,
     updateOrderStatus,
     updateProduct,
     updateUserFlags,
+    uploadProductImage,
 } from "./api.ts";
 import styles from "./AdminApp.module.scss";
 import type {
+    AdminAnalytics,
     AdminOrder,
     AdminProduct,
     AdminSummary,
     AdminUser,
     AdminView,
+    CurrencySettingsUpdate,
     OrderStatus,
     ProductFormState,
 } from "./types.ts";
+import {useCurrencyFormatter} from "../hooks/useCurrencyFormatter.ts";
+import {useAppDispatch, useAppSelector} from "../redux/hooks.ts";
+import {fetchPublicSettings as refreshPublicSettings} from "../redux/slices/settingsSlice.ts";
 
 const ORDER_STATUSES: OrderStatus[] = [
     "PENDING",
@@ -72,10 +95,7 @@ const productToForm = (product: AdminProduct): ProductFormState => {
     };
 };
 
-const currency = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "UAH",
-});
+const CHART_COLORS = ["#2f6f5e", "#c84f3f", "#f2ad4b", "#6b7280", "#5f6fb2", "#9a6438"];
 
 const AdminApp = () => {
     const [authState, setAuthState] = useState<"loading" | "login" | "ready" | "forbidden">(
@@ -149,7 +169,7 @@ const AdminApp = () => {
                     <h1>Cheburek Shop</h1>
                 </div>
                 <nav className={styles.nav}>
-                    {(["dashboard", "products", "orders", "users"] as AdminView[]).map((view) => (
+                    {(["dashboard", "products", "orders", "users", "settings"] as AdminView[]).map((view) => (
                         <button
                             key={view}
                             type="button"
@@ -173,6 +193,7 @@ const AdminApp = () => {
                 {activeView === "products" && <ProductsPanel />}
                 {activeView === "orders" && <OrdersPanel />}
                 {activeView === "users" && currentUser && <UsersPanel currentUser={currentUser} />}
+                {activeView === "settings" && <SettingsPanel />}
             </section>
         </main>
     );
@@ -258,14 +279,21 @@ const AdminLogin = ({onLogin}: {onLogin: (user: AdminUser) => void}) => {
 
 const DashboardPanel = () => {
     const [summary, setSummary] = useState<AdminSummary | null>(null);
+    const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const formatPrice = useCurrencyFormatter();
 
     const loadSummary = useCallback(async () => {
         setIsLoading(true);
         setError("");
         try {
-            setSummary(await fetchAdminSummary());
+            const [nextSummary, nextAnalytics] = await Promise.all([
+                fetchAdminSummary(),
+                fetchAdminAnalytics(),
+            ]);
+            setSummary(nextSummary);
+            setAnalytics(nextAnalytics);
         } catch (requestError) {
             setError(getAdminErrorMessage(requestError, "Unable to load dashboard."));
         } finally {
@@ -300,19 +328,129 @@ const DashboardPanel = () => {
             />
             {isLoading && <InlineState>Loading dashboard.</InlineState>}
             {error && <InlineState tone="error">{error}</InlineState>}
-            {!isLoading && !error && (
-                <div className={styles.metricGrid}>
-                    {cards.map(([label, value]) => (
-                        <article key={label} className={styles.metric}>
-                            <span>{label}</span>
-                            <strong>{value}</strong>
-                        </article>
-                    ))}
-                </div>
+            {!isLoading && !error && analytics && (
+                <>
+                    <div className={styles.metricGrid}>
+                        {cards.map(([label, value]) => (
+                            <article key={label} className={styles.metric}>
+                                <span>{label}</span>
+                                <strong>{value}</strong>
+                            </article>
+                        ))}
+                    </div>
+                    <div className={styles.dashboardGrid}>
+                        <ChartPanel title="Revenue over time">
+                            <ResponsiveContainer width="100%" height={260}>
+                                <LineChart data={analytics.revenue_over_time}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e5ebe8" />
+                                    <XAxis dataKey="date" tick={{fontSize: 12}} />
+                                    <YAxis tick={{fontSize: 12}} />
+                                    <Tooltip formatter={(value) => formatPrice(Number(value))} />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="value"
+                                        stroke="#2f6f5e"
+                                        strokeWidth={3}
+                                        dot={false}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </ChartPanel>
+                        <ChartPanel title="Orders by day">
+                            <ResponsiveContainer width="100%" height={260}>
+                                <BarChart data={analytics.orders_over_time}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e5ebe8" />
+                                    <XAxis dataKey="date" tick={{fontSize: 12}} />
+                                    <YAxis allowDecimals={false} tick={{fontSize: 12}} />
+                                    <Tooltip />
+                                    <Bar dataKey="value" fill="#c84f3f" radius={[6, 6, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </ChartPanel>
+                        <ChartPanel title="Order status mix">
+                            {analytics.orders_by_status.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={260}>
+                                    <PieChart>
+                                        <Pie
+                                            data={analytics.orders_by_status}
+                                            dataKey="count"
+                                            nameKey="status"
+                                            outerRadius={88}
+                                            label
+                                        >
+                                            {analytics.orders_by_status.map((entry, index) => (
+                                                <Cell
+                                                    key={entry.status}
+                                                    fill={CHART_COLORS[index % CHART_COLORS.length]}
+                                                />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <InlineState>No orders yet.</InlineState>
+                            )}
+                        </ChartPanel>
+                        <ChartPanel title="Top products">
+                            {analytics.top_products.length > 0 ? (
+                                <div className={styles.compactList}>
+                                    {analytics.top_products.map((product) => (
+                                        <div key={product.name}>
+                                            <span>{product.name}</span>
+                                            <strong>
+                                                {product.quantity} sold - {formatPrice(product.revenue)}
+                                            </strong>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <InlineState>No product sales yet.</InlineState>
+                            )}
+                        </ChartPanel>
+                        <ChartPanel title="Low stock">
+                            {analytics.low_stock_products.length > 0 ? (
+                                <div className={styles.compactList}>
+                                    {analytics.low_stock_products.map((product) => (
+                                        <div key={product.product_id}>
+                                            <span>{product.name}</span>
+                                            <strong>{product.stock_quantity} left</strong>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <InlineState>Stock levels look healthy.</InlineState>
+                            )}
+                        </ChartPanel>
+                        <ChartPanel title="Recent orders">
+                            {analytics.recent_orders.length > 0 ? (
+                                <div className={styles.compactList}>
+                                    {analytics.recent_orders.map((order) => (
+                                        <div key={order.order_id}>
+                                            <span>{order.email}</span>
+                                            <strong>
+                                                {order.status} - {formatPrice(order.total_price)}
+                                            </strong>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <InlineState>No recent orders.</InlineState>
+                            )}
+                        </ChartPanel>
+                    </div>
+                </>
             )}
         </section>
     );
 };
+
+const ChartPanel = ({title, children}: {title: string; children: ReactNode}) => (
+    <article className={styles.chartPanel}>
+        <h3>{title}</h3>
+        {children}
+    </article>
+);
 
 interface PanelHeaderProps {
     title: string;
@@ -353,6 +491,8 @@ const ProductsPanel = () => {
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const formatPrice = useCurrencyFormatter();
 
     const loadProducts = useCallback(async () => {
         setIsLoading(true);
@@ -436,6 +576,23 @@ const ProductsPanel = () => {
             await loadProducts();
         } catch (requestError) {
             setError(getAdminErrorMessage(requestError, "Unable to seed products."));
+        }
+    };
+
+    const uploadImage = async (file: File | undefined) => {
+        if (!file) {
+            return;
+        }
+        setIsUploadingImage(true);
+        setError("");
+        try {
+            const media = await uploadProductImage(file);
+            setForm((currentForm) => ({...currentForm, image_src: media.url}));
+            setMessage("Product image uploaded.");
+        } catch (requestError) {
+            setError(getAdminErrorMessage(requestError, "Unable to upload image."));
+        } finally {
+            setIsUploadingImage(false);
         }
     };
 
@@ -539,9 +696,25 @@ const ProductsPanel = () => {
                                 required
                             />
                         </label>
+                        <label>
+                            Upload image
+                            <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                                onChange={(event) => void uploadImage(event.target.files?.[0])}
+                            />
+                        </label>
+                    </div>
+                    <div className={styles.mediaPreview}>
+                        {form.image_src ? (
+                            <img src={form.image_src} alt="Product preview" />
+                        ) : (
+                            <span>No image selected.</span>
+                        )}
+                        {isUploadingImage && <span>Uploading image.</span>}
                     </div>
                     <div className={styles.formActions}>
-                        <button type="submit" className={styles.primaryButton} disabled={isSaving}>
+                        <button type="submit" className={styles.primaryButton} disabled={isSaving || isUploadingImage}>
                             {isSaving ? "Saving" : editingProductId ? "Update product" : "Create product"}
                         </button>
                         {editingProductId && (
@@ -559,9 +732,12 @@ const ProductsPanel = () => {
                         <ResponsiveTable
                             headers={["Product", "Category", "Price", "Stock", "Actions"]}
                             rows={products.map((product) => [
-                                <strong>{product.name}</strong>,
+                                <div className={styles.productCell}>
+                                    <img src={product.image_src} alt="" />
+                                    <strong>{product.name}</strong>
+                                </div>,
                                 product.category,
-                                currency.format(product.price),
+                                formatPrice(product.price),
                                 product.stock_quantity,
                                 <div className={styles.rowActions}>
                                     <button type="button" onClick={() => void editProduct(product.product_id)}>
@@ -586,6 +762,7 @@ const OrdersPanel = () => {
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const formatPrice = useCurrencyFormatter();
 
     const selectedOrder = useMemo(
         () => orders.find((order) => order.order_id === selectedOrderId) || orders[0],
@@ -666,7 +843,7 @@ const OrdersPanel = () => {
                                     {order.email}
                                 </button>,
                                 order.status,
-                                currency.format(order.total_price || 0),
+                                formatPrice(order.total_price || 0),
                                 new Date(order.created_at).toLocaleString(),
                             ])}
                         />
@@ -716,7 +893,7 @@ const OrdersPanel = () => {
                                     <div key={`${selectedOrder.order_id}-${product.name}`} className={styles.orderItem}>
                                         <span>{product.name}</span>
                                         <span>
-                                            {product.quantity} x {currency.format(product.price)}
+                                            {product.quantity} x {formatPrice(product.price)}
                                         </span>
                                     </div>
                                 ))}
@@ -904,6 +1081,173 @@ const UsersPanel = ({currentUser}: {currentUser: AdminUser}) => {
                     )}
                 </div>
             </div>
+        </section>
+    );
+};
+
+const SettingsPanel = () => {
+    const dispatch = useAppDispatch();
+    const currentCurrency = useAppSelector((state) => state.settings.currency);
+    const [defaultCurrency, setDefaultCurrency] = useState(currentCurrency.default_currency);
+    const [supportedInput, setSupportedInput] = useState(
+        currentCurrency.supported_currencies.join(","),
+    );
+    const [rates, setRates] = useState<Record<string, string>>(
+        Object.fromEntries(
+            Object.entries(currentCurrency.currency_rates).map(([currencyCode, rate]) => [
+                currencyCode,
+                String(rate),
+            ]),
+        ),
+    );
+    const [symbols, setSymbols] = useState<Record<string, string>>(
+        currentCurrency.currency_symbols,
+    );
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
+    const supportedCurrencies = useMemo(
+        () =>
+            supportedInput
+                .split(",")
+                .map((currencyCode) => currencyCode.trim().toUpperCase())
+                .filter(Boolean),
+        [supportedInput],
+    );
+
+    const loadSettings = useCallback(async () => {
+        setError("");
+        try {
+            const settings = await fetchAdminPublicSettings();
+            setDefaultCurrency(settings.currency.default_currency);
+            setSupportedInput(settings.currency.supported_currencies.join(","));
+            setRates(
+                Object.fromEntries(
+                    Object.entries(settings.currency.currency_rates).map(
+                        ([currencyCode, rate]) => [currencyCode, String(rate)],
+                    ),
+                ),
+            );
+            setSymbols(settings.currency.currency_symbols);
+        } catch (requestError) {
+            setError(getAdminErrorMessage(requestError, "Unable to load settings."));
+        }
+    }, []);
+
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            void loadSettings();
+        }, 0);
+        return () => window.clearTimeout(timeoutId);
+    }, [loadSettings]);
+
+    const submitSettings = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setIsSaving(true);
+        setMessage("");
+        setError("");
+
+        const payload: CurrencySettingsUpdate = {
+            default_currency: defaultCurrency,
+            supported_currencies: supportedCurrencies,
+            currency_rates: Object.fromEntries(
+                supportedCurrencies.map((currencyCode) => [
+                    currencyCode,
+                    Number(rates[currencyCode] || 0),
+                ]),
+            ),
+            currency_symbols: Object.fromEntries(
+                supportedCurrencies.map((currencyCode) => [
+                    currencyCode,
+                    symbols[currencyCode] || currencyCode,
+                ]),
+            ),
+        };
+
+        try {
+            await updateCurrencySettings(payload);
+            await dispatch(refreshPublicSettings());
+            setMessage("Currency settings updated.");
+        } catch (requestError) {
+            setError(getAdminErrorMessage(requestError, "Unable to save settings."));
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <section>
+            <PanelHeader
+                title="Settings"
+                description="Manage display currency for the storefront and back office."
+                actionLabel="Reload"
+                onAction={() => void loadSettings()}
+            />
+            {message && <InlineState tone="success">{message}</InlineState>}
+            {error && <InlineState tone="error">{error}</InlineState>}
+            <form className={styles.settingsPanel} onSubmit={submitSettings}>
+                <div className={styles.formGrid}>
+                    <label>
+                        Base currency
+                        <input value={currentCurrency.base_currency} disabled />
+                    </label>
+                    <label>
+                        Default display currency
+                        <select
+                            value={defaultCurrency}
+                            onChange={(event) => setDefaultCurrency(event.target.value)}
+                        >
+                            {supportedCurrencies.map((currencyCode) => (
+                                <option key={currencyCode} value={currencyCode}>
+                                    {currencyCode}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                    <label>
+                        Supported currencies
+                        <input
+                            value={supportedInput}
+                            onChange={(event) => setSupportedInput(event.target.value)}
+                            placeholder="UAH,USD,EUR"
+                        />
+                    </label>
+                </div>
+                <div className={styles.currencyGrid}>
+                    {supportedCurrencies.map((currencyCode) => (
+                        <div key={currencyCode} className={styles.currencyRow}>
+                            <strong>{currencyCode}</strong>
+                            <label>
+                                Rate from UAH
+                                <input
+                                    type="number"
+                                    min="0.0001"
+                                    step="0.0001"
+                                    value={rates[currencyCode] ?? ""}
+                                    onChange={(event) =>
+                                        setRates({...rates, [currencyCode]: event.target.value})
+                                    }
+                                    required
+                                />
+                            </label>
+                            <label>
+                                Symbol
+                                <input
+                                    value={symbols[currencyCode] ?? ""}
+                                    onChange={(event) =>
+                                        setSymbols({...symbols, [currencyCode]: event.target.value})
+                                    }
+                                    required
+                                />
+                            </label>
+                        </div>
+                    ))}
+                </div>
+                <button type="submit" className={styles.primaryButton} disabled={isSaving}>
+                    {isSaving ? "Saving" : "Save settings"}
+                </button>
+            </form>
         </section>
     );
 };

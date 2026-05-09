@@ -117,6 +117,7 @@
 .workspace {
   min-width: 0;
   padding: 32px;
+  overflow-x: hidden;
 }
 
 .panelHeader {
@@ -130,11 +131,14 @@
     margin: 4px 0;
     font-size: 32px;
     line-height: 1.1;
+    overflow-wrap: anywhere;
   }
 
   p:last-child {
+    max-width: 680px;
     margin: 0;
     color: #65746f;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -160,6 +164,55 @@
   strong {
     font-size: 34px;
     line-height: 1;
+    overflow-wrap: anywhere;
+  }
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.chartPanel {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid #dbe3df;
+  border-radius: 8px;
+  background: #fff;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.25;
+  }
+}
+
+.compactList {
+  display: grid;
+  gap: 10px;
+
+  div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #edf1ef;
+  }
+
+  span,
+  strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  strong {
+    font-size: 13px;
+    color: #2f6f5e;
   }
 }
 
@@ -172,7 +225,8 @@
 
 .formPanel,
 .tablePanel,
-.detailPanel {
+.detailPanel,
+.settingsPanel {
   display: grid;
   gap: 16px;
   padding: 20px;
@@ -183,6 +237,7 @@
   h3 {
     margin: 0;
     font-size: 20px;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -215,6 +270,7 @@ input,
 select,
 textarea {
   width: 100%;
+  min-width: 0;
   min-height: 42px;
   padding: 10px 12px;
   border: 1px solid #cfd9d5;
@@ -226,6 +282,10 @@ textarea {
     border-color: #2f6f5e;
     outline: 3px solid rgba(47, 111, 94, 0.18);
   }
+}
+
+input[type="file"] {
+  padding: 8px;
 }
 
 textarea {
@@ -257,6 +317,7 @@ textarea {
   border-radius: 8px;
   font-weight: 800;
   cursor: pointer;
+  overflow-wrap: anywhere;
 
   &:disabled {
     cursor: not-allowed;
@@ -322,6 +383,7 @@ textarea {
 
 .tableScroller {
   overflow-x: auto;
+  max-width: 100%;
 }
 
 .table {
@@ -332,10 +394,12 @@ textarea {
 
   th,
   td {
+    max-width: 260px;
     padding: 12px 10px;
     border-bottom: 1px solid #edf1ef;
     text-align: left;
     vertical-align: middle;
+    overflow-wrap: anywhere;
   }
 
   th {
@@ -343,6 +407,73 @@ textarea {
     font-size: 12px;
     font-weight: 900;
     text-transform: uppercase;
+  }
+}
+
+.productCell {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+
+  img {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: #fff7ef;
+    object-fit: contain;
+  }
+
+  strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.mediaPreview {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px dashed #cfd9d5;
+  border-radius: 8px;
+  background: #f7f9f8;
+
+  img {
+    width: 88px;
+    height: 88px;
+    border-radius: 8px;
+    background: #fff;
+    object-fit: contain;
+  }
+
+  span {
+    min-width: 0;
+    color: #65746f;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+}
+
+.currencyGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.currencyRow {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  border: 1px solid #edf1ef;
+  border-radius: 8px;
+  background: #f7f9f8;
+
+  strong {
+    padding-bottom: 10px;
   }
 }
 
@@ -417,11 +548,15 @@ textarea {
   }
 
   .nav {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .metricGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboardGrid {
+    grid-template-columns: 1fr;
   }
 
   .splitGrid {
@@ -445,7 +580,8 @@ textarea {
 
   .nav,
   .metricGrid,
-  .formGrid {
+  .formGrid,
+  .currencyRow {
     grid-template-columns: 1fr;
   }
 

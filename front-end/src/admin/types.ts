@@ -1,4 +1,6 @@
-export type AdminView = "dashboard" | "products" | "orders" | "users";
+import type {CurrencySettings} from "../types/settings.ts";
+
+export type AdminView = "dashboard" | "products" | "orders" | "users" | "settings";
 
 export type OrderStatus =
     | "PENDING"
@@ -64,6 +66,58 @@ export interface ProductSeedResponse {
     reset: boolean;
     total_seed_products: number;
 }
+
+export interface StatusCount {
+    status: string;
+    count: number;
+}
+
+export interface TimeSeriesPoint {
+    date: string;
+    value: number;
+}
+
+export interface LowStockProduct {
+    product_id: string;
+    name: string;
+    stock_quantity: number;
+}
+
+export interface TopProduct {
+    name: string;
+    quantity: number;
+    revenue: number;
+}
+
+export interface RecentOrder {
+    order_id: string;
+    created_at: string;
+    status: string;
+    email: string;
+    total_price: number;
+    total_count: number;
+}
+
+export interface AdminAnalytics {
+    orders_by_status: StatusCount[];
+    orders_over_time: TimeSeriesPoint[];
+    revenue_over_time: TimeSeriesPoint[];
+    low_stock_products: LowStockProduct[];
+    top_products: TopProduct[];
+    recent_orders: RecentOrder[];
+}
+
+export interface MediaUploadResponse {
+    object_name: string;
+    url: string;
+    content_type: string;
+    size: number;
+}
+
+export type CurrencySettingsUpdate = Pick<
+    CurrencySettings,
+    "default_currency" | "supported_currencies" | "currency_rates" | "currency_symbols"
+>;
 
 export interface AdminOrderProduct {
     product_id?: string | null;

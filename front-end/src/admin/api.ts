@@ -3,14 +3,18 @@ import axios, {AxiosError} from "axios";
 import {API_BASE_URL} from "../api/api.ts";
 import type {
     AdminOrder,
+    AdminAnalytics,
     AdminProduct,
     AdminSummary,
     AdminUser,
+    CurrencySettingsUpdate,
+    MediaUploadResponse,
     OrderStatus,
     ProductFormState,
     ProductListResponse,
     ProductSeedResponse,
 } from "./types.ts";
+import type {CurrencySettings, PublicSettings} from "../types/settings.ts";
 
 export const ADMIN_TOKEN_KEY = "cheburek_admin_token";
 
@@ -93,6 +97,35 @@ export const fetchAdminMe = async () => {
 
 export const fetchAdminSummary = async () => {
     const response = await adminApiClient.get<AdminSummary>("/admin/summary");
+    return response.data;
+};
+
+export const fetchAdminAnalytics = async () => {
+    const response = await adminApiClient.get<AdminAnalytics>("/admin/analytics");
+    return response.data;
+};
+
+export const fetchPublicSettings = async () => {
+    const response = await adminApiClient.get<PublicSettings>("/settings/public");
+    return response.data;
+};
+
+export const updateCurrencySettings = async (payload: CurrencySettingsUpdate) => {
+    const response = await adminApiClient.patch<CurrencySettings>(
+        "/admin/settings/currency",
+        payload,
+    );
+    return response.data;
+};
+
+export const uploadProductImage = async (file: File) => {
+    const formData = new FormData();
+    formData.set("file", file);
+    const response = await adminApiClient.post<MediaUploadResponse>(
+        "/admin/media/products",
+        formData,
+        {headers: {"Content-Type": "multipart/form-data"}},
+    );
     return response.data;
 };
 
