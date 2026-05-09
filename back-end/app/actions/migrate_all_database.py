@@ -1,10 +1,14 @@
 import asyncio
+from dataclasses import dataclass
 
-from sqlalchemy import text, inspect
+from sqlalchemy import delete, select
+from sqlalchemy.orm import joinedload
 
-from app.core.models import sql_db_helper
-from app.api.v1.products.services import ProductsService, ProductBulkCreate
-
+from app.core.models import Product, redis_db_helper, sql_db_helper
+from app.core.models.product_translations import (
+    ProductTranslation as ProductTranslationModel,
+)
+from app.core.schemas.products import ProductBulkCreate
 
 # Data to be used for bulk creation
 PRODUCTS_DATA = {
@@ -265,39 +269,191 @@ PRODUCTS_DATA = {
 }
 
 
-async def truncate_products_databases():
-    # Implement truncation logic for your databases here
-    # If using SQLAlchemy, you could drop and recreate tables or run raw SQL commands.
-    async with sql_db_helper.session_factory() as session:
-        async with session.bind.connect() as conn:
-            # Use run_sync to execute a synchronous function with the connection
-            def sync_inspect(connection):
-                inspector = inspect(connection)
-                return inspector.get_table_names()
+@dataclass(frozen=True)
+class ProductSeedResult:
+    created: int
+    updated: int
+    skipped: int
+    reset: bool
+    total_seed_products: int
 
-            tables = await conn.run_sync(sync_inspect)
-            print("Available tables in the database:", tables)
 
-        await session.execute(text('TRUNCATE TABLE "Products" CASCADE;'))
-        await session.execute(text('TRUNCATE TABLE "Orders" CASCADE;'))
+def _seed_products() -> ProductBulkCreate:
+    products_in = ProductBulkCreate(**PRODUCTS_DATA)
+    names = [_english_name(product) for product in products_in.products]
+    if len(names) != len(set(names)):
+        raise ValueError("Seed products must have unique English names.")
+    return products_in
+
+
+def _english_name(product) -> str:
+    for translation in product.translations:
+        if translation.language_code == "en":
+            return translation.product_name
+    raise ValueError("Each seed product must include an English translation.")
+
+
+async def _get_existing_seed_products(
+    session, seed_names: list[str]
+) -> dict[str, Product]:
+    stmt = (
+        select(Product)
+        .join(Product.translations)
+        .options(joinedload(Product.translations))
+        .where(
+            ProductTranslationModel.language_code == "en",
+            ProductTranslationModel.product_name.in_(seed_names),
+        )
+    )
+    result = await session.execute(stmt)
+    products = result.unique().scalars().all()
+
+    products_by_seed_name: dict[str, Product] = {}
+    for product in products:
+        for translation in product.translations:
+            if (
+                translation.language_code == "en"
+                and translation.product_name in seed_names
+            ):
+                products_by_seed_name[translation.product_name] = product
+                break
+    return products_by_seed_name
+
+
+def _apply_seed_product(existing_product: Product, seed_product) -> bool:
+    changed = False
+    scalar_fields = ("price", "category", "stock_quantity", "image_src")
+
+    for field_name in scalar_fields:
+        new_value = getattr(seed_product, field_name)
+        if getattr(existing_product, field_name) != new_value:
+            setattr(existing_product, field_name, new_value)
+            changed = True
+
+    translations_by_language = {
+        translation.language_code: translation
+        for translation in existing_product.translations
+    }
+    for seed_translation in seed_product.translations:
+        existing_translation = translations_by_language.get(
+            seed_translation.language_code
+        )
+        if existing_translation is None:
+            existing_product.translations.append(
+                ProductTranslationModel(**seed_translation.model_dump())
+            )
+            changed = True
+            continue
+
+        for field_name in ("product_name", "product_description"):
+            new_value = getattr(seed_translation, field_name)
+            if getattr(existing_translation, field_name) != new_value:
+                setattr(existing_translation, field_name, new_value)
+                changed = True
+
+    return changed
+
+
+async def _delete_seed_products(session, seed_names: list[str]) -> int:
+    products_by_seed_name = await _get_existing_seed_products(session, seed_names)
+    product_ids = [product.product_id for product in products_by_seed_name.values()]
+    if not product_ids:
+        return 0
+
+    await session.execute(delete(Product).where(Product.product_id.in_(product_ids)))
+    await session.flush()
+    return len(product_ids)
+
+
+async def seed_products(session=None, *, reset: bool = False) -> ProductSeedResult:
+    products_in = _seed_products()
+    seed_names = [_english_name(product) for product in products_in.products]
+    owns_session = session is None
+
+    if owns_session:
+        session_context = sql_db_helper.session_factory()
+        session = await session_context.__aenter__()
+    else:
+        session_context = None
+
+    try:
+        if reset:
+            await _delete_seed_products(session, seed_names)
+
+        existing_products = await _get_existing_seed_products(session, seed_names)
+        created = 0
+        updated = 0
+        skipped = 0
+
+        for seed_product in products_in.products:
+            seed_name = _english_name(seed_product)
+            existing_product = existing_products.get(seed_name)
+            if existing_product is None:
+                translations = [
+                    ProductTranslationModel(**translation.model_dump())
+                    for translation in seed_product.translations
+                ]
+                session.add(
+                    Product(
+                        price=seed_product.price,
+                        category=seed_product.category,
+                        stock_quantity=seed_product.stock_quantity,
+                        image_src=seed_product.image_src,
+                        translations=translations,
+                    )
+                )
+                created += 1
+                continue
+
+            if _apply_seed_product(existing_product, seed_product):
+                session.add(existing_product)
+                updated += 1
+            else:
+                skipped += 1
+
         await session.commit()
-    print("All databases truncated.")
+        if redis_db_helper.cache is not None:
+            await redis_db_helper.cache.remove_all_cache_keys()
+
+        return ProductSeedResult(
+            created=created,
+            updated=updated,
+            skipped=skipped,
+            reset=reset,
+            total_seed_products=len(products_in.products),
+        )
+    except Exception:
+        await session.rollback()
+        raise
+    finally:
+        if owns_session and session_context is not None:
+            await session_context.__aexit__(None, None, None)
 
 
-async def run_bulk_create():
-    async with sql_db_helper.session_factory() as session:
-        products_in = ProductBulkCreate(**PRODUCTS_DATA)
-        result = await ProductsService.bulk_create_product(session, products_in)
-        print(f"Bulk creation of products completed: {result}")
-
-
-async def main():
-    # Truncate databases
-    await truncate_products_databases()
-
-    # Run bulk create
-    await run_bulk_create()
+async def main(reset: bool = False):
+    await redis_db_helper.connect()
+    try:
+        result = await seed_products(reset=reset)
+        print(
+            "Product seed complete: "
+            f"created={result.created}, "
+            f"updated={result.updated}, "
+            f"skipped={result.skipped}, "
+            f"reset={result.reset}"
+        )
+    finally:
+        await redis_db_helper.dispose()
+        await sql_db_helper.dispose()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Seed catalog products safely.")
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="Delete and recreate only known seed products. Local use only.",
+    )
+    args = parser.parse_args()
+    asyncio.run(main(reset=args.reset))
