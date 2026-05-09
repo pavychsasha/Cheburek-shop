@@ -14,8 +14,8 @@ const Searchbar: React.FC<ISearchProps> = ({ onChangeSearch }) => {
 
     const [t] = useTranslation('global');
 
-    const updateSearchValue = React.useCallback(
-        debounce((value: string) => {
+    const updateSearchValue = React.useMemo(
+        () => debounce((value: string) => {
             onChangeSearch(value);
         }, 350),
         [onChangeSearch]

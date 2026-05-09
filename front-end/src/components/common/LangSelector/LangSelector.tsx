@@ -2,7 +2,7 @@ import {useTranslation} from "react-i18next";
 import styles from './LangSelector.module.scss';
 import {RiArrowDropDownLine} from "react-icons/ri";
 import React, {useRef} from "react";
-import axios from "axios";
+import {apiClient} from "../../../api/api.ts";
 
 const LangSelector = () => {
     const [isOpen, setIsOpen] = React.useState(false);
@@ -17,13 +17,11 @@ const LangSelector = () => {
     ];
 
     const handleOnClickLang = async (langCode: string) => {
-        await axios.post(`http://localhost:8000/api/v1/languages/change_language?language=${langCode}`, {}, {withCredentials: true})
-        await axios.get('http://localhost:8000/api/v1/languages/current_language', {withCredentials: true});
+        await apiClient.post("/languages/change_language", {}, {params: {language: langCode}});
+        await apiClient.get("/languages/current_language");
         i18n.changeLanguage(langCode);
         setIsOpen(false);
     };
-
-    console.log(i18n.language);
 
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -40,19 +38,23 @@ const LangSelector = () => {
 
     return (
         <div className={styles.dropdown__menu} ref={dropdownRef}>
-            <div className={styles.btn} onClick={() => {
+            <button className={styles.btn} type="button" aria-haspopup="listbox" aria-expanded={isOpen} onClick={() => {
                 setIsOpen(!isOpen)
             }}>
                 <p>{(i18n.language).toUpperCase()}</p>
                 <RiArrowDropDownLine size={28}/>
-            </div>
-            <ul className={styles.list} style={{display: isOpen ? 'block' : 'none'}}>
+            </button>
+            <ul className={styles.list} role="listbox" style={{display: isOpen ? 'block' : 'none'}}>
                 {langList.map(lang => (
-                    <li className={styles.item}
-                        key={lang.code}
-                        onClick={() => handleOnClickLang(lang.code)}
-                    >
-                        {lang.label}
+                    <li className={styles.item} key={lang.code}>
+                        <button
+                            type="button"
+                            role="option"
+                            aria-selected={i18n.language === lang.code}
+                            onClick={() => handleOnClickLang(lang.code)}
+                        >
+                            {lang.label}
+                        </button>
                     </li>
                 ))}
             </ul>

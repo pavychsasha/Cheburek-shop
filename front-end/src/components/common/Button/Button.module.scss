@@ -1,12 +1,12 @@
 .button {
-  padding: 8px 16px;
+  padding: 10px 18px;
   width: 100%;
   min-height: 44px;
   font-size: 1rem;
-  border: none;
-  border-radius: 16px;
+  font-weight: 800;
+  border-radius: 999px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, border-color 0.2s;
   box-sizing: border-box;
 }
 
@@ -16,16 +16,28 @@
 }
 
 .primary {
-  background-color: #d56550;
+  background-color: var(--color-primary);
   color: white;
+  box-shadow: 0 12px 28px rgba(200, 79, 63, 0.2);
 }
 
 .secondary {
   background-color: #fff;
-  color: #d56550;
-  border: #d56550 2px solid;
+  color: var(--color-primary);
+  border: var(--color-primary) 2px solid;
+}
+
+.danger {
+  background-color: #7e271e;
+  color: #ffffff;
 }
 
 .button:hover:not(:disabled) {
-  opacity: 0.9;
+  background-color: var(--color-primary-dark);
+  color: #ffffff;
+}
+
+.button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(200, 79, 63, 0.16);
 }

@@ -1,12 +1,12 @@
 import React from 'react';
-import { FieldError } from 'react-hook-form';
+import { FieldError, UseFormRegisterReturn } from 'react-hook-form';
 import styles from './InputField.module.scss';
 
 interface InputFieldProps {
     label: string;
     type: string;
     placeholder: string;
-    register: any;
+    register: UseFormRegisterReturn;
     error?: FieldError
 }
 

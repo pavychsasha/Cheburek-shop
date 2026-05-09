@@ -1,15 +1,11 @@
 .app__wrapper {
-  max-width: calc(1400px - 10rem);
-  margin: 3rem auto;
-  padding: 5rem;
-  background-color: #fff;
-  border-radius: 12px;
+  width: min(1180px, calc(100% - 48px));
+  min-height: calc(100vh - 48px);
+  margin: 0 auto;
+  padding: 24px 0 56px;
 
   @media (max-width: 768px) {
-    padding: 3rem 1rem;
-  }
-
-  @media (max-width: 500px) {
-    padding: 2rem 1rem;
+    width: min(720px, calc(100% - 28px));
+    padding: 16px 0 40px;
   }
 }

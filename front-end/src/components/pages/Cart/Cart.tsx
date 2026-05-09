@@ -2,18 +2,17 @@ import styles from './Cart.module.scss';
 import {FaCartShopping} from "react-icons/fa6";
 import {FaTrash} from "react-icons/fa";
 import CartItem from "../../common/CartItem/CartItem.tsx";
-import {useDispatch, useSelector} from "react-redux";
-import {RootState} from "../../../redux/store.ts";
 import {clearCartFromBackend} from "../../../redux/slices/cartSLice.ts";
 import {useTranslation} from "react-i18next";
 import Button from "../../common/Button/Button.tsx";
 import {useNavigate} from "react-router-dom";
+import {useAppDispatch, useAppSelector} from "../../../redux/hooks.ts";
 
 const Cart = () => {
     //Getting variables from state
-    const {items, total_price, total_count} = useSelector((state: RootState) => state.cart);
+    const {items, total_price, total_count} = useAppSelector((state) => state.cart);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const navigate = useNavigate();
 
@@ -31,22 +30,27 @@ const Cart = () => {
                     <FaCartShopping/>
                     <h2>{t('cart.title')}</h2>
                 </div>
-                <div className={styles.delete} onClick={handleClickClear}>
+                <button className={styles.delete} type="button" onClick={handleClickClear} disabled={total_count === 0}>
                     <FaTrash/>
                     <span>{t('cart.clear')}</span>
-                </div>
+                </button>
             </div>
-            <div className={styles.items}>
-                {
-                    items.map((item) =>
+            {items.length > 0 ? (
+                <div className={styles.items}>
+                    {items.map((item) =>
                         <CartItem key={item.product_id}
                                   product_id={item.product_id}
                                   name={item.name}
                                   price={item.price}
                                   count={item.count}
-                                  image_src={item.image_src}/>)
-                }
-            </div>
+                                  image_src={item.image_src}/>)}
+                </div>
+            ) : (
+                <div className={styles.empty}>
+                    <h3>{t('cart.empty.title')}</h3>
+                    <p>{t('cart.empty.text')}</p>
+                </div>
+            )}
             <div className={styles.bottom}>
                 <div className={styles.detail}>
                     <p>{t('cart.totalQuantity')}: <span>{total_count}</span></p>
@@ -54,13 +58,13 @@ const Cart = () => {
                 </div>
                 <div className={styles.buttons}>
                     <Button
-                        label="Back home"
+                        label={t('cart.back')}
                         type="button"
                         variant="secondary"
                         onClick={() => navigate('/')}
                     />
                     <Button
-                        label="Go to paymnet"
+                        label={t('cart.checkout')}
                         type="button"
                         variant="primary"
                         disabled={total_count === 0}

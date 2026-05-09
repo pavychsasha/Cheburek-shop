@@ -1,16 +1,22 @@
 .container {
   display: flex;
   align-items: center;
-  padding: 8px 4px;
-  width: 300px;
-  height: 24px;
+  padding: 0 14px;
+  width: min(330px, 28vw);
+  height: 44px;
 
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(55, 36, 19, 0.05);
 
   @media (max-width: 1360px) {
-    display: none
+    width: min(340px, 34vw);
+  }
+
+  @media (max-width: 860px) {
+    order: 3;
+    width: 100%;
   }
 
   input {
@@ -26,25 +32,25 @@
     }
 
     &::placeholder {
-      color: rgba(0, 0, 0, 0.4);
+      color: #9a9188;
     }
   }
 
   svg {
     margin-right: 8px;
     font-size: 16px;
-    color: rgba(0, 0, 0, 0.4);
+    color: #9a9188;
   }
 
   &:hover {
-    border-color: rgba(0, 0, 0, 0.5);
+    border-color: #d8c9ba;
   }
 
   &:focus-within {
-    border-color: rgba(0, 0, 0, 0.7);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(200, 79, 63, 0.12);
   }
 }
-
 
 
 

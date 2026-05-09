@@ -1,4 +1,5 @@
 import React from "react";
+import {ISortType} from "./filter.ts";
 
 export interface IPaginationProps {
     setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
@@ -13,13 +14,8 @@ export interface ICategoriesProps {
 }
 
 export interface ISortProps {
-    value: {
-        nameUkr: string;
-        nameEn: string;
-        sortType: string;
-        sortOrder: string;
-    };
-    onChangeSort: (sort: { nameUkr: string; sortType: string }) => void;
+    value: ISortType;
+    onChangeSort: (sort: ISortType) => void;
 }
 
 export interface ICartItemProps {

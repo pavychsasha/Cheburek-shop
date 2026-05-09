@@ -1,4 +1,4 @@
-interface ISortType {
+export interface ISortType {
     nameUkr: string;
     nameEn: string;
     sortType: string;

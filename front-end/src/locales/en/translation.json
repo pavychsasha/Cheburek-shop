@@ -9,6 +9,19 @@
   "sort": {
     "sortBy": "Sort by"
   },
+  "home": {
+    "eyebrow": "Open menu",
+    "title": "Hot chebureks, pies, and drinks",
+    "subtitle": "Choose favorites for a quick lunch, snack, or group order.",
+    "empty": {
+      "title": "No products found",
+      "text": "Try a different search term or category."
+    },
+    "error": {
+      "title": "Menu is unavailable",
+      "text": "Check that the backend is running and refresh the page."
+    }
+  },
   "auth": {
     "titleLogin": "Login",
     "titleRegister": "Register",
@@ -61,7 +74,13 @@
     "title": "Cart",
     "clear": "Clear cart",
     "totalQuantity": "Total quantity",
-    "totalPrice": "Total price"
+    "totalPrice": "Total price",
+    "back": "Back home",
+    "checkout": "Go to payment",
+    "empty": {
+      "title": "Your cart is empty",
+      "text": "Add a few favorites from the menu to start an order."
+    }
   },
   "errorPage": {
     "errorText": "Page was not found"
@@ -75,6 +94,7 @@
       "shipping": "Shipping"
     },
     "total": "Total",
+    "empty": "Add items to the cart before placing an order.",
     "email": {
       "label": "Email",
       "placeholder": "Enter your email",

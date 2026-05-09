@@ -1,25 +1,27 @@
-import axios from 'axios';
+import axios, {AxiosResponse} from 'axios';
+import {apiClient} from "../api/api.ts";
 
-const useSubmitForm = (url: string) => {
-    const contentTypeHeader: string = !url.includes('login') ? 'application/json' : 'application/x-www-form-urlencoded'
+type SubmitFormResult = {
+    res: AxiosResponse | null;
+    error: {message?: string; detail?: string} | string | null;
+};
 
-    const submitForm = async (data: Record<string, any>) => {
+const useSubmitForm = (endpoint: string) => {
+    const contentTypeHeader: string = !endpoint.includes('login') ? 'application/json' : 'application/x-www-form-urlencoded'
+
+    const submitForm = async (data: Record<string, unknown>): Promise<SubmitFormResult> => {
         try {
-            const response = await axios.post(url, data, {
-                withCredentials: true,
+            const response = await apiClient.post(endpoint, data, {
                 headers: {
                     'Content-Type': contentTypeHeader,
                 },
             });
-            console.log('Response:', response.data);
             return {res: response, error: null};
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
-                console.error('Error response data:', error.response.data);
                 return {res: null, error: error.response.data};
             } else {
-                console.error('Error message:', error);
-                return {res: null, error: 'Проблема із запитом'};
+                return {res: null, error: 'Request failed'};
             }
         }
     };

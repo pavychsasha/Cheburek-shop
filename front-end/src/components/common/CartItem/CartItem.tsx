@@ -1,6 +1,5 @@
 import styles from './CartItem.module.scss'
 import {ImCross} from "react-icons/im";
-import {useDispatch} from "react-redux";
 import {
     addItemToBackend,
     deleteItemFromBackend,
@@ -8,9 +7,10 @@ import {
 } from "../../../redux/slices/cartSLice.ts";
 import React from "react";
 import {ICartItemProps} from "../../../types/props.ts";
+import {useAppDispatch} from "../../../redux/hooks.ts";
 
 const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count, price, isOrder}) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const handleClickPlus = () => {
         const itemToAdd = {
@@ -44,12 +44,14 @@ const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count,
                 ?
                 <>
                     <p>{price * count}₴</p>
-                    <div className={styles.count}>
-                        <span className={styles.action} onClick={handleClickMinus}>-</span>
+                    <div className={styles.count} aria-label={`${name} quantity`}>
+                        <button className={styles.action} type="button" onClick={handleClickMinus} aria-label={`Remove one ${name}`}>-</button>
                         <p>{count}</p>
-                        <span className={styles.action} onClick={handleClickPlus}>+</span>
+                        <button className={styles.action} type="button" onClick={handleClickPlus} aria-label={`Add one ${name}`}>+</button>
                     </div>
-                    <ImCross onClick={handleClickDelete}/>
+                    <button className={styles.delete} type="button" onClick={handleClickDelete} aria-label={`Remove ${name} from cart`}>
+                        <ImCross/>
+                    </button>
                 </>
 
                 :

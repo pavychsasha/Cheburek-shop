@@ -3,23 +3,22 @@ import {CiShoppingCart} from "react-icons/ci";
 import styles from './Header.module.scss';
 import Searchbar from "../Searchbar/Searchbar.tsx";
 import {NavLink, useLocation} from "react-router-dom";
-import {useDispatch, useSelector} from "react-redux";
-import {RootState} from '../../../redux/store.ts'
 import {setSearchValue} from "../../../redux/slices/filterSlice.ts";
 import {FaUserCircle} from "react-icons/fa";
 import {useTranslation} from "react-i18next";
 import LangSelector from "../LangSelector/LangSelector.tsx";
 import {RiLogoutCircleRFill} from "react-icons/ri";
-import axios from "axios";
 import {setIsAuth} from "../../../redux/slices/authSlice.ts";
+import {apiClient, getAuthHeaders} from "../../../api/api.ts";
+import {useAppDispatch, useAppSelector} from "../../../redux/hooks.ts";
 
 
 const Header = () => {
-    const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized)
-    const searchValue = useSelector((state: RootState) => state.filter.searchValue);
-    const {total_price, total_count} = useSelector((state: RootState) => state.cart)
+    const isAuthorized = useAppSelector((state) => state.auth.isAuthorized)
+    const searchValue = useAppSelector((state) => state.filter.searchValue);
+    const {total_price, total_count} = useAppSelector((state) => state.cart)
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const location = useLocation();
 
@@ -31,8 +30,17 @@ const Header = () => {
         dispatch(setSearchValue(value));
     }
 
+    const handleLogout = async () => {
+        try {
+            await apiClient.post("/auth/logout", {}, {headers: getAuthHeaders()});
+        } finally {
+            localStorage.removeItem("token");
+            dispatch(setIsAuth(false));
+        }
+    };
+
     return (
-        <header>
+        <header className={styles.header}>
             <NavLink className={styles.link} to={'/'}>
                 <div className={styles.logo__and__name}>
                     <img src={cheburekLogo} className={styles.logo} alt="logo"/>
@@ -50,14 +58,9 @@ const Header = () => {
                 {
                     isAuthorized
                         ?
-                        <a>
-                            <RiLogoutCircleRFill onClick={() =>
-                            {
-                                const token = localStorage.getItem('token');
-                                axios.post("http://localhost:8000/api/v1/auth/logout", {},{ headers: { Authorization: `Bearer ${token}`}});
-                                dispatch(setIsAuth(false));
-                            }} className={styles.user}/>
-                        </a>
+                        <button className={styles.iconButton} type="button" onClick={handleLogout} aria-label="Log out">
+                            <RiLogoutCircleRFill className={styles.user}/>
+                        </button>
                         :
                         <NavLink className={styles.link} to="/register">
                             <FaUserCircle className={styles.user}/>
@@ -77,4 +80,3 @@ const Header = () => {
 }
 
 export default Header;
-

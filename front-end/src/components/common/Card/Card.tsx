@@ -1,10 +1,9 @@
 import styles from './Card.module.scss'
 import {FaMinus, FaPlus} from "react-icons/fa";
 import {addItemToBackend, subtractItemFromBackend} from "../../../redux/slices/cartSLice.ts";
-import {useDispatch, useSelector} from "react-redux";
-import {RootState} from "../../../redux/store.ts";
 import React from "react";
 import {useTranslation} from "react-i18next";
+import {useAppDispatch, useAppSelector} from "../../../redux/hooks.ts";
 
 interface ICardProps {
     product_id: string;
@@ -14,10 +13,10 @@ interface ICardProps {
 }
 
 const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
-    const cartItem = useSelector((state: RootState) =>
+    const cartItem = useAppSelector((state) =>
         state.cart.items.find((item) => item.product_id === product_id));
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const [t] = useTranslation('global');
 
@@ -46,11 +45,21 @@ const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
                 <h3>{name}</h3>
                 <div className={styles.bottom}>
                     <p>{t('card.price')}: {price}₴</p>
-                    <div className={styles.button} onClick={itemCount === 0 ? handleClickPlus : undefined}>
-                        {itemCount !== 0 && <FaMinus onClick={handleClickMinus}/>}
-                        <p>{itemCount === 0 ? t('card.button') : <span>{itemCount}</span>}</p>
-                        {itemCount !== 0 && <FaPlus onClick={handleClickPlus}/>}
-                    </div>
+                    {itemCount === 0 ? (
+                        <button className={styles.button} type="button" onClick={handleClickPlus}>
+                            {t('card.button')}
+                        </button>
+                    ) : (
+                        <div className={styles.counter} aria-label={`${name} quantity`}>
+                            <button type="button" onClick={handleClickMinus} aria-label={`Remove one ${name}`}>
+                                <FaMinus/>
+                            </button>
+                            <span>{itemCount}</span>
+                            <button type="button" onClick={handleClickPlus} aria-label={`Add one ${name}`}>
+                                <FaPlus/>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

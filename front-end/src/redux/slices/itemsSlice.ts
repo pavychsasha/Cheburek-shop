@@ -1,9 +1,7 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
-import axios from "axios";
 import {IParams} from "../../types/api.ts";
 import {IItemsState} from "../../types/state.ts";
-
-const baseUrl = 'http://localhost:8000/api/v1';
+import {apiClient} from "../../api/api.ts";
 
 export const fetchItems = createAsyncThunk('items/fetchItemsStatus',
     async (params: IParams) => {
@@ -16,9 +14,16 @@ export const fetchItems = createAsyncThunk('items/fetchItemsStatus',
             searchValue,
             currentPage
         } = params
-        const {data} = await axios.get(
-            `${baseUrl}/products/search?name=${searchValue}&category=${categoryParam}&sort_by=${sortBy}&order=${orderBy}&page=${currentPage}&per_page=8`, {withCredentials: true}
-        );
+        const {data} = await apiClient.get('/products/search/', {
+            params: {
+                name: searchValue,
+                category: categoryParam,
+                sort_by: sortBy,
+                order: orderBy,
+                page: currentPage,
+                per_page: 8,
+            },
+        });
         return data;
     })
 

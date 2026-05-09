@@ -1,5 +1,5 @@
 import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
-import axios from "axios";
+import {apiClient, getAuthHeaders} from "../../api/api.ts";
 
 interface IItem {
     product_id: string;
@@ -31,7 +31,12 @@ const initialState: ICartState = {
     clearCartStatus: ''
 };
 
-const baseUrl = 'http://localhost:8000/api/v1';
+type CartStatusField =
+    | 'fetchCartStatus'
+    | 'addItemStatus'
+    | 'subtractItemStatus'
+    | 'deleteItemStatus'
+    | 'clearCartStatus';
 
 // Helper function to find item by product ID
 const findItem = (items: IItem[], id: string) => items.find(item => item.product_id === id);
@@ -43,34 +48,33 @@ const updateTotals = (state: ICartState) => {
 };
 
 // Helper function to handle API status updates
-const updateStatus = (state: ICartState, field: keyof ICartState, status: string) => {
+const updateStatus = (state: ICartState, field: CartStatusField, status: string) => {
     state[field] = status;
 };
 
 // Async Thunks for API calls
 export const fetchCart = createAsyncThunk('cart/fetchCart', async () => {
-    const token = localStorage.getItem('token');
-    const {data} = await axios.get(baseUrl + '/cart/', { headers: { Authorization: `Bearer ${token}`}});
+    const {data} = await apiClient.get('/cart/', {headers: getAuthHeaders()});
     return data;
 });
 
 export const addItemToBackend = createAsyncThunk('cart/addItem', async (item: IItem) => {
-    await axios.patch(baseUrl + '/cart/add', {product_id: item.product_id, count: 1}, {withCredentials: true});
+    await apiClient.patch('/cart/add', {product_id: item.product_id, count: 1});
     return item;
 });
 
 export const subtractItemFromBackend = createAsyncThunk('cart/subtractItem', async (product_id: string) => {
-    await axios.patch(baseUrl + '/cart/subtract_product', {product_id, count: 1}, {withCredentials: true});
+    await apiClient.patch('/cart/subtract_product', {product_id, count: 1});
     return product_id;
 });
 
 export const deleteItemFromBackend = createAsyncThunk('cart/deleteItem', async (product_id: string) => {
-    await axios.delete(baseUrl + `/cart/product/${product_id}`, {withCredentials: true});
+    await apiClient.delete(`/cart/product/${product_id}`);
     return product_id;
 });
 
 export const clearCartFromBackend = createAsyncThunk('cart/clearCart', async () => {
-    await axios.delete(baseUrl + '/cart/', {withCredentials: true});
+    await apiClient.delete('/cart/');
 });
 
 // Cart Slice
@@ -97,7 +101,11 @@ const cartSlice = createSlice({
             .addCase(addItemToBackend.pending, (state) => updateStatus(state, 'addItemStatus', 'loading'))
             .addCase(addItemToBackend.fulfilled, (state, action) => {
                 const existingItem = findItem(state.items, action.payload.product_id);
-                existingItem ? existingItem.count += 1 : state.items.push({...action.payload, count: 1});
+                if (existingItem) {
+                    existingItem.count += 1;
+                } else {
+                    state.items.push({...action.payload, count: 1});
+                }
                 updateStatus(state, 'addItemStatus', 'success');
                 updateTotals(state);
             })
@@ -109,7 +117,11 @@ const cartSlice = createSlice({
             .addCase(subtractItemFromBackend.fulfilled, (state, action) => {
                 const existingItem = findItem(state.items, action.payload);
                 if (existingItem) {
-                    existingItem.count > 1 ? existingItem.count -= 1 : state.items = state.items.filter(item => item.product_id !== action.payload);
+                    if (existingItem.count > 1) {
+                        existingItem.count -= 1;
+                    } else {
+                        state.items = state.items.filter(item => item.product_id !== action.payload);
+                    }
                     updateStatus(state, 'subtractItemStatus', 'success');
                     updateTotals(state);
                 }
@@ -138,9 +150,5 @@ const cartSlice = createSlice({
             .addCase(clearCartFromBackend.rejected, (state) => updateStatus(state, 'clearCartStatus', 'error'));
     }
 });
-
-export const {
-
-} = cartSlice.actions;
 
 export default cartSlice.reducer;

@@ -11,7 +11,7 @@ const Categories: React.FC<ICategoriesProps> = ({value, onChangeCategory, catego
     }
 
     return (
-        <ul>
+        <ul className={styles.list}>
             {
                 categories.map((category, index) => (
                     <li

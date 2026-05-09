@@ -4,10 +4,9 @@ import InputField from '../../../common/InputField/InputField.tsx';
 import useSubmitForm from '../../../../hooks/useSubmitForm.ts';
 import {setIsAuth} from "../../../../redux/slices/authSlice.ts";
 import {NavLink, useNavigate} from "react-router-dom";
-import {useDispatch, useSelector} from "react-redux";
 import {useTranslation} from "react-i18next";
 import React from "react";
-import {RootState} from "../../../../redux/store.ts";
+import {useAppDispatch, useAppSelector} from "../../../../redux/hooks.ts";
 
 //Type(interface) of register form
 interface IFormRegister {
@@ -28,12 +27,12 @@ const Register = () => {
         getValues,
     } = useForm<IFormRegister>({mode: 'onChange'});
 
-    const {submitForm: submitRegisterForm} = useSubmitForm('http://localhost:8000/api/v1/auth/register');
-    const {submitForm: submitLoginForm} = useSubmitForm('http://localhost:8000/api/v1/auth/login');
+    const {submitForm: submitRegisterForm} = useSubmitForm('/auth/register');
+    const {submitForm: submitLoginForm} = useSubmitForm('/auth/login');
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
-    const isAuthorized = useSelector((state: RootState) => state.auth.isAuthorized);
+    const isAuthorized = useAppSelector((state) => state.auth.isAuthorized);
 
     const navigate = useNavigate();
 
@@ -62,19 +61,21 @@ const Register = () => {
             });
 
             //Checking for response /auth/login
-            if (logResponse && logResponse.status === 204) {
+            if (logResponse && logResponse.status === 200) {
+                const token = logResponse.data.access_token;
+                localStorage.setItem('token', token);
                 dispatch(setIsAuth(true));
                 navigate('/');
             } else if (logError) {
                 setError('rePassword', {
                     type: 'manual',
-                    message: logError.message || t('auth.registrationFailed'),
+                    message: typeof logError === 'string' ? logError : logError.message || logError.detail || t('auth.registrationFailed'),
                 });
             }
         } else if (regError) {
             setError('rePassword', {
                 type: 'manual',
-                message: regError.message || t('auth.userExist'),
+                message: typeof regError === 'string' ? regError : regError.message || regError.detail || t('auth.userExist'),
             });
         }
     };
@@ -83,7 +84,7 @@ const Register = () => {
         if (isAuthorized) {
             navigate('/');
         }
-    }, [isAuthorized])
+    }, [isAuthorized, navigate])
 
     return (
         <main className={styles.container}>

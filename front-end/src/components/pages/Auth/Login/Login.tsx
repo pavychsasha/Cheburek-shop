@@ -3,11 +3,10 @@ import {SubmitHandler, useForm} from 'react-hook-form';
 import InputField from '../../../common/InputField/InputField.tsx';
 import useSubmitForm from '../../../../hooks/useSubmitForm.ts';
 import {setIsAuth} from "../../../../redux/slices/authSlice.ts";
-import {useDispatch, useSelector} from "react-redux";
 import {useNavigate} from 'react-router-dom';
-import {RootState} from "../../../../redux/store.ts";
 import React from "react";
 import {useTranslation} from "react-i18next";
+import {useAppDispatch, useAppSelector} from "../../../../redux/hooks.ts";
 
 //Type type(interface) of login form
 interface IFormLogin {
@@ -25,11 +24,11 @@ const Login = () => {
         formState: {errors, isSubmitting},
     } = useForm<IFormLogin>({mode: 'onChange'});
 
-    const {submitForm} = useSubmitForm('http://localhost:8000/api/v1/auth/login');
+    const {submitForm} = useSubmitForm('/auth/login');
 
-    const isAuthorized = useSelector((state:RootState) => state.auth.isAuthorized);
+    const isAuthorized = useAppSelector((state) => state.auth.isAuthorized);
 
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const navigate = useNavigate();
 
@@ -56,7 +55,7 @@ const Login = () => {
         } else if (error) {
             setError('password', {
                 type: 'manual',
-                message: error.message || t('auth.incorrectData'),
+                message: typeof error === 'string' ? error : error.message || error.detail || t('auth.incorrectData'),
             });
         }
     };
@@ -65,7 +64,7 @@ const Login = () => {
         if (isAuthorized) {
             navigate('/');
         }
-    }, [isAuthorized])
+    }, [isAuthorized, navigate])
 
     return (
         <main className={styles.container}>

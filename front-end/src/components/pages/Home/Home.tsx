@@ -1,26 +1,26 @@
 import Categories from "../../common/Categories/Categories";
 import Skeleton from "../../common/Card/Skeleton";
 import Card from "../../common/Card/Card";
-import React, { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import styles from './Home.module.scss';
 import Sort from "../../common/Sort/Sort";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from '../../../redux/store';
 import { setCategory, setSort } from "../../../redux/slices/filterSlice";
 import { fetchItems } from "../../../redux/slices/itemsSlice.ts";
 import { IParams } from "../../../types/api.ts";
 import Pagination from "../../common/Pagination/Pagination.tsx";
 import { useTranslation } from "react-i18next";
+import {ISortType} from "../../../types/filter.ts";
+import {useAppDispatch, useAppSelector} from "../../../redux/hooks.ts";
 
 const Home = () => {
-    const category = useSelector((state: RootState) => state.filter.category);
-    const sort = useSelector((state: RootState) => state.filter.sort);
-    const searchValue = useSelector((state: RootState) => state.filter.searchValue);
-    const { items, status } = useSelector((state: RootState) => state.items);
-    const isLanguageSet = useSelector((state: RootState) => state.lang.isLanguageSet);
+    const category = useAppSelector((state) => state.filter.category);
+    const sort = useAppSelector((state) => state.filter.sort);
+    const searchValue = useAppSelector((state) => state.filter.searchValue);
+    const { items, status } = useAppSelector((state) => state.items);
+    const isLanguageSet = useAppSelector((state) => state.lang.isLanguageSet);
 
-    const dispatch = useDispatch();
-    const { i18n } = useTranslation();
+    const dispatch = useAppDispatch();
+    const { i18n, t } = useTranslation('global');
     const [currentPage, setCurrentPage] = useState(1);
 
     const categoriesEn = ['All', 'Chebureks', 'Pies', 'Drinks', 'Other'];
@@ -28,19 +28,20 @@ const Home = () => {
     const displayCategories = i18n.language === 'en' ? categoriesEn : categoriesUkr;
 
     const getCategoryTitle = (category: string) => {
-        const titles = {
+        const language = i18n.language === 'ukr' ? 'ukr' : 'en';
+        const titles: Record<'en' | 'ukr', Record<string, string>> = {
             en: { All: 'All', Chebureks: 'Chebureks', Pies: 'Pies', Drinks: 'Drinks', Other: 'Other' },
             ukr: { All: 'Все', Chebureks: 'Чебуреки', Pies: 'Пиріжки', Drinks: 'Напої', Other: 'Інше' }
         };
-        return titles[i18n.language]?.[category] || category;
+        return titles[language][category] || category;
     };
 
     const currentCategoryTitle = getCategoryTitle(category);
 
     const onChangeCategory = (newCategory: string) => dispatch(setCategory(newCategory));
-    const onChangeSort = (sort: object) => dispatch(setSort(sort));
+    const onChangeSort = (sort: ISortType) => dispatch(setSort(sort));
 
-    const getItems = () => {
+    const getItems = useCallback(() => {
         const categoryParam = category !== 'All' ? category : '';
         const sortBy = sort.sortType;
         const orderBy = sort.sortOrder;
@@ -55,15 +56,22 @@ const Home = () => {
 
         dispatch(fetchItems(params));
         window.scrollTo(0, 0);
-    };
+    }, [category, currentPage, dispatch, searchValue, sort.sortOrder, sort.sortType]);
 
     useEffect(() => {
         if (isLanguageSet) getItems();
-    }, [i18n.language, category, sort, searchValue, currentPage, isLanguageSet]);
+    }, [getItems, i18n.language, isLanguageSet]);
 
     return (
         <>
-            <nav>
+            <section className={styles.hero}>
+                <div>
+                    <p>{t('home.eyebrow')}</p>
+                    <h2>{t('home.title')}</h2>
+                    <span>{t('home.subtitle')}</span>
+                </div>
+            </section>
+            <nav className={styles.nav}>
                 <Categories
                     value={category}
                     onChangeCategory={(newValue) => onChangeCategory(newValue)}
@@ -77,9 +85,8 @@ const Home = () => {
             </div>
             <main>
                 <div className={styles.grid__wrapper}>
-                    {status === 'loading'
-                        ? [...new Array(8)].map((_, index) => <Skeleton key={index}/>)
-                        : items.map(item => (
+                    {status === 'loading' && [...new Array(8)].map((_, index) => <Skeleton key={index}/>)}
+                    {status === 'success' && items.map(item => (
                             <Card
                                 key={item.product_id}
                                 product_id={item.product_id}
@@ -89,6 +96,18 @@ const Home = () => {
                             />
                         ))
                     }
+                    {status === 'success' && items.length === 0 && (
+                        <section className={styles.empty}>
+                            <h3>{t('home.empty.title')}</h3>
+                            <p>{t('home.empty.text')}</p>
+                        </section>
+                    )}
+                    {status === 'error' && (
+                        <section className={styles.empty}>
+                            <h3>{t('home.error.title')}</h3>
+                            <p>{t('home.error.text')}</p>
+                        </section>
+                    )}
                 </div>
                 <Pagination setCurrentPage={setCurrentPage} currentPage={currentPage}/>
             </main>

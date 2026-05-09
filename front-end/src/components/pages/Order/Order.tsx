@@ -3,11 +3,10 @@ import InputField from '../../common/InputField/InputField.tsx';
 import {useNavigate} from 'react-router-dom';
 import {useTranslation} from "react-i18next";
 import styles from './Order.module.scss'
-import {useSelector} from "react-redux";
 import CartItem from "../../common/CartItem/CartItem.tsx";
-import {RootState} from "../../../redux/store.ts";
 import Button from "../../common/Button/Button.tsx";
-import axios from "axios";
+import {apiClient, getAuthHeaders} from "../../../api/api.ts";
+import {useAppSelector} from "../../../redux/hooks.ts";
 
 // Define the type for the order form
 interface IFormOrder {
@@ -29,29 +28,25 @@ const Order = () => {
         formState: {errors, isSubmitting},
     } = useForm<IFormOrder>({mode: 'onChange'});
 
-    const items = useSelector((state: RootState) => state.cart.items);
-    const totalPrice = useSelector((state: RootState) => state.cart.total_price);
+    const items = useAppSelector((state) => state.cart.items);
+    const totalPrice = useAppSelector((state) => state.cart.total_price);
 
     const navigate = useNavigate();
     const [t] = useTranslation('global');
 
     const onSubmit: SubmitHandler<IFormOrder> = async (data) => {
 
-        const token = localStorage.getItem('token');
+        try {
+            const response = await apiClient.post('/orders/', null, {
+                params: data,
+                headers: getAuthHeaders(),
+            });
 
-        const response = await axios.post(`http://localhost:8000/api/v1/orders/
-        ?email=${data.email}
-        &street_name=${data.street_name}
-        &street_number=${data.street_number}
-        &apartment_number=${data.apartment_number}
-        &zip_code=${data.zip_code}
-        &city=${data.city}
-        &state=${data.state}
-        &country=${data.country}`, null, { headers: { Authorization: `Bearer ${token}`}});
-
-        if (response && response.status === 201) {
-            navigate('/');
-        } else {
+            if (response && response.status === 201) {
+                navigate('/');
+                return;
+            }
+        } catch {
             setError('email', {
                 type: 'manual',
                 message: t('order.error'),
@@ -143,11 +138,10 @@ const Order = () => {
                             error={errors.country}
                         />
                         <Button
-                            label="Submit order"
+                            label={isSubmitting ? t('order.button.loading') : t('order.button.submit')}
                             type="submit"
                             variant="primary"
                             disabled={isSubmitting}
-                            onClick={() => alert('nice!')}
                         />
 
                     </form>
@@ -155,7 +149,7 @@ const Order = () => {
             </main>
             <aside>
                 <h2>{t('order.orderTitle')}</h2>
-                {
+                {items.length > 0 ? (
                     items.map((item) =>
                         <CartItem key={item.product_id}
                                   product_id={item.product_id}
@@ -164,7 +158,9 @@ const Order = () => {
                                   count={item.count}
                                   image_src={item.image_src}
                                   isOrder={true}/>)
-                }
+                ) : (
+                    <p className={styles.empty}>{t('order.empty')}</p>
+                )}
                 <h2>{t('order.subtotal.title')}</h2>
                 <div className={styles.subtotal}>
                     <div className={styles.price}>

@@ -1,14 +1,13 @@
 import styles from './Pagination.module.scss'
-import {useSelector} from "react-redux";
-import {RootState} from "../../../redux/store.ts";
 import React from "react";
 import {IPaginationProps} from "../../../types/props.ts";
+import {useAppSelector} from "../../../redux/hooks.ts";
 
 const Pagination: React.FC<IPaginationProps> = ({setCurrentPage, currentPage}) => {
 
-    const pagesCount = useSelector((state: RootState) => state.items.pagesCount);
+    const pagesCount = useAppSelector((state) => state.items.pagesCount);
 
-    let pages = [];
+    const pages = [];
 
     for (let i = 1; i <= pagesCount; i++) {
         pages.push(i);
@@ -22,11 +21,13 @@ const Pagination: React.FC<IPaginationProps> = ({setCurrentPage, currentPage}) =
 
     return (
         <div className={styles.pagination}>
-            <ul>
+            <ul className={styles.list}>
                 {pages.map(page =>
-                    <li key={page} onClick={() => {handleChangeCurrentPage(page)}}
+                    <li key={page}>
+                        <button type="button" onClick={() => {handleChangeCurrentPage(page)}}
                         className={page == currentPage ? `${styles.page}  ${styles.active}` : styles.page}>
                         {page}
+                        </button>
                     </li>)}
             </ul>
         </div>
