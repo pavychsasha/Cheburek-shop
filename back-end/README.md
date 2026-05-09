@@ -6,7 +6,7 @@ FastAPI backend for the Cheburek Shop storefront.
 
 - Python `3.12`
 - Poetry
-- PostgreSQL, MongoDB, and Redis for full local operation
+- PostgreSQL, MongoDB, Redis, and MinIO for full local operation
 
 Docker Compose from the repository root is the simplest way to run the required services.
 
@@ -28,6 +28,17 @@ Important variables:
 - `APP_CONFIG__MONGO_DB__PORT`: MongoDB port
 - `APP_CONFIG__REDIS__HOST`: Redis host
 - `APP_CONFIG__REDIS__PORT`: Redis port
+- `APP_CONFIG__MEDIA__ENDPOINT`: MinIO API endpoint
+- `APP_CONFIG__MEDIA__ACCESS_KEY`: generated local MinIO access key
+- `APP_CONFIG__MEDIA__SECRET_KEY`: generated local MinIO secret key
+- `APP_CONFIG__MEDIA__BUCKET`: product image bucket
+- `APP_CONFIG__MEDIA__PUBLIC_BASE_URL`: public backend media base URL
+- `APP_CONFIG__MEDIA__MAX_IMAGE_UPLOAD_MB`: upload size limit
+- `APP_CONFIG__CURRENCY__BASE_CURRENCY`: stored base currency, currently UAH
+- `APP_CONFIG__CURRENCY__DEFAULT_CURRENCY`: default display currency
+- `APP_CONFIG__CURRENCY__SUPPORTED_CURRENCIES`: comma-separated display currencies
+- `APP_CONFIG__CURRENCY__CURRENCY_RATES`: static display rates from base UAH
+- `APP_CONFIG__CURRENCY__CURRENCY_SYMBOLS`: display symbols for supported currencies
 - `APP_CONFIG__CORS__ALLOWED_ORIGINS`: comma-separated frontend origins
 - `APP_CONFIG__ACCESS_TOKEN__RESET_PASSWORD_TOKEN_SECRET`: reset-token secret
 - `APP_CONFIG__ACCESS_TOKEN__VERIFICATION_TOKEN_SECRET`: verification-token secret
@@ -70,7 +81,7 @@ Seed products without deleting unrelated data:
 docker compose run --rm fastapi python -m app.actions.seed_products
 ```
 
-Known seed products are matched by English product name. The seed creates missing products, updates known seed fields and translations, and leaves unrelated catalog records, carts, and orders untouched. Use `--reset` only for an explicit local seed-product reset.
+Known seed products are matched by English product name. The seed creates missing products, uploads deterministic local product images to MinIO, updates known seed fields and translations, and leaves unrelated catalog records, carts, and orders untouched. Use `--reset` only for an explicit local seed-product reset.
 
 Bootstrap or refresh the generated local admin user:
 
@@ -105,7 +116,7 @@ curl http://localhost:8091/health
 From the repository root:
 
 ```bash
-docker compose up -d postgres mongo redis fastapi
+docker compose up -d postgres mongo redis minio fastapi
 docker compose run --rm fastapi alembic upgrade head
 ```
 
@@ -120,11 +131,22 @@ Default API URLs:
 
 Admin endpoints are under `/api/v1/admin` and require an active superuser token. Product, order, and user management endpoints also rely on backend superuser checks.
 
+Public and admin settings/media endpoints:
+
+- `GET /api/v1/settings/public`: currency display settings
+- `PATCH /api/v1/admin/settings/currency`: update display currencies and rates
+- `POST /api/v1/admin/media/products`: upload product images
+- `GET /media/{object_name}`: public media served through the backend from MinIO
+- `GET /api/v1/admin/analytics`: dashboard chart and operational datasets
+
 ## Troubleshooting
 
 - Settings validation fails: run root `./setup.sh` to generate local env files.
-- Health check is `degraded`: one of PostgreSQL, MongoDB, or Redis is not reachable.
+- Health check is `degraded`: one of PostgreSQL, MongoDB, Redis, or MinIO is not reachable.
 - Tests fail to connect to databases: start dependencies with Docker Compose first.
+- Product image upload fails with unsupported media type: use JPEG, PNG, WebP, GIF, or SVG within the configured size limit.
+- Product seed does not show local images: rerun `../scripts/migrate.sh` after MinIO is healthy.
+- Currency update fails validation: every supported currency must include a positive rate and a symbol.
 - Browser CORS errors: make sure the frontend origin is listed in `APP_CONFIG__CORS__ALLOWED_ORIGINS`.
 - Local-domain URLs do not resolve: add the hosts entry printed by root `./setup.sh`.
 - After rotating local secrets, reset local volumes if database authentication no longer works.
@@ -137,3 +159,4 @@ Admin endpoints are under `/api/v1/admin` and require an active superuser token.
 - Runtime dependencies are managed by Poetry and locked in `poetry.lock`.
 - `pip-audit` is included for dependency vulnerability checks.
 - `aioredis` is not required because the code uses `redis.asyncio`.
+- MinIO credentials are local-only generated values and must stay in ignored `.env` files.

@@ -1,12 +1,13 @@
 # Cheburek Shop
 
 Cheburek Shop is a React storefront backed by a FastAPI API, PostgreSQL, MongoDB, and Redis.
+The same frontend service also hosts a protected admin CMS for catalog, media, orders, users, analytics, and currency settings.
 
 ## Stack
 
 - Frontend: React 18, Vite, TypeScript, Redux Toolkit, SCSS modules, npm
-- Backend: Python 3.12, FastAPI, Poetry, SQLAlchemy async, Alembic, Beanie, Redis, pytest
-- Services: PostgreSQL 16, MongoDB 7, Redis 7
+- Backend: Python 3.12, FastAPI, Poetry, SQLAlchemy async, Alembic, Beanie, Redis, MinIO, pytest
+- Services: PostgreSQL 16, MongoDB 7, Redis 7, MinIO object storage
 - Local orchestration: Docker Compose
 
 ## Local URLs
@@ -19,6 +20,7 @@ Preferred local-domain URLs:
 | Admin portal | `http://admin.local.cheburek-shop.com` |
 | Backend API | `http://api.local.cheburek-shop.com/api/v1` |
 | Backend health | `http://api.local.cheburek-shop.com/health` |
+| Public media | `http://api.local.cheburek-shop.com/media/...` |
 
 Localhost fallback URLs:
 
@@ -31,6 +33,8 @@ Localhost fallback URLs:
 | PostgreSQL host port | `55432` |
 | MongoDB host port | `27018` |
 | Redis host port | `6380` |
+| MinIO API port | `9000` |
+| MinIO console | `http://localhost:9001` |
 
 The friendly local-domain URLs are served through the local proxy on `LOCAL_HTTP_PORT=80`, so they do not need explicit ports. Direct service ports are intentionally offset from common defaults. Override them in `.env` if needed.
 
@@ -41,7 +45,7 @@ The friendly local-domain URLs are served through the local proxy on `LOCAL_HTTP
 ./start.sh
 ```
 
-`setup.sh` creates local env files, generates local-only secrets, installs frontend dependencies when npm is available, validates Docker Compose, starts PostgreSQL, MongoDB, and Redis, waits for them to become healthy, runs migrations, seeds the product catalog idempotently, bootstraps the local admin user, and offers to add these hostnames to `/etc/hosts`:
+`setup.sh` creates local env files, generates local-only secrets, installs frontend dependencies when npm is available, validates Docker Compose, starts PostgreSQL, MongoDB, Redis, and MinIO, waits for them to become healthy, runs migrations, seeds the product catalog and product media idempotently, bootstraps the local admin user, and offers to add these hostnames to `/etc/hosts`:
 
 ```text
 127.0.0.1 app.local.cheburek-shop.com api.local.cheburek-shop.com admin.local.cheburek-shop.com
@@ -75,7 +79,7 @@ Run migrations and the idempotent product seed after services are available:
 ./scripts/migrate.sh
 ```
 
-The product seed creates missing seed products and updates known seed product fields by English product name. It does not delete unrelated products, carts, or orders. A destructive seed reset is available only as an explicit local maintenance action:
+The product seed creates missing seed products, uploads deterministic local product images to MinIO, and updates known seed product fields by English product name. It does not delete unrelated products, carts, or orders. A destructive seed reset is available only as an explicit local maintenance action:
 
 ```bash
 docker compose run --rm fastapi python -m app.actions.seed_products --reset
@@ -110,6 +114,17 @@ Important root `.env` values:
 - `POSTGRES_PORT`: host PostgreSQL port
 - `MONGO_PORT`: host MongoDB port
 - `REDIS_PORT`: host Redis port
+- `MINIO_API_PORT`: host MinIO API port
+- `MINIO_CONSOLE_PORT`: host MinIO console port
+- `MINIO_ROOT_USER`: generated local MinIO access key
+- `MINIO_ROOT_PASSWORD`: generated local MinIO secret key
+- `MINIO_BUCKET`: local product image bucket
+- `MINIO_PUBLIC_BASE_URL`: public media URL served through the backend
+- `MAX_IMAGE_UPLOAD_MB`: admin image upload limit
+- `DEFAULT_CURRENCY`: default display currency
+- `SUPPORTED_CURRENCIES`: comma-separated display currencies
+- `CURRENCY_RATES`: static display rates from base UAH
+- `CURRENCY_SYMBOLS`: display symbols for supported currencies
 - `VITE_API_BASE_URL`: browser API base URL
 - `CORS_ALLOWED_ORIGINS`: comma-separated frontend origins allowed by the API
 - `POSTGRES_PASSWORD`: generated local database password
@@ -164,7 +179,7 @@ Backend through Docker Compose:
 
 ```bash
 docker compose build fastapi
-docker compose up -d postgres mongo redis fastapi
+docker compose up -d postgres mongo redis minio fastapi
 curl http://localhost:8091/health
 ```
 
@@ -180,11 +195,14 @@ docker compose run --rm fastapi python -m app.actions.create_super_user
 - Compose reports a missing secret: run `./setup.sh` before starting services.
 - Local-domain URLs do not resolve: add the hosts entry shown by `./setup.sh`, then retry.
 - Admin portal does not open: confirm `admin.local.cheburek-shop.com` is in `/etc/hosts` and `VITE_DEV_ALLOWED_HOSTS`.
+- Product images do not load: confirm `/health` reports `minio: ok`, then rerun `./scripts/migrate.sh` to recreate seed media.
+- MinIO console login is needed: read the generated local MinIO values from ignored `.env`; do not copy them into documentation or commits.
+- Currency selector shows stale values: reload settings in the admin Settings panel or refresh the page after saving currency changes.
 - Port already in use: update `.env`, `front-end/.env`, and `back-end/.env` so ports, `VITE_API_BASE_URL`, and `CORS_ALLOWED_ORIGINS` stay aligned. If host port `80` is busy, set `LOCAL_HTTP_PORT` to another value and include that port in local-domain URLs.
 - Frontend cannot reach the API: confirm `VITE_API_BASE_URL` points to the backend URL visible from the browser.
 - Storefront works on localhost but local domains fail: rerun `./setup.sh` in a terminal and accept or manually add the printed hosts entry.
 - CORS errors: add the frontend origin to `CORS_ALLOWED_ORIGINS`.
-- Health check returns `degraded`: PostgreSQL, MongoDB, or Redis is not reachable from the backend container.
+- Health check returns `degraded`: PostgreSQL, MongoDB, Redis, or MinIO is not reachable from the backend container.
 - Compose waits indefinitely or reports an unhealthy service: inspect logs with `docker compose logs <service>` and rerun `./setup.sh`.
 - Backend tests require PostgreSQL, MongoDB, and Redis. Start dependencies before running the full pytest suite.
 - After rotating local secrets, reset local volumes if database authentication no longer works.

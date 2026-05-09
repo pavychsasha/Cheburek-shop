@@ -1,6 +1,6 @@
 # Cheburek Shop Frontend
 
-React 18 storefront and admin portal built with Vite, TypeScript, Redux Toolkit, SCSS modules, and npm.
+React 18 storefront and admin CMS built with Vite, TypeScript, Redux Toolkit, SCSS modules, Recharts, and npm.
 
 ## Requirements
 
@@ -57,11 +57,15 @@ npm audit
 ## Integration Notes
 
 - API calls use `src/api/api.ts`.
+- Prices are stored by the backend in base UAH and displayed through public currency settings from `/settings/public`.
+- The storefront currency selector persists the selected display currency in browser local storage.
 - Keep `VITE_API_BASE_URL` aligned with the backend hostname. The default local-domain URL uses the root local proxy at `http://api.local.cheburek-shop.com/api/v1`.
 - When the app is opened through `localhost`, API calls fall back to the localhost backend if the configured API URL points at the preferred local API domain.
 - The storefront renders on the storefront local domain and localhost. The admin portal renders only on the admin local domain.
 - Admin tokens are stored in `sessionStorage` and are cleared on unauthorized or forbidden API responses.
 - Admin access is enforced by backend superuser checks; frontend route selection is only a rendering concern.
+- Product images are uploaded through admin media APIs and displayed from backend `/media/...` URLs backed by MinIO.
+- The admin CMS includes dashboard charts, products with image upload/preview, orders, users, and currency settings.
 - If the browser reports CORS errors, add the frontend origin to backend `APP_CONFIG__CORS__ALLOWED_ORIGINS`.
 - The app stores bearer tokens in `localStorage` and sends session cookies for cart and language flows.
 
@@ -71,5 +75,7 @@ npm audit
 - Dev server port is busy: set `VITE_DEV_SERVER_PORT` in `.env`.
 - Local-domain page is blocked by Vite: confirm `VITE_DEV_ALLOWED_HOSTS` includes the storefront and admin local domains.
 - API calls fail locally: verify the backend health endpoint at `http://api.local.cheburek-shop.com/health`.
+- Product images do not load: verify the backend health endpoint reports MinIO as healthy and rerun the root migration helper.
+- Currency values look stale: refresh the page after saving admin currency settings.
 - Local-domain URLs do not resolve: run root `./setup.sh` and add the printed hosts entry.
 - Admin portal shows the login page but login fails: rerun root `./setup.sh`, then rerun the backend admin bootstrap command from the root README.
