@@ -43,9 +43,20 @@ cypress/videos/
 # CI/CD
 .cache/
 
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+
 # Docker
 docker-compose.override.yml
 docker-compose.local.yml
+compose.override.yaml
+compose.local.yaml
 
 # Next.js
 .next/

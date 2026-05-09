@@ -12,16 +12,16 @@ Docker Compose from the repository root is the simplest way to run the required 
 
 ## Environment
 
-Create a local env file:
+The root setup script creates `back-end/.env`, generates local-only secrets, and keeps values aligned with Compose:
 
 ```bash
-cp .env.example .env
+../setup.sh
 ```
 
 Important variables:
 
-- `APP_CONFIG__RUN__HOST`: API host, default `127.0.0.1`
-- `APP_CONFIG__RUN__PORT`: API port, default `8091`
+- `APP_CONFIG__RUN__HOST`: API bind host
+- `APP_CONFIG__RUN__PORT`: API port
 - `APP_CONFIG__DB__URL`: async PostgreSQL URL
 - `APP_CONFIG__DB__TEST_URL`: async PostgreSQL test URL
 - `APP_CONFIG__MONGO_DB__HOST`: MongoDB host
@@ -32,6 +32,8 @@ Important variables:
 - `APP_CONFIG__ACCESS_TOKEN__RESET_PASSWORD_TOKEN_SECRET`: reset-token secret
 - `APP_CONFIG__ACCESS_TOKEN__VERIFICATION_TOKEN_SECRET`: verification-token secret
 - `APP_CONFIG__SESSION__SECRET_KEY`: session middleware secret
+
+`back-end/.env` is local-only and ignored by Git. Keep real local values out of commits.
 
 ## Commands
 
@@ -64,6 +66,12 @@ poetry run pip-audit
 Health check:
 
 ```bash
+curl http://api.local.cheburek-shop.com:8091/health
+```
+
+Localhost fallback:
+
+```bash
 curl http://localhost:8091/health
 ```
 
@@ -78,15 +86,19 @@ docker compose run --rm fastapi alembic upgrade head
 
 Default API URLs:
 
+- `http://api.local.cheburek-shop.com:8091/health`
+- `http://api.local.cheburek-shop.com:8091/api/v1`
 - `http://localhost:8091/health`
 - `http://localhost:8091/api/v1`
 
 ## Troubleshooting
 
-- Settings validation fails: confirm required `APP_CONFIG__...` variables exist in `.env`.
+- Settings validation fails: run root `./setup.sh` to generate local env files.
 - Health check is `degraded`: one of PostgreSQL, MongoDB, or Redis is not reachable.
 - Tests fail to connect to databases: start dependencies with Docker Compose first.
 - Browser CORS errors: make sure the frontend origin is listed in `APP_CONFIG__CORS__ALLOWED_ORIGINS`.
+- Local-domain URLs do not resolve: add the hosts entry printed by root `./setup.sh`.
+- After rotating local secrets, reset local volumes if database authentication no longer works.
 
 ## Dependency And Security Notes
 

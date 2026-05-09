@@ -100,6 +100,11 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
 .venv
 env/
 venv/
@@ -145,7 +150,18 @@ dmypy.json
 *.sqlite
 *.sqlite3
 
+# Docker
+docker-compose.override.yml
+docker-compose.local.yml
+compose.override.yaml
+compose.local.yaml
+
 # Secrets
 certs/
+*.pem
+*.key
+*.crt
+*.p12
+*.hosts.backup
 
 .DS_Store

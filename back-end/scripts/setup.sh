@@ -6,9 +6,8 @@ ROOT_DIR="$(cd "$BACKEND_DIR/.." && pwd)"
 
 cd "$ROOT_DIR"
 
-if [[ ! -f back-end/.env ]]; then
-  cp back-end/.env.example back-end/.env
-  echo "Created back-end/.env from back-end/.env.example"
+if [[ ! -f .env || ! -f back-end/.env ]] || grep -q "generated-by-setup" .env back-end/.env; then
+  ./setup.sh
 fi
 
 docker compose up -d postgres mongo redis

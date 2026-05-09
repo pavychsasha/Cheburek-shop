@@ -11,7 +11,11 @@ class RunConfig(BaseModel):
 
 
 class CorsConfig(BaseModel):
-    allowed_origins: str = "http://localhost:5178,http://127.0.0.1:5178"
+    allowed_origins: str = (
+        "http://app.local.cheburek-shop.com:5178,"
+        "http://localhost:5178,"
+        "http://127.0.0.1:5178"
+    )
 
     @property
     def origins(self) -> list[str]:
@@ -48,7 +52,7 @@ class ApiPrefix(BaseModel):
 class DatabaseConfig(BaseModel):
     # url: PostgresDsn
     url: str
-    test_url: str = "postgresql+asyncpg://postgres:postgres@postgres:5432/test_db"
+    test_url: str
     echo: bool = False
     echo_pool: bool = False
     pool_size: int = 50

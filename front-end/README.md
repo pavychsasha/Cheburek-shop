@@ -9,17 +9,32 @@ React 18 storefront built with Vite, TypeScript, Redux Toolkit, SCSS modules, an
 
 ## Environment
 
-Create a local env file:
+The root setup script creates `front-end/.env` and keeps it aligned with the backend:
 
 ```bash
-cp .env.example .env
+../setup.sh
+```
+
+Default local-domain URL:
+
+```text
+http://app.local.cheburek-shop.com:5178
+```
+
+Localhost fallback:
+
+```text
+http://localhost:5178
 ```
 
 Variables:
 
-- `VITE_API_BASE_URL`: backend API base URL, default `http://localhost:8091/api/v1`
-- `VITE_DEV_SERVER_HOST`: dev server host, default `127.0.0.1`
-- `VITE_DEV_SERVER_PORT`: dev server port, default `5178`
+- `VITE_API_BASE_URL`: backend API base URL
+- `VITE_DEV_SERVER_HOST`: dev server bind host
+- `VITE_DEV_SERVER_PORT`: dev server port
+- `VITE_DEV_ALLOWED_HOSTS`: comma-separated Vite host allowlist
+
+`front-end/.env` is local-only and ignored by Git. Keep real local values out of commits.
 
 ## Commands
 
@@ -33,16 +48,10 @@ npm run preview
 npm audit
 ```
 
-Default local URL:
-
-```text
-http://localhost:5178
-```
-
 ## Integration Notes
 
 - API calls use `src/api/api.ts`.
-- Keep `VITE_API_BASE_URL` aligned with the backend port.
+- Keep `VITE_API_BASE_URL` aligned with the backend port and hostname.
 - If the browser reports CORS errors, add the frontend origin to backend `APP_CONFIG__CORS__ALLOWED_ORIGINS`.
 - The app stores bearer tokens in `localStorage` and sends session cookies for cart and language flows.
 
@@ -50,4 +59,6 @@ http://localhost:5178
 
 - Build fails after dependency changes: run `npm ci` to refresh `node_modules` from `package-lock.json`.
 - Dev server port is busy: set `VITE_DEV_SERVER_PORT` in `.env`.
-- API calls fail locally: verify the backend health endpoint at `http://localhost:8091/health`.
+- Local-domain page is blocked by Vite: confirm `VITE_DEV_ALLOWED_HOSTS` includes `app.local.cheburek-shop.com`.
+- API calls fail locally: verify the backend health endpoint at `http://api.local.cheburek-shop.com:8091/health`.
+- Local-domain URLs do not resolve: run root `./setup.sh` and add the printed hosts entry.
