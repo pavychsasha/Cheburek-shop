@@ -64,13 +64,13 @@ npm audit
 - The storefront renders on the storefront local domain and localhost. The admin portal renders only on the admin local domain.
 - Admin tokens are stored in `sessionStorage` and are cleared on unauthorized or forbidden API responses. Token lifetime is controlled by backend `APP_CONFIG__ACCESS_TOKEN__LIFETIME_SECONDS`, which defaults to 30 days for local development.
 - Admin access is enforced by backend superuser checks; frontend route selection is only a rendering concern.
-- Product images are uploaded through admin media APIs and displayed from backend `/media/...` URLs backed by MinIO.
+- Product images are uploaded with drag-and-drop through admin media APIs and displayed from backend `/media/...` URLs backed by MinIO.
 - Seeded category visuals are loaded from backend media URLs and displayed in the storefront category strip.
 - Similar item shelves use backend product-tag recommendations with category fallback.
 - Checkout includes optional customer notes for delivery and fulfillment context.
-- The admin CMS includes customizable dashboard charts, visitor/page-view analytics, products with image upload/preview, product tags, translation tabs with local auto-translation previews, order notes, users, currency settings, and product language settings.
-- Dashboard widget visibility, chart type, and order are stored per admin user by the backend.
-- Product translations are generated through the local translator when enabled and are meant to be reviewed in the CMS before publishing as final localized copy.
+- The admin CMS includes customizable dashboard charts, visitor/page-view analytics, revenue/profit metrics, searchable orders/users, products with drag image upload, product costs, product tags, translation tabs, order notes, users, currency/profit settings, and product language settings.
+- Dashboard widget visibility, chart type, timespan, periodization, and order are stored per admin user by the backend.
+- Product translations are generated through the local LibreTranslate service when enabled and are meant to be reviewed in the CMS before publishing as final localized copy.
 - The product grid keeps existing items visible while category/search/sort refreshes are in flight, so users do not see a blank blink between filter changes.
 - Visitor analytics are first-party only and use anonymous aggregate tracking; no third-party analytics script is included.
 - The storefront ships baseline SEO metadata, canonical URLs, Open Graph/Twitter metadata, and restaurant structured data. The admin host sets `noindex,nofollow`.
@@ -87,6 +87,6 @@ npm audit
 - Product images do not load: verify the backend health endpoint reports MinIO as healthy and rerun the root migration helper.
 - Currency values look stale: refresh the page after saving admin currency settings.
 - Product language tabs look stale: reload Admin Settings, save the language list, run product translation backfill, then refresh Products.
-- Product auto-translation fails: confirm the backend health check is green and the root Compose stack has the `translator` service running.
+- Product auto-translation fails: confirm the backend health check is green and the root Compose stack has the `translator` service running. First startup can take longer while local translation models are downloaded.
 - Local-domain URLs do not resolve: run root `./setup.sh` and add the printed hosts entry.
 - Admin portal shows the login page but login fails: rerun root `./setup.sh`, then rerun the backend admin bootstrap command from the root README.

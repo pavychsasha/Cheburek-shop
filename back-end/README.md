@@ -40,6 +40,7 @@ Important variables:
 - `APP_CONFIG__CURRENCY__SUPPORTED_CURRENCIES`: comma-separated display currencies
 - `APP_CONFIG__CURRENCY__CURRENCY_RATES`: static display rates from base UAH
 - `APP_CONFIG__CURRENCY__CURRENCY_SYMBOLS`: display symbols for supported currencies
+- `APP_CONFIG__PROFIT__FALLBACK_MARGIN`: estimated profit margin for legacy order rows without saved cost
 - `APP_CONFIG__PRODUCT_LANGUAGES__SUPPORTED_LANGUAGES`: comma-separated product translation languages
 - `APP_CONFIG__PRODUCT_LANGUAGES__AUTO_TRANSLATE_PRODUCTS`: enables generated translations for missing product languages
 - `APP_CONFIG__TRANSLATION__ENABLED`: enables backend calls to the local translation service
@@ -166,14 +167,17 @@ Public and admin settings/media endpoints:
 
 - `GET /api/v1/settings/public`: currency display settings
 - `PATCH /api/v1/admin/settings/currency`: update display currencies and rates
+- `PATCH /api/v1/admin/settings/profit`: update fallback profit assumptions
 - `PATCH /api/v1/admin/settings/languages`: update configured product languages
 - `POST /api/v1/admin/translations/backfill`: create missing product translations
 - `POST /api/v1/admin/translations/preview`: generate editable product translation previews
 - `POST /api/v1/admin/media/products`: upload product images
 - `GET /media/{object_name}`: public media served through the backend from MinIO
-- `GET /api/v1/admin/analytics`: dashboard chart and operational datasets
+- `GET /api/v1/admin/analytics?timespan_days=30&period=day`: dashboard chart, revenue, cost, profit, visitor, and operational datasets
 - `GET /api/v1/admin/dashboard/preferences`: per-admin dashboard widget preferences
 - `PATCH /api/v1/admin/dashboard/preferences`: update per-admin dashboard widget preferences
+- `GET /api/v1/orders/?q=&status=&date_from=&date_to=&page=&per_page=`: searchable admin order list
+- `GET /api/v1/users/?q=&is_active=&is_verified=&is_superuser=&page=&per_page=`: searchable admin user list
 - `POST /api/v1/analytics/visit`: first-party anonymous visitor/page-view tracking
 - `GET /api/v1/products/{product_id}/similar`: tag/category based recommendations for one product
 - `GET /api/v1/products/similar?product_ids=...`: tag/category based recommendations for a cart or order context
@@ -185,9 +189,10 @@ Public and admin settings/media endpoints:
 - Similar-item recommendations rank shared tags first and same-category fallback second.
 - Order records support optional customer notes and private admin notes.
 - Visitor analytics store anonymous daily visitor hashes and aggregate page-view counts. Raw IP addresses are not stored.
-- Dashboard preferences are stored per admin user so chart layout and visibility follow the signed-in admin account.
+- Dashboard preferences are stored per admin user so chart layout, timespan, periodization, and visibility follow the signed-in admin account.
+- Product cost is stored on products and snapshotted onto order lines for revenue, cost, gross profit, estimated profit, margin, and average order value reporting.
 - Category and product placeholder visuals are generated into MinIO during the idempotent seed flow.
-- The local translator exposes a LibreTranslate-compatible `/translate` shape for development without API keys.
+- The local translator is a LibreTranslate service. It exposes `/translate` and `/languages` for development without API keys; first startup may take longer while models download into the local Docker volume.
 
 ## Troubleshooting
 

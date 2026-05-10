@@ -116,7 +116,7 @@ Important root `.env` values:
 - `REDIS_PORT`: host Redis port
 - `MINIO_API_PORT`: host MinIO API port
 - `MINIO_CONSOLE_PORT`: host MinIO console port
-- `TRANSLATOR_PORT`: host port for the local translation service
+- `TRANSLATOR_PORT`: host port for the local LibreTranslate service
 - `MINIO_ROOT_USER`: generated local MinIO access key
 - `MINIO_ROOT_PASSWORD`: generated local MinIO secret key
 - `MINIO_BUCKET`: local product image bucket
@@ -126,6 +126,7 @@ Important root `.env` values:
 - `SUPPORTED_CURRENCIES`: comma-separated display currencies
 - `CURRENCY_RATES`: static display rates from base UAH
 - `CURRENCY_SYMBOLS`: display symbols for supported currencies
+- `FALLBACK_PROFIT_MARGIN`: estimated margin for legacy order rows without saved cost
 - `PRODUCT_LANGUAGES`: comma-separated product translation languages
 - `AUTO_TRANSLATE_PRODUCTS`: enables local auto-translation for missing product languages
 - `TRANSLATION_ENABLED`: enables the local translation service integration
@@ -205,16 +206,18 @@ docker compose run --rm fastapi python -m app.actions.create_super_user
 - Product creation in the admin CMS uses translation tabs instead of separate hardcoded fields.
 - Product tags are managed in the admin CMS and power similar-item recommendations in the storefront.
 - Add global product languages in Admin Settings, then run the product translation backfill action from the same screen.
-- Missing translations are generated through the local translator service when enabled, then remain editable in the admin CMS before publishing.
+- Missing translations are generated through the local LibreTranslate service when enabled, then remain editable in the admin CMS before publishing.
+- Product images are uploaded by drag-and-drop in the admin CMS. The raw media URL is kept internally but is not edited directly in the product form.
 - The storefront includes baseline SEO metadata, Open Graph/Twitter metadata, canonical URLs, and restaurant structured data.
 - The admin host sets `noindex,nofollow` at runtime.
 - For production-grade per-product SEO, add stable product detail routes plus server-side rendering or prerendering so crawlers receive product-specific HTML.
 
 ## CMS, Analytics, And Demo Data
 
-- The admin CMS includes catalog/media management, product tags, product languages, order status and private fulfillment notes, users, currency settings, and dashboard analytics.
+- The admin CMS includes catalog/media management, product costs, product tags, product languages, searchable orders/users, order status and private fulfillment notes, currency/profit settings, and dashboard analytics.
+- Profit analytics show revenue, recorded cost, gross profit, estimated profit for legacy rows, margin, and average order value.
 - Customer order notes are collected at checkout and private admin notes are editable from order detail.
-- Dashboard widget visibility, order, and chart type are stored per admin user in the backend.
+- Dashboard widget visibility, order, chart type, timespan, and periodization are stored per admin user in the backend.
 - Visitor analytics are first-party and privacy-safe: the app stores an anonymous visitor cookie, records aggregate daily unique visitors and page views, and does not persist raw IP addresses.
 - Similar-item recommendations use shared product tags first and category fallback second.
 - Local demo orders and visitor/page-view analytics are seeded by default so dashboard charts are useful on a fresh setup. Demo seeds are idempotent and local-development oriented.
@@ -228,7 +231,7 @@ docker compose run --rm fastapi python -m app.actions.create_super_user
 - MinIO console login is needed: read the generated local MinIO values from ignored `.env`; do not copy them into documentation or commits.
 - Currency selector shows stale values: reload settings in the admin Settings panel or refresh the page after saving currency changes.
 - Product translation languages look stale: reload Admin Settings, save the language list, then run the backfill action.
-- Auto-translation is unavailable: confirm the `translator` container is healthy and `TRANSLATION_ENABLED=true`, then rerun the backfill or use the Products panel translation action.
+- Auto-translation is unavailable: confirm the `translator` container is healthy and `TRANSLATION_ENABLED=true`, then rerun the backfill or use the Products panel translation action. First startup can take longer while LibreTranslate downloads local models into the Docker volume.
 - Port already in use: update `.env`, `front-end/.env`, and `back-end/.env` so ports, `VITE_API_BASE_URL`, and `CORS_ALLOWED_ORIGINS` stay aligned. If host port `80` is busy, set `LOCAL_HTTP_PORT` to another value and include that port in local-domain URLs.
 - Frontend cannot reach the API: confirm `VITE_API_BASE_URL` points to the backend URL visible from the browser.
 - Storefront works on localhost but local domains fail: rerun `./setup.sh` in a terminal and accept or manually add the printed hosts entry.
