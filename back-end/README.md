@@ -85,6 +85,14 @@ docker compose run --rm fastapi python -m app.actions.seed_products
 
 Known seed products are matched by English product name. The seed creates missing products, uploads deterministic local product images to MinIO, updates known seed fields and translations, and leaves unrelated catalog records, carts, and orders untouched. Use `--reset` only for an explicit local seed-product reset.
 
+Seed local demo orders for dashboard charts:
+
+```bash
+docker compose run --rm fastapi python -m app.actions.seed_demo_orders
+```
+
+Demo orders are matched by local demo email address and can be run repeatedly without creating duplicates.
+
 Backfill configured product languages across existing products:
 
 ```bash
@@ -150,6 +158,21 @@ Public and admin settings/media endpoints:
 - `POST /api/v1/admin/media/products`: upload product images
 - `GET /media/{object_name}`: public media served through the backend from MinIO
 - `GET /api/v1/admin/analytics`: dashboard chart and operational datasets
+- `GET /api/v1/admin/dashboard/preferences`: per-admin dashboard widget preferences
+- `PATCH /api/v1/admin/dashboard/preferences`: update per-admin dashboard widget preferences
+- `POST /api/v1/analytics/visit`: first-party anonymous visitor/page-view tracking
+- `GET /api/v1/products/{product_id}/similar`: tag/category based recommendations for one product
+- `GET /api/v1/products/similar?product_ids=...`: tag/category based recommendations for a cart or order context
+- `PATCH /api/v1/orders/{order_id}/notes`: update private admin fulfillment notes
+
+## Data Model Notes
+
+- Product tags are normalized strings stored in SQL and attached to products through a many-to-many relationship.
+- Similar-item recommendations rank shared tags first and same-category fallback second.
+- Order records support optional customer notes and private admin notes.
+- Visitor analytics store anonymous daily visitor hashes and aggregate page-view counts. Raw IP addresses are not stored.
+- Dashboard preferences are stored per admin user so chart layout and visibility follow the signed-in admin account.
+- Category and product placeholder visuals are generated into MinIO during the idempotent seed flow.
 
 ## Troubleshooting
 

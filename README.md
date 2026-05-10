@@ -45,7 +45,7 @@ The friendly local-domain URLs are served through the local proxy on `LOCAL_HTTP
 ./start.sh
 ```
 
-`setup.sh` creates local env files, generates local-only secrets, installs frontend dependencies when npm is available, validates Docker Compose, starts PostgreSQL, MongoDB, Redis, and MinIO, waits for them to become healthy, runs migrations, seeds the product catalog and product media idempotently, backfills configured product-language drafts, bootstraps the local admin user, and offers to add these hostnames to `/etc/hosts`:
+`setup.sh` creates local env files, generates local-only secrets, installs frontend dependencies when npm is available, validates Docker Compose, starts PostgreSQL, MongoDB, Redis, and MinIO, waits for them to become healthy, runs migrations, seeds the product catalog, category visuals, product media, product tags, and local demo orders idempotently, backfills configured product-language drafts, bootstraps the local admin user, and offers to add these hostnames to `/etc/hosts`:
 
 ```text
 127.0.0.1 app.local.cheburek-shop.com api.local.cheburek-shop.com admin.local.cheburek-shop.com
@@ -79,7 +79,7 @@ Run migrations and the idempotent product seed after services are available:
 ./scripts/migrate.sh
 ```
 
-The product seed creates missing seed products, uploads deterministic local product images to MinIO, updates known seed product fields by English product name, and backfills missing configured product-language drafts. It does not delete unrelated products, carts, or orders. A destructive seed reset is available only as an explicit local maintenance action:
+The product seed creates missing seed products, uploads deterministic local product and category images to MinIO, updates known seed product fields and tags by English product name, and backfills missing configured product-language drafts. It does not delete unrelated products, carts, or orders. A destructive seed reset is available only as an explicit local maintenance action:
 
 ```bash
 docker compose run --rm fastapi python -m app.actions.seed_products --reset
@@ -189,6 +189,7 @@ Admin and seed helpers:
 
 ```bash
 docker compose run --rm fastapi python -m app.actions.seed_products
+docker compose run --rm fastapi python -m app.actions.seed_demo_orders
 docker compose run --rm fastapi python -m app.actions.backfill_product_translations
 docker compose run --rm fastapi python -m app.actions.create_super_user
 ```
@@ -196,11 +197,21 @@ docker compose run --rm fastapi python -m app.actions.create_super_user
 ## Product Languages And SEO
 
 - Product creation in the admin CMS uses translation tabs instead of separate hardcoded fields.
+- Product tags are managed in the admin CMS and power similar-item recommendations in the storefront.
 - Add global product languages in Admin Settings, then run the product translation backfill action from the same screen.
 - Missing translations are filled as editable drafts from the English fallback. No external translation provider is configured, so review generated drafts before publishing them as final copy.
 - The storefront includes baseline SEO metadata, Open Graph/Twitter metadata, canonical URLs, and restaurant structured data.
 - The admin host sets `noindex,nofollow` at runtime.
 - For production-grade per-product SEO, add stable product detail routes plus server-side rendering or prerendering so crawlers receive product-specific HTML.
+
+## CMS, Analytics, And Demo Data
+
+- The admin CMS includes catalog/media management, product tags, product languages, order status and private fulfillment notes, users, currency settings, and dashboard analytics.
+- Customer order notes are collected at checkout and private admin notes are editable from order detail.
+- Dashboard widget visibility, order, and chart type are stored per admin user in the backend.
+- Visitor analytics are first-party and privacy-safe: the app stores an anonymous visitor cookie, records aggregate daily unique visitors and page views, and does not persist raw IP addresses.
+- Similar-item recommendations use shared product tags first and category fallback second.
+- Local demo orders are seeded by default so dashboard charts are useful on a fresh setup. The demo-order seed is idempotent and local-development oriented.
 
 ## Troubleshooting
 

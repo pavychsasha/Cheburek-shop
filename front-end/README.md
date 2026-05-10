@@ -65,8 +65,13 @@ npm audit
 - Admin tokens are stored in `sessionStorage` and are cleared on unauthorized or forbidden API responses.
 - Admin access is enforced by backend superuser checks; frontend route selection is only a rendering concern.
 - Product images are uploaded through admin media APIs and displayed from backend `/media/...` URLs backed by MinIO.
-- The admin CMS includes dashboard charts, products with image upload/preview, translation tabs, orders, users, currency settings, and product language settings.
+- Seeded category visuals are loaded from backend media URLs and displayed in the storefront category strip.
+- Similar item shelves use backend product-tag recommendations with category fallback.
+- Checkout includes optional customer notes for delivery and fulfillment context.
+- The admin CMS includes customizable dashboard charts, visitor/page-view analytics, products with image upload/preview, product tags, translation tabs, order notes, users, currency settings, and product language settings.
+- Dashboard widget visibility, chart type, and order are stored per admin user by the backend.
 - Product-language drafts are generated from the English fallback and are meant to be reviewed in the CMS before publishing as final localized copy.
+- Visitor analytics are first-party only and use anonymous aggregate tracking; no third-party analytics script is included.
 - The storefront ships baseline SEO metadata, canonical URLs, Open Graph/Twitter metadata, and restaurant structured data. The admin host sets `noindex,nofollow`.
 - Product-specific SEO requires stable product detail routes plus server-side rendering or prerendering in a later production hardening pass.
 - If the browser reports CORS errors, add the frontend origin to backend `APP_CONFIG__CORS__ALLOWED_ORIGINS`.
