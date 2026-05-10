@@ -94,6 +94,8 @@ class OrderModel(BaseModel):
     user_id: Optional[uuid.UUID] = None
     status: str
     email: EmailStr
+    customer_notes: Optional[str] = None
+    admin_notes: Optional[str] = None
     products: List[OrderProductModel]
 
     # TODO: SAVE PRODUCTS NAME, ORDERS TOTAL PRICE AND COUNT IN CASE PRODUCT HAS BEEN DELETED
@@ -118,6 +120,8 @@ class OrderResponseModel(BaseModel):
     user_id: Optional[uuid.UUID] = None
     status: OrderStatus | str
     email: EmailStr
+    customer_notes: Optional[str] = None
+    admin_notes: Optional[str] = None
     # TODO: SAVE PRODUCTS NAME, ORDERS TOTAL PRICE AND COUNT IN CASE PRODUCT HAS BEEN DELETED
     total_price: Optional[float] = None
     total_count: Optional[int] = None
@@ -132,6 +136,7 @@ class OrderResponse(BaseModel):
 
 class ContactData(BaseModel):
     email: EmailStr
+    customer_notes: Optional[str] = Field(None, max_length=500)
 
 
 class OrderStatusUpdate(BaseModel):
@@ -141,6 +146,16 @@ class OrderStatusUpdate(BaseModel):
 class OrderStatusResponse(BaseModel):
     order_id: uuid.UUID
     status: OrderStatus
+
+
+class OrderNotesUpdate(BaseModel):
+    admin_notes: Optional[str] = Field(None, max_length=1000)
+
+
+class OrderNotesResponse(BaseModel):
+    order_id: uuid.UUID
+    customer_notes: Optional[str] = None
+    admin_notes: Optional[str] = None
 
 
 # Utility function for handling address parameters in API routes
@@ -166,10 +181,11 @@ async def order_address_params(
 
 async def contact_data_params(
     email: Annotated[str, Query(max_length=150)],
+    customer_notes: Annotated[str | None, Query(max_length=500)] = None,
 ) -> ContactData:
     # Validate the email within the ContactData model
     try:
-        return ContactData(email=email)
+        return ContactData(email=email, customer_notes=customer_notes)
     except ValidationError as e:
         # Raise a 422 HTTPException with details if validation fails
         raise HTTPException(status_code=422, detail=e.errors())

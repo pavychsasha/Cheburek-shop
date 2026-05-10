@@ -10,5 +10,6 @@ docker compose build fastapi
 docker compose run --rm fastapi alembic upgrade head
 docker compose run --rm fastapi python -m app.actions.seed_products
 docker compose run --rm fastapi python -m app.actions.backfill_product_translations
+docker compose run --rm fastapi python -m app.actions.seed_demo_orders
 
-echo "Database migrations, product seed, and translation backfill complete."
+echo "Database migrations, product seed, demo orders, and translation backfill complete."

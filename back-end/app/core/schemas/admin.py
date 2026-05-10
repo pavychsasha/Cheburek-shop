@@ -2,7 +2,7 @@ from typing import Literal
 import uuid
 from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 OrderStatus = Literal[
     "PENDING",
@@ -20,6 +20,8 @@ class AdminSummary(BaseModel):
     users_count: int
     low_stock_products_count: int
     pending_orders_count: int
+    unique_visitors_today: int = 0
+    page_views_today: int = 0
 
 
 class ProductSeedResponse(BaseModel):
@@ -65,6 +67,19 @@ class AdminAnalytics(BaseModel):
     orders_by_status: list[StatusCount]
     orders_over_time: list[TimeSeriesPoint]
     revenue_over_time: list[TimeSeriesPoint]
+    visitors_over_time: list[TimeSeriesPoint] = Field(default_factory=list)
+    page_views_over_time: list[TimeSeriesPoint] = Field(default_factory=list)
     low_stock_products: list[LowStockProduct]
     top_products: list[TopProduct]
     recent_orders: list[RecentOrder]
+
+
+class DashboardWidgetPreference(BaseModel):
+    id: str
+    visible: bool = True
+    chart_type: str | None = None
+    position: int = 0
+
+
+class DashboardPreferences(BaseModel):
+    widgets: list[DashboardWidgetPreference]

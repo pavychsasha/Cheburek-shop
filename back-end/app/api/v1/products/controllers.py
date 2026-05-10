@@ -17,6 +17,7 @@ from app.core.schemas.products import (
     ProductUpdate,
     ProductPartialUpdate,
     ProductBulkCreate,
+    ProductResponse,
     Pagination,
     pagination_params,
     ProductPaginatedResponse,
@@ -65,6 +66,25 @@ async def get_product_by_query(
     )
 
 
+@router.get(
+    "/similar",
+    response_model=list[ProductResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_similar_products(
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    current_language: Annotated[str, Depends(current_language)],
+    product_ids: Annotated[list[uuid.UUID] | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=12)] = 4,
+):
+    return await ProductsService.get_similar_products_response(
+        session=session,
+        product_ids=product_ids or [],
+        current_language=current_language,
+        limit=limit,
+    )
+
+
 @router.post(
     "/",
     response_model=Product,
@@ -91,6 +111,25 @@ async def create_bulk_product(
     return await ProductsService.bulk_create_product(
         session=session,
         products_in=products_in,
+    )
+
+
+@router.get(
+    "/{product_id}/similar",
+    response_model=list[ProductResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_similar_products_for_product(
+    product_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    current_language: Annotated[str, Depends(current_language)],
+    limit: Annotated[int, Query(ge=1, le=12)] = 4,
+):
+    return await ProductsService.get_similar_products_response(
+        session=session,
+        product_ids=[product_id],
+        current_language=current_language,
+        limit=limit,
     )
 
 

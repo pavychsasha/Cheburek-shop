@@ -17,6 +17,7 @@ class ProductLanguageSettings(BaseModel):
 class PublicSettings(BaseModel):
     currency: CurrencySettings
     product_languages: ProductLanguageSettings
+    category_media: dict[str, str]
 
 
 class CurrencySettingsUpdate(BaseModel):

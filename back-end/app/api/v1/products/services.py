@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models import redis_db_helper
 from app.core.models import Product
+from app.core.models.product_tag import ProductTag
 from app.core.models.product_translations import ProductTranslation
 
 from app.core.schemas.products import (
@@ -44,6 +45,53 @@ def validate_uuid(uuid_str: str):
 
 
 class ProductsService:
+    @staticmethod
+    def _normalize_tag_names(tag_names: list[str] | None) -> list[str]:
+        if not tag_names:
+            return []
+        normalized = [
+            tag.strip().lower()
+            for tag in tag_names
+            if tag and tag.strip()
+        ]
+        return list(dict.fromkeys(normalized))
+
+    @classmethod
+    async def _resolve_tags(
+        cls,
+        session: AsyncSession,
+        tag_names: list[str] | None,
+    ) -> list[ProductTag]:
+        normalized_names = cls._normalize_tag_names(tag_names)
+        if not normalized_names:
+            return []
+
+        existing_result = await session.execute(
+            select(ProductTag).where(ProductTag.name.in_(normalized_names))
+        )
+        existing_tags = {tag.name: tag for tag in existing_result.scalars().all()}
+        created = False
+        resolved_tags = []
+        for tag_name in normalized_names:
+            tag = existing_tags.get(tag_name)
+            if tag is None:
+                tag = ProductTag(name=tag_name)
+                session.add(tag)
+                existing_tags[tag_name] = tag
+                created = True
+            resolved_tags.append(tag)
+        if created:
+            await session.flush()
+        return resolved_tags
+
+    @classmethod
+    async def _sync_product_tags(
+        cls,
+        session: AsyncSession,
+        product: Product,
+        tag_names: list[str] | None,
+    ) -> None:
+        product.tag_links = await cls._resolve_tags(session, tag_names)
 
     @classmethod
     async def get_products(
@@ -54,7 +102,10 @@ class ProductsService:
         """Fetch products with pagination."""
         stmt = (
             select(Product)
-            .options(joinedload(Product.translations))
+            .options(
+                joinedload(Product.translations),
+                selectinload(Product.tag_links),
+            )
             .order_by(Product.product_id)
         )
         if pagination_params:
@@ -69,7 +120,10 @@ class ProductsService:
     async def localize_product(
         cls, product: Product, language: str = "en"
     ) -> ProductResponse:
+        fallback_translation = None
         for translation in product.translations:
+            if translation.language_code == "en":
+                fallback_translation = translation
             if translation.language_code == language:
                 return ProductResponse(
                     product_id=product.product_id,
@@ -79,7 +133,23 @@ class ProductsService:
                     category=product.category,
                     stock_quantity=product.stock_quantity,
                     image_src=product.image_src,
+                    tags=product.tags,
                 )
+        if fallback_translation is None and product.translations:
+            fallback_translation = product.translations[0]
+        if fallback_translation is None:
+            raise ProductNotFoundError(product.product_id)
+
+        return ProductResponse(
+            product_id=product.product_id,
+            name=fallback_translation.product_name,
+            description=fallback_translation.product_description,
+            price=product.price,
+            category=product.category,
+            stock_quantity=product.stock_quantity,
+            image_src=product.image_src,
+            tags=product.tags,
+        )
 
     @classmethod
     async def localize_products_list(
@@ -140,7 +210,10 @@ class ProductsService:
 
         stmt = (
             select(Product)
-            .options(joinedload(Product.translations))
+            .options(
+                joinedload(Product.translations),
+                selectinload(Product.tag_links),
+            )
             .where(
                 Product.product_id == product_id,
             )
@@ -214,7 +287,8 @@ class ProductsService:
                 translation_subquery.c.rank == 1
             )  # Get only the first matching translation
             .options(
-                selectinload(Product.translations)
+                selectinload(Product.translations),
+                selectinload(Product.tag_links),
             )  # Load all translations for each product
         )
 
@@ -335,6 +409,7 @@ class ProductsService:
             image_src=product_in.image_src,
             translations=translations,
         )
+        product.tag_links = await cls._resolve_tags(session, product_in.tags)
 
         session.add(product)
         await session.commit()
@@ -388,6 +463,7 @@ class ProductsService:
                     stock_quantity=product.stock_quantity,
                     image_src=product.image_src,
                     translations=translations,
+                    tag_links=await cls._resolve_tags(session, product.tags),
                 )
             )
 
@@ -450,6 +526,8 @@ class ProductsService:
                             .values(**translation.model_dump(exclude_unset=partial))
                         )
                         await session.execute(stmt)
+            elif name == "tags":
+                await cls._sync_product_tags(session, product, value)
             else:
                 setattr(product, name, value)
         await session.commit()
@@ -492,12 +570,66 @@ class ProductsService:
         await cls.invalidate_products_cache()
 
     @classmethod
+    @memoize(ttl=300)
+    async def get_similar_products_response(
+        cls,
+        session: AsyncSession,
+        product_ids: list[uuid.UUID],
+        current_language: str = "en",
+        limit: int = 4,
+    ) -> list[ProductResponse]:
+        source_ids = list(dict.fromkeys(product_ids))
+        if not source_ids:
+            return []
+
+        source_result = await session.execute(
+            select(Product)
+            .options(selectinload(Product.tag_links))
+            .where(Product.product_id.in_(source_ids))
+        )
+        source_products = source_result.scalars().all()
+        source_tags = {tag for product in source_products for tag in product.tags}
+        source_categories = {
+            product.category
+            for product in source_products
+            if product.category
+        }
+        if not source_tags and not source_categories:
+            return []
+
+        candidate_result = await session.execute(
+            select(Product)
+            .options(
+                selectinload(Product.translations),
+                selectinload(Product.tag_links),
+            )
+            .where(Product.product_id.notin_(source_ids))
+        )
+        candidates = candidate_result.scalars().all()
+        scored: list[tuple[int, str, Product]] = []
+        for product in candidates:
+            shared_tags = source_tags.intersection(product.tags)
+            category_match = bool(product.category in source_categories)
+            score = len(shared_tags) * 10 + (2 if category_match else 0)
+            if score > 0:
+                scored.append((score, product.category or "", product))
+
+        scored.sort(key=lambda row: (-row[0], row[1], str(row[2].product_id)))
+        return await cls.localize_products_list(
+            [product for _, _, product in scored[:limit]],
+            current_language,
+        )
+
+    @classmethod
     async def invalidate_products_cache(cls):
+        if redis_db_helper.cache is None:
+            return
 
         for m in [
             cls.get_all_products_response,
             cls.get_product,
             cls.get_searched_products_response,
+            cls.get_similar_products_response,
         ]:
 
             await redis_db_helper.cache.invalidate(m, invalidate_all=True)

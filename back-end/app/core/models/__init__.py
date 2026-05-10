@@ -20,6 +20,10 @@ __all__ = (
     "City",
     "State",
     "Country",
+    "ProductTag",
+    "DashboardPreference",
+    "VisitorDailyStats",
+    "PageViewDailyStats",
 )
 
 from .cart import all_document_models, Cart, CartItem, StoreSettings
@@ -42,3 +46,6 @@ from .address import Address
 from .city import City
 from .state import State
 from .country import Country
+from .product_tag import ProductTag
+from .dashboard_preference import DashboardPreference
+from .visitor_analytics import VisitorDailyStats, PageViewDailyStats

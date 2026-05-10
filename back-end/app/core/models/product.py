@@ -8,6 +8,9 @@ from .base import Base
 if TYPE_CHECKING:
     from .order_association import OrderProductAssociation
     from .product_translations import ProductTranslation
+    from .product_tag import ProductTag
+
+from .product_tag import product_tag_association
 
 
 class Product(Base):
@@ -37,6 +40,14 @@ class Product(Base):
         back_populates="product", cascade="all, delete, delete-orphan"
     )
     translations: Mapped[list["ProductTranslation"]] = relationship(uselist=True)
+    tag_links: Mapped[list["ProductTag"]] = relationship(
+        secondary=product_tag_association,
+        back_populates="products",
+    )
+
+    @property
+    def tags(self) -> list[str]:
+        return sorted(tag.name for tag in self.tag_links)
 
     __table_args__ = (
         Index("ix_product_category", "category"),

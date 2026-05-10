@@ -49,6 +49,7 @@ class ProductBase(BaseModel):
     category: Optional[str] = Field(None, max_length=50)
     stock_quantity: Optional[int] = Field(default=0, ge=0)
     image_src: str = Field(..., min_length=1, max_length=350)
+    tags: list[str] = Field(default_factory=list, max_length=20)
 
     @field_validator("category")
     def no_whitespace(cls, v):
@@ -80,6 +81,7 @@ class ProductPartialUpdate(BaseModel):
     stock_quantity: Optional[int] = Field(None, ge=0)
     points: Optional[int] = Field(None, ge=0)
     image_src: Optional[str] = Field(None, max_length=500)
+    tags: Optional[list[str]] = Field(None, max_length=20)
 
     @field_validator("category")
     def no_whitespace(cls, v):
@@ -108,6 +110,7 @@ class ProductResponse(BaseModel):
     category: Optional[str] = Field(None, max_length=50)
     stock_quantity: Optional[int] = Field(default=0, ge=0)
     image_src: str = Field(..., min_length=1, max_length=350)
+    tags: list[str] = Field(default_factory=list)
 
 
 class ProductPaginatedResponse(PaginationResponse):

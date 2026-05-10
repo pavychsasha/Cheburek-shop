@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 
 from app.core.config import settings
 from app.core.models import StoreSettings
+from app.core.storage import public_media_url
 from app.core.schemas.settings import (
     CurrencySettings,
     CurrencySettingsUpdate,
@@ -32,6 +33,16 @@ def _configured_product_language_settings() -> ProductLanguageSettings:
         product_languages=settings.product_languages.language_codes,
         auto_translate_products=settings.product_languages.auto_translate_products,
     )
+
+
+def get_category_media_settings() -> dict[str, str]:
+    return {
+        "All": public_media_url("categories/all.svg"),
+        "Chebureks": public_media_url("categories/chebureks.svg"),
+        "Pies": public_media_url("categories/pies.svg"),
+        "Drinks": public_media_url("categories/drinks.svg"),
+        "Other": public_media_url("categories/other.svg"),
+    }
 
 
 def _settings_to_schema(store_settings: StoreSettings) -> CurrencySettings:

@@ -39,6 +39,7 @@ class ApiV1Prefix(BaseModel):
     admin: str = "/admin"
     languages: str = "/languages"
     settings: str = "/settings"
+    analytics: str = "/analytics"
 
 
 class ApiPrefix(BaseModel):

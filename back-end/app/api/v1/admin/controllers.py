@@ -18,6 +18,7 @@ from app.core.models import (
 from app.core.models.product_translations import ProductTranslation
 from app.core.schemas.admin import (
     AdminAnalytics,
+    DashboardPreferences,
     AdminSummary,
     LowStockProduct,
     ProductSeedResponse,
@@ -25,6 +26,10 @@ from app.core.schemas.admin import (
     StatusCount,
     TimeSeriesPoint,
     TopProduct,
+)
+from app.core.services.dashboard_preferences import (
+    get_dashboard_preferences,
+    update_dashboard_preferences,
 )
 from app.core.schemas.settings import (
     CurrencySettings,
@@ -38,6 +43,11 @@ from app.core.services.product_translations import backfill_product_translations
 from app.core.services.store_settings import (
     update_currency_settings,
     update_product_language_settings,
+)
+from app.core.services.visitor_analytics import (
+    get_today_page_views,
+    get_today_unique_visitors,
+    get_visitor_time_series,
 )
 from app.core.storage import upload_product_image
 
@@ -73,6 +83,8 @@ async def get_admin_summary(
         .select_from(Order)
         .where(Order.status == "PENDING")
     )
+    unique_visitors_today = await get_today_unique_visitors(session)
+    page_views_today = await get_today_page_views(session)
 
     return AdminSummary(
         products_count=products_count or 0,
@@ -80,6 +92,8 @@ async def get_admin_summary(
         users_count=users_count or 0,
         low_stock_products_count=low_stock_products_count or 0,
         pending_orders_count=pending_orders_count or 0,
+        unique_visitors_today=unique_visitors_today,
+        page_views_today=page_views_today,
     )
 
 
@@ -120,6 +134,10 @@ async def get_admin_analytics(
             .limit(14)
         )
     ).all()
+    visitors_over_time, page_views_over_time = await get_visitor_time_series(
+        session,
+        days=14,
+    )
 
     low_stock_rows = (
         await session.execute(
@@ -177,6 +195,8 @@ async def get_admin_analytics(
             TimeSeriesPoint(date=row[0], value=float(row[1] or 0))
             for row in reversed(revenue_time_rows)
         ],
+        visitors_over_time=visitors_over_time,
+        page_views_over_time=page_views_over_time,
         low_stock_products=[
             LowStockProduct(
                 product_id=row[0],
@@ -204,6 +224,44 @@ async def get_admin_analytics(
             )
             for order in recent_order_rows.scalars().all()
         ],
+    )
+
+
+@router.get(
+    "/dashboard/preferences",
+    response_model=DashboardPreferences,
+    status_code=status.HTTP_200_OK,
+)
+async def get_admin_dashboard_preferences(
+    session: Annotated[
+        AsyncSession,
+        Depends(sql_db_helper.session_dependency),
+    ],
+    superuser: Annotated[User, Security(current_active_superuser)],
+):
+    return await get_dashboard_preferences(
+        session=session,
+        user_id=superuser.id,
+    )
+
+
+@router.patch(
+    "/dashboard/preferences",
+    response_model=DashboardPreferences,
+    status_code=status.HTTP_200_OK,
+)
+async def update_admin_dashboard_preferences(
+    preferences: DashboardPreferences,
+    session: Annotated[
+        AsyncSession,
+        Depends(sql_db_helper.session_dependency),
+    ],
+    superuser: Annotated[User, Security(current_active_superuser)],
+):
+    return await update_dashboard_preferences(
+        session=session,
+        user_id=superuser.id,
+        update=preferences,
     )
 
 

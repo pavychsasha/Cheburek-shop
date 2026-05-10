@@ -18,6 +18,8 @@ from app.core.schemas.orders import (
     ContactData,
     contact_data_params,
     OrderResponseModel,
+    OrderNotesResponse,
+    OrderNotesUpdate,
     OrderStatusResponse,
     OrderStatusUpdate,
 )
@@ -96,6 +98,35 @@ async def update_order_status(
             status=status_update.status,
         )
         return OrderStatusResponse(order_id=order.order_id, status=order.status)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+
+
+@router.patch(
+    "/{order_id}/notes",
+    response_model=OrderNotesResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_order_notes(
+    order_id: uuid.UUID,
+    notes_update: OrderNotesUpdate,
+    session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
+    superuser: Annotated[User, Security(current_active_superuser)],
+):
+    try:
+        order = await OrderService.update_order_notes(
+            session=session,
+            order_id=order_id,
+            admin_notes=notes_update.admin_notes,
+        )
+        return OrderNotesResponse(
+            order_id=order.order_id,
+            customer_notes=order.customer_notes,
+            admin_notes=order.admin_notes,
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

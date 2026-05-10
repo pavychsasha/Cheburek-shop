@@ -5,7 +5,7 @@ import re
 from sqlalchemy import delete, select
 from sqlalchemy.orm import joinedload
 
-from app.core.models import Product, redis_db_helper, sql_db_helper
+from app.core.models import Product, ProductTag, redis_db_helper, sql_db_helper
 from app.core.models.product_translations import (
     ProductTranslation as ProductTranslationModel,
 )
@@ -285,6 +285,8 @@ def _seed_products() -> ProductBulkCreate:
     names = [_english_name(product) for product in products_in.products]
     if len(names) != len(set(names)):
         raise ValueError("Seed products must have unique English names.")
+    for product in products_in.products:
+        product.tags = _default_seed_tags(product)
     return products_in
 
 
@@ -298,6 +300,35 @@ def _english_name(product) -> str:
 def _slugify_seed_name(name: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
     return slug or "product"
+
+
+def _default_seed_tags(product) -> list[str]:
+    name = _english_name(product).lower()
+    category = (product.category or "other").lower()
+    tags = {category}
+    for token in (
+        "meat",
+        "chicken",
+        "cheese",
+        "mushrooms",
+        "potatoes",
+        "cabbage",
+        "herbs",
+        "cola",
+        "sprite",
+        "drink",
+        "fries",
+        "nuggets",
+    ):
+        if token in name:
+            tags.add(token)
+    if category == "drinks":
+        tags.update({"cold", "beverage"})
+    if category == "chebureks":
+        tags.add("fried")
+    if category == "pies":
+        tags.add("baked")
+    return sorted(tags)
 
 
 def _seed_svg(product_name: str, category: str | None) -> bytes:
@@ -322,6 +353,73 @@ def _seed_svg(product_name: str, category: str | None) -> bytes:
     return svg.encode("utf-8")
 
 
+def _category_svg(category: str) -> bytes:
+    if category == "Drinks":
+        foreground = """
+    <rect x="238" y="92" width="82" height="252" rx="32" fill="#d94b3d" stroke="#78322e" stroke-width="10"/>
+    <rect x="255" y="58" width="48" height="48" rx="14" fill="#7bbbc8" stroke="#22515d" stroke-width="8"/>
+    <rect x="366" y="142" width="120" height="170" rx="28" fill="#ffffff" stroke="#d94b3d" stroke-width="12"/>
+    <path d="M376 184h100" stroke="#d94b3d" stroke-width="12" stroke-linecap="round"/>
+    <path d="M372 316h118" stroke="#78322e" stroke-width="12" stroke-linecap="round"/>
+"""
+        primary = "#d94b3d"
+        accent = "#7bbbc8"
+    elif category == "Pies":
+        foreground = """
+    <ellipse cx="360" cy="258" rx="170" ry="92" fill="#dba457" stroke="#75533a" stroke-width="14"/>
+    <path d="M230 248c62-42 185-52 266-12" fill="none" stroke="#fff3d4" stroke-width="15" stroke-linecap="round"/>
+    <path d="M286 210c18 20 24 42 18 66M358 196c14 28 15 57 2 88M431 211c-12 25-19 48-18 70" fill="none" stroke="#8b5c3c" stroke-width="10" stroke-linecap="round" opacity=".55"/>
+"""
+        primary = "#dba457"
+        accent = "#75533a"
+    elif category == "Chebureks":
+        foreground = """
+    <path d="M180 294c58-156 268-212 404-80 28 27 30 74 1 101-91 84-306 87-405-21Z" fill="#f0ad4e" stroke="#a94539" stroke-width="15" stroke-linejoin="round"/>
+    <path d="M215 286c92 36 230 38 335-1" fill="none" stroke="#fff4d8" stroke-width="12" stroke-linecap="round"/>
+    <path d="M270 246c32-32 71-50 120-54" fill="none" stroke="#a94539" stroke-width="10" stroke-linecap="round" opacity=".55"/>
+"""
+        primary = "#f0ad4e"
+        accent = "#a94539"
+    elif category == "All":
+        foreground = """
+    <path d="M170 276c46-130 216-176 330-72 24 22 26 60 2 84-74 70-250 72-332-12Z" fill="#f0ad4e" stroke="#a94539" stroke-width="12"/>
+    <rect x="464" y="112" width="70" height="180" rx="28" fill="#d94b3d" stroke="#78322e" stroke-width="9"/>
+    <ellipse cx="320" cy="332" rx="118" ry="62" fill="#dba457" stroke="#75533a" stroke-width="11"/>
+"""
+        primary = "#f0ad4e"
+        accent = "#d94b3d"
+    else:
+        foreground = """
+    <rect x="220" y="168" width="260" height="150" rx="34" fill="#f3d27a" stroke="#745132" stroke-width="13"/>
+    <path d="M252 214h198M252 268h140" stroke="#fff9dd" stroke-width="16" stroke-linecap="round"/>
+    <circle cx="468" cy="326" r="52" fill="#75b6c9" stroke="#234d59" stroke-width="10"/>
+"""
+        primary = "#f3d27a"
+        accent = "#745132"
+
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" role="img" aria-label="{category} category">
+  <rect width="720" height="420" rx="36" fill="#fff8ee"/>
+  <circle cx="575" cy="82" r="84" fill="{primary}" opacity=".22"/>
+  <circle cx="128" cy="350" r="108" fill="{accent}" opacity=".14"/>
+  <g>{foreground}
+  </g>
+</svg>"""
+    return svg.encode("utf-8")
+
+
+async def ensure_category_media() -> dict[str, str]:
+    media: dict[str, str] = {}
+    for category in ("All", "Chebureks", "Pies", "Drinks", "Other"):
+        object_name = f"categories/{_slugify_seed_name(category)}.svg"
+        stored = await put_media_object(
+            object_name=object_name,
+            payload=_category_svg(category),
+            content_type="image/svg+xml",
+        )
+        media[category] = stored.url
+    return media
+
+
 async def _ensure_seed_product_image(seed_product) -> str:
     seed_name = _english_name(seed_product)
     object_name = f"products/seed-{_slugify_seed_name(seed_name)}.svg"
@@ -339,7 +437,7 @@ async def _get_existing_seed_products(
     stmt = (
         select(Product)
         .join(Product.translations)
-        .options(joinedload(Product.translations))
+        .options(joinedload(Product.translations), joinedload(Product.tag_links))
         .where(
             ProductTranslationModel.language_code == "en",
             ProductTranslationModel.product_name.in_(seed_names),
@@ -391,7 +489,35 @@ def _apply_seed_product(existing_product: Product, seed_product) -> bool:
                 setattr(existing_translation, field_name, new_value)
                 changed = True
 
+    existing_tags = set(existing_product.tags)
+    next_tags = set(_default_seed_tags(seed_product))
+    if existing_tags != next_tags:
+        changed = True
+
     return changed
+
+
+async def _resolve_seed_tags(session, seed_product) -> list[ProductTag]:
+    tag_names = _default_seed_tags(seed_product)
+    if not tag_names:
+        return []
+    result = await session.execute(
+        select(ProductTag).where(ProductTag.name.in_(tag_names))
+    )
+    existing = {tag.name: tag for tag in result.scalars().all()}
+    created = False
+    resolved: list[ProductTag] = []
+    for tag_name in tag_names:
+        tag = existing.get(tag_name)
+        if tag is None:
+            tag = ProductTag(name=tag_name)
+            session.add(tag)
+            existing[tag_name] = tag
+            created = True
+        resolved.append(tag)
+    if created:
+        await session.flush()
+    return resolved
 
 
 async def _delete_seed_products(session, seed_names: list[str]) -> int:
@@ -417,6 +543,8 @@ async def seed_products(session=None, *, reset: bool = False) -> ProductSeedResu
         session_context = None
 
     try:
+        await ensure_category_media()
+
         if reset:
             await _delete_seed_products(session, seed_names)
 
@@ -441,12 +569,17 @@ async def seed_products(session=None, *, reset: bool = False) -> ProductSeedResu
                         stock_quantity=seed_product.stock_quantity,
                         image_src=seed_product.image_src,
                         translations=translations,
+                        tag_links=await _resolve_seed_tags(session, seed_product),
                     )
                 )
                 created += 1
                 continue
 
             if _apply_seed_product(existing_product, seed_product):
+                existing_product.tag_links = await _resolve_seed_tags(
+                    session,
+                    seed_product,
+                )
                 session.add(existing_product)
                 updated += 1
             else:

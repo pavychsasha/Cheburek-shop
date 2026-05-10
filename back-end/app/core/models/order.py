@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 import uuid
 
-from sqlalchemy import ForeignKey, func, Float, Integer, UniqueConstraint
+from sqlalchemy import ForeignKey, func, Float, Integer, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -50,6 +50,8 @@ class Order(Base):
     )
     email: Mapped[str]
     status: Mapped[str] = mapped_column(default="PENDING")
+    customer_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    admin_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     total_price: Mapped[float] = mapped_column(Float, default=0)
     total_count: Mapped[int] = mapped_column(Integer, default=0)

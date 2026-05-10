@@ -41,6 +41,9 @@ class OrderService:
                 joinedload(Order.products)
                 .selectinload(OrderProductAssociation.product)
                 .selectinload(Product.translations),
+                joinedload(Order.products)
+                .selectinload(OrderProductAssociation.product)
+                .selectinload(Product.tag_links),
                 joinedload(Order.address)
                 .joinedload(Address.city)
                 .joinedload(City.state)
@@ -59,6 +62,9 @@ class OrderService:
                 joinedload(Order.products)
                 .selectinload(OrderProductAssociation.product)
                 .selectinload(Product.translations),
+                joinedload(Order.products)
+                .selectinload(OrderProductAssociation.product)
+                .selectinload(Product.tag_links),
                 joinedload(Order.address)
                 .joinedload(Address.city)
                 .joinedload(City.state)
@@ -130,6 +136,8 @@ class OrderService:
                     user_id=order.user_id,
                     status=order.status,
                     email=order.email,
+                    customer_notes=order.customer_notes,
+                    admin_notes=order.admin_notes,
                     total_price=order.total_price,
                     total_count=order.total_count,
                     products=product_response,
@@ -303,6 +311,7 @@ class OrderService:
         new_order = Order(
             order_id=uuid.uuid4(),
             email=contact_data.email,
+            customer_notes=contact_data.customer_notes,
             address_id=new_address.address_id,
         )
         session.add(new_order)
@@ -348,6 +357,22 @@ class OrderService:
         if order is None:
             raise ValueError("Order not found")
         order.status = status
+        session.add(order)
+        await session.commit()
+        await session.refresh(order)
+        return order
+
+    @classmethod
+    async def update_order_notes(
+        cls,
+        session: AsyncSession,
+        order_id: uuid.UUID,
+        admin_notes: str | None,
+    ) -> Order:
+        order = await cls.get_order(session=session, order_id=order_id)
+        if order is None:
+            raise ValueError("Order not found")
+        order.admin_notes = admin_notes
         session.add(order)
         await session.commit()
         await session.refresh(order)
