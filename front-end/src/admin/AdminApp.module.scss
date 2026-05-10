@@ -186,6 +186,34 @@
   margin-bottom: 14px;
 }
 
+.hiddenWidgets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid #eadfce;
+  border-radius: 8px;
+  background: #fffaf4;
+
+  span {
+    color: #756a60;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  button {
+    min-height: 32px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: #e7f0e7;
+    color: #2f6f5e;
+    font-weight: 900;
+    cursor: pointer;
+  }
+}
+
 .preferencePanel {
   display: grid;
   gap: 12px;
@@ -269,11 +297,59 @@
   background: #fffdf8;
   box-shadow: 0 16px 38px rgba(67, 43, 24, 0.07);
 
+}
+
+.chartHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
   h3 {
     margin: 0;
     font-size: 18px;
     line-height: 1.25;
     color: #2b2420;
+  }
+}
+
+.widgetControls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: 100%;
+
+  select,
+  button {
+    width: auto;
+    min-height: 32px;
+    padding: 6px 9px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  select {
+    background: #fffaf4;
+  }
+
+  button {
+    background: #eef2f0;
+    color: #33433d;
+    cursor: pointer;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+  }
+
+  span {
+    align-self: center;
+    color: #78958b;
+    font-size: 12px;
+    font-weight: 900;
   }
 }
 
@@ -427,6 +503,18 @@
   }
 }
 
+.filterBar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(130px, 0.7fr)) auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid #eadfce;
+  border-radius: 8px;
+  background: #fffdf8;
+}
+
 label {
   display: grid;
   gap: 7px;
@@ -451,10 +539,6 @@ textarea {
     border-color: #2f6f5e;
     outline: 3px solid rgba(47, 111, 94, 0.18);
   }
-}
-
-input[type="file"] {
-  padding: 8px;
 }
 
 textarea {
@@ -624,6 +708,19 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #e7f0e7;
+  color: #2f6f5e;
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .mediaPreview {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
@@ -650,6 +747,61 @@ textarea {
   }
 }
 
+.mediaDropzone {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 8px 14px;
+  align-items: center;
+  padding: 14px;
+  border: 2px dashed #d8c8b3;
+  border-radius: 8px;
+  background: #fff8ef;
+  color: #33433d;
+  text-align: left;
+  cursor: pointer;
+
+  img {
+    grid-row: span 2;
+    width: 96px;
+    height: 96px;
+    padding: 8px;
+    border-radius: 8px;
+    background: #fff;
+    object-fit: contain;
+  }
+
+  span {
+    font-size: 15px;
+    font-weight: 900;
+  }
+
+  small {
+    color: #756a60;
+    font-weight: 700;
+  }
+
+  &:hover,
+  &:focus-visible {
+    border-color: #cf5343;
+    background: #fff0eb;
+    outline: none;
+  }
+}
+
+.mediaDropzoneActive {
+  border-color: #2f6f5e;
+  background: #e7f0e7;
+}
+
+.hiddenFileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .currencyGrid {
   display: grid;
   gap: 12px;
@@ -657,7 +809,72 @@ textarea {
 
 .settingsSections {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+.settingsPanel:first-child {
+  grid-column: 1 / -1;
+}
+
+.settingsPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+
+  h3 {
+    margin-top: 4px;
+  }
+
+  span {
+    max-width: 420px;
+    color: #65746f;
+    font-weight: 800;
+    text-align: right;
+  }
+}
+
+.settingsPreview {
+  display: grid;
+  align-self: end;
+  gap: 4px;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #eadfce;
+  border-radius: 8px;
+  background: #fff8ef;
+
+  span {
+    color: #756a60;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  strong {
+    color: #2f6f5e;
+  }
+}
+
+.statusGood,
+.statusWarning {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.statusGood {
+  background: #e2f4ec;
+  color: #176346 !important;
+}
+
+.statusWarning {
+  background: #fff0eb;
+  color: #a94134 !important;
 }
 
 .settingsHint {
@@ -724,6 +941,23 @@ textarea {
   gap: 14px;
   padding: 10px 0;
   border-bottom: 1px solid #edf1ef;
+
+  span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.orderItemTotal {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 6px;
+  padding: 14px;
+  border-radius: 8px;
+  background: #fff8ef;
+  color: #2b2420;
+  font-weight: 900;
 }
 
 .checkGroup {
@@ -773,7 +1007,9 @@ textarea {
   }
 
   .preferenceGrid,
-  .preferenceItem {
+  .preferenceItem,
+  .settingsSections,
+  .filterBar {
     grid-template-columns: 1fr;
   }
 
@@ -798,18 +1034,22 @@ textarea {
 
   .panelHeader,
   .toolbar,
+  .filterBar,
   .translationHeader,
   .formActions,
-  .detailHeader {
+  .detailHeader,
+  .chartHeader,
+  .settingsPanelHeader {
     align-items: stretch;
     flex-direction: column;
   }
 
   .nav,
   .metricGrid,
-  .formGrid,
-  .translationTools,
-  .currencyRow {
+    .formGrid,
+    .translationTools,
+    .currencyRow,
+    .mediaDropzone {
     grid-template-columns: 1fr;
   }
 

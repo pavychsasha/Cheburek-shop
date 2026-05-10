@@ -1,4 +1,4 @@
-import {FormEvent, ReactNode, useCallback, useEffect, useMemo, useState} from "react";
+import {DragEvent, FormEvent, ReactNode, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {
     Area,
     AreaChart,
@@ -26,6 +26,7 @@ import {
     deleteProduct,
     deleteUser,
     fetchAdminAnalytics,
+    fetchAdminAnalyticsForWidget,
     fetchAdminMe,
     fetchAdminSummary,
     fetchDashboardPreferences,
@@ -44,6 +45,7 @@ import {
     updateOrderStatus,
     updateProduct,
     updateProductLanguageSettings,
+    updateProfitSettings,
     updateUserFlags,
     uploadProductImage,
 } from "./api.ts";
@@ -66,6 +68,7 @@ import type {
 import {useCurrencyFormatter} from "../hooks/useCurrencyFormatter.ts";
 import {useAppDispatch, useAppSelector} from "../redux/hooks.ts";
 import {fetchPublicSettings as refreshPublicSettings} from "../redux/slices/settingsSlice.ts";
+import {categoryFallbackSvg} from "../utils/productVisuals.ts";
 
 const ORDER_STATUSES: OrderStatus[] = [
     "PENDING",
@@ -142,6 +145,7 @@ const emptyProductForm = (
     languages: string[] = DEFAULT_PRODUCT_LANGUAGES,
 ): ProductFormState => ({
     price: "",
+    cost_price: "",
     category: "Chebureks",
     stock_quantity: "0",
     image_src: "",
@@ -154,6 +158,7 @@ const productToForm = (
     languages: string[] = DEFAULT_PRODUCT_LANGUAGES,
 ): ProductFormState => ({
     price: String(product.price),
+    cost_price: String(product.cost_price || ""),
     category: product.category || "Chebureks",
     stock_quantity: String(product.stock_quantity),
     image_src: product.image_src,
@@ -175,19 +180,21 @@ const productToForm = (
 const CHART_COLORS = ["#2f6f5e", "#c84f3f", "#f2ad4b", "#6b7280", "#5f6fb2", "#9a6438"];
 
 const DEFAULT_DASHBOARD_WIDGETS: DashboardWidgetPreference[] = [
-    {id: "metrics", visible: true, position: 0},
-    {id: "revenue", visible: true, chart_type: "line", position: 1},
-    {id: "orders", visible: true, chart_type: "bar", position: 2},
-    {id: "visitors", visible: true, chart_type: "area", position: 3},
-    {id: "status", visible: true, chart_type: "pie", position: 4},
-    {id: "top-products", visible: true, position: 5},
-    {id: "low-stock", visible: true, position: 6},
-    {id: "recent-orders", visible: true, position: 7},
+    {id: "metrics", visible: true, position: 0, timespan_days: 30, period: "day"},
+    {id: "revenue", visible: true, chart_type: "line", position: 1, timespan_days: 30, period: "day"},
+    {id: "profit", visible: true, chart_type: "area", position: 2, timespan_days: 30, period: "day"},
+    {id: "orders", visible: true, chart_type: "bar", position: 3, timespan_days: 30, period: "day"},
+    {id: "visitors", visible: true, chart_type: "area", position: 4, timespan_days: 30, period: "day"},
+    {id: "status", visible: true, chart_type: "pie", position: 5, timespan_days: 30, period: "day"},
+    {id: "top-products", visible: true, position: 6, timespan_days: 30, period: "day"},
+    {id: "low-stock", visible: true, position: 7, timespan_days: 30, period: "day"},
+    {id: "recent-orders", visible: true, position: 8, timespan_days: 30, period: "day"},
 ];
 
 const DASHBOARD_WIDGET_LABELS: Record<string, string> = {
     metrics: "Metric cards",
     revenue: "Revenue over time",
+    profit: "Profit over time",
     orders: "Orders by day",
     visitors: "Visitors and page views",
     status: "Order status mix",
@@ -381,12 +388,13 @@ const AdminLogin = ({onLogin}: {onLogin: (user: AdminUser) => void}) => {
 const DashboardPanel = () => {
     const [summary, setSummary] = useState<AdminSummary | null>(null);
     const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
+    const [widgetAnalytics, setWidgetAnalytics] = useState<Record<string, AdminAnalytics>>({});
     const [preferences, setPreferences] = useState<DashboardPreferences>({
         widgets: DEFAULT_DASHBOARD_WIDGETS,
     });
     const [error, setError] = useState("");
+    const [savingPreference, setSavingPreference] = useState("");
     const [isLoading, setIsLoading] = useState(true);
-    const [showPreferences, setShowPreferences] = useState(false);
     const formatPrice = useCurrencyFormatter();
 
     const loadSummary = useCallback(async () => {
@@ -400,6 +408,7 @@ const DashboardPanel = () => {
             ]);
             setSummary(nextSummary);
             setAnalytics(nextAnalytics);
+            setWidgetAnalytics({});
             setPreferences(nextPreferences);
         } catch (requestError) {
             setError(getAdminErrorMessage(requestError, "Unable to load dashboard."));
@@ -424,6 +433,11 @@ const DashboardPanel = () => {
               ["Pending", summary.pending_orders_count],
               ["Visitors today", summary.unique_visitors_today],
               ["Page views today", summary.page_views_today],
+              ["Revenue", formatPrice(summary.total_revenue)],
+              ["Gross profit", formatPrice(summary.gross_profit)],
+              ["Estimated profit", formatPrice(summary.estimated_profit)],
+              ["Profit margin", `${summary.profit_margin_percent}%`],
+              ["Avg. order", formatPrice(summary.average_order_value)],
           ]
         : [];
 
@@ -434,15 +448,21 @@ const DashboardPanel = () => {
         }))
         .sort((left, right) => left.position - right.position);
 
-    const persistPreferences = async (nextWidgets: DashboardWidgetPreference[]) => {
+    const persistPreferences = async (
+        nextWidgets: DashboardWidgetPreference[],
+        widgetId?: string,
+    ) => {
         const nextPreferences = {
             widgets: nextWidgets.map((widget, index) => ({...widget, position: index})),
         };
         setPreferences(nextPreferences);
+        setSavingPreference(widgetId || "dashboard");
         try {
             await updateDashboardPreferences(nextPreferences);
         } catch (requestError) {
             setError(getAdminErrorMessage(requestError, "Unable to save dashboard preferences."));
+        } finally {
+            setSavingPreference("");
         }
     };
 
@@ -450,11 +470,28 @@ const DashboardPanel = () => {
         widgetId: string,
         update: Partial<DashboardWidgetPreference>,
     ) => {
-        void persistPreferences(
-            sortedWidgets.map((widget) =>
-                widget.id === widgetId ? {...widget, ...update} : widget,
-            ),
+        const nextWidgets = sortedWidgets.map((widget) =>
+            widget.id === widgetId ? {...widget, ...update} : widget,
         );
+        void persistPreferences(nextWidgets, widgetId);
+        const nextWidget = nextWidgets.find((widget) => widget.id === widgetId);
+        if (nextWidget && ("timespan_days" in update || "period" in update)) {
+            void fetchAdminAnalyticsForWidget(nextWidget.timespan_days, nextWidget.period)
+                .then((nextAnalytics) =>
+                    setWidgetAnalytics((current) => ({
+                        ...current,
+                        [widgetId]: nextAnalytics,
+                    })),
+                )
+                .catch((requestError) =>
+                    setError(
+                        getAdminErrorMessage(
+                            requestError,
+                            "Unable to load widget analytics.",
+                        ),
+                    ),
+                );
+        }
     };
 
     const moveWidget = (widgetId: string, direction: -1 | 1) => {
@@ -466,7 +503,7 @@ const DashboardPanel = () => {
         const nextWidgets = [...sortedWidgets];
         const [widget] = nextWidgets.splice(currentIndex, 1);
         nextWidgets.splice(nextIndex, 0, widget);
-        void persistPreferences(nextWidgets);
+        void persistPreferences(nextWidgets, widgetId);
     };
 
     const renderSeriesChart = (
@@ -475,6 +512,21 @@ const DashboardPanel = () => {
         color: string,
         formatter?: (value: number) => string,
     ) => {
+        if (chartType === "pie") {
+            return (
+                <PieChart>
+                    <Pie data={data} dataKey="value" nameKey="date" outerRadius={86} label>
+                        {data.map((entry, index) => (
+                            <Cell
+                                key={`${entry.date}-${entry.value}`}
+                                fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            />
+                        ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatter ? formatter(Number(value)) : value} />
+                </PieChart>
+            );
+        }
         if (chartType === "bar") {
             return (
                 <BarChart data={data}>
@@ -520,6 +572,75 @@ const DashboardPanel = () => {
         );
     };
 
+    const widgetControls = (widget: DashboardWidgetPreference, index: number) => (
+        <div className={styles.widgetControls}>
+            {widget.chart_type && (
+                <select
+                    value={widget.chart_type}
+                    onChange={(event) =>
+                        updateWidget(widget.id, {
+                            chart_type: event.target.value as DashboardChartType,
+                        })
+                    }
+                    aria-label={`${DASHBOARD_WIDGET_LABELS[widget.id] || widget.id} chart type`}
+                >
+                    {CHART_TYPES.map((chartType) => (
+                        <option key={chartType} value={chartType}>
+                            {chartType}
+                        </option>
+                    ))}
+                </select>
+            )}
+            <select
+                value={widget.timespan_days}
+                onChange={(event) =>
+                    updateWidget(widget.id, {
+                        timespan_days: Number(event.target.value),
+                    })
+                }
+                aria-label={`${DASHBOARD_WIDGET_LABELS[widget.id] || widget.id} timespan`}
+            >
+                <option value={7}>7 days</option>
+                <option value={14}>14 days</option>
+                <option value={30}>30 days</option>
+                <option value={90}>90 days</option>
+            </select>
+            <select
+                value={widget.period}
+                onChange={(event) =>
+                    updateWidget(widget.id, {
+                        period: event.target.value as DashboardWidgetPreference["period"],
+                    })
+                }
+                aria-label={`${DASHBOARD_WIDGET_LABELS[widget.id] || widget.id} period`}
+            >
+                <option value="day">Daily</option>
+                <option value="week">Weekly</option>
+                <option value="month">Monthly</option>
+            </select>
+            <button type="button" onClick={() => moveWidget(widget.id, -1)} disabled={index === 0}>
+                Up
+            </button>
+            <button
+                type="button"
+                onClick={() => moveWidget(widget.id, 1)}
+                disabled={index === sortedWidgets.length - 1}
+            >
+                Down
+            </button>
+            <button
+                type="button"
+                onClick={() => updateWidget(widget.id, {visible: false})}
+            >
+                Hide
+            </button>
+            {savingPreference === widget.id && <span>Saving</span>}
+        </div>
+    );
+
+    const analyticsFor = (widget: DashboardWidgetPreference) =>
+        widgetAnalytics[widget.id] || analytics;
+
     return (
         <section>
             <PanelHeader
@@ -532,80 +653,37 @@ const DashboardPanel = () => {
             {error && <InlineState tone="error">{error}</InlineState>}
             {!isLoading && !error && analytics && (
                 <>
-                    <div className={styles.dashboardActions}>
-                        <button
-                            type="button"
-                            className={styles.secondaryButton}
-                            onClick={() => setShowPreferences((isVisible) => !isVisible)}
-                        >
-                            {showPreferences ? "Hide customization" : "Customize dashboard"}
-                        </button>
-                    </div>
-                    {showPreferences && (
-                        <div className={styles.preferencePanel}>
-                            <div>
-                                <strong>Dashboard customization</strong>
-                                <span>Choose visible widgets, chart styles, and display order.</span>
-                            </div>
-                            <div className={styles.preferenceGrid}>
-                                {sortedWidgets.map((widget, index) => (
-                                    <div key={widget.id} className={styles.preferenceItem}>
-                                        <label>
-                                            <input
-                                                type="checkbox"
-                                                checked={widget.visible}
-                                                onChange={(event) =>
-                                                    updateWidget(widget.id, {
-                                                        visible: event.target.checked,
-                                                    })
-                                                }
-                                            />
-                                            {DASHBOARD_WIDGET_LABELS[widget.id] || widget.id}
-                                        </label>
-                                        {widget.chart_type && (
-                                            <select
-                                                value={widget.chart_type}
-                                                onChange={(event) =>
-                                                    updateWidget(widget.id, {
-                                                        chart_type: event.target.value as DashboardChartType,
-                                                    })
-                                                }
-                                            >
-                                                {CHART_TYPES.map((chartType) => (
-                                                    <option key={chartType} value={chartType}>
-                                                        {chartType}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        )}
-                                        <div className={styles.preferenceActions}>
-                                            <button
-                                                type="button"
-                                                onClick={() => moveWidget(widget.id, -1)}
-                                                disabled={index === 0}
-                                            >
-                                                Up
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => moveWidget(widget.id, 1)}
-                                                disabled={index === sortedWidgets.length - 1}
-                                            >
-                                                Down
-                                            </button>
-                                        </div>
-                                    </div>
+                    {sortedWidgets.some((widget) => !widget.visible) && (
+                        <div className={styles.hiddenWidgets}>
+                            <span>Hidden widgets</span>
+                            {sortedWidgets
+                                .filter((widget) => !widget.visible)
+                                .map((widget) => (
+                                    <button
+                                        key={widget.id}
+                                        type="button"
+                                        onClick={() => updateWidget(widget.id, {visible: true})}
+                                    >
+                                        Show {DASHBOARD_WIDGET_LABELS[widget.id] || widget.id}
+                                    </button>
                                 ))}
-                            </div>
                         </div>
                     )}
                     <div className={styles.dashboardGrid}>
                         {sortedWidgets
                             .filter((widget) => widget.visible)
-                            .map((widget) => {
+                            .map((widget, index) => {
+                                const currentAnalytics = analyticsFor(widget);
+                                if (!currentAnalytics) {
+                                    return null;
+                                }
                                 if (widget.id === "metrics") {
                                     return (
-                                        <ChartPanel key={widget.id} title="Metric cards">
+                                        <ChartPanel
+                                            key={widget.id}
+                                            title="Metric cards"
+                                            controls={widgetControls(widget, index)}
+                                        >
                                             <div className={styles.metricGrid}>
                                                 {cards.map(([label, value]) => (
                                                     <article key={label} className={styles.metric}>
@@ -619,10 +697,14 @@ const DashboardPanel = () => {
                                 }
                                 if (widget.id === "revenue") {
                                     return (
-                                        <ChartPanel key={widget.id} title="Revenue over time">
+                                        <ChartPanel
+                                            key={widget.id}
+                                            title="Revenue over time"
+                                            controls={widgetControls(widget, index)}
+                                        >
                                             <ResponsiveContainer width="100%" height={260}>
                                                 {renderSeriesChart(
-                                                    analytics.revenue_over_time,
+                                                    currentAnalytics.revenue_over_time,
                                                     widget.chart_type,
                                                     "#2f6f5e",
                                                     (value) => formatPrice(value),
@@ -631,12 +713,44 @@ const DashboardPanel = () => {
                                         </ChartPanel>
                                     );
                                 }
-                                if (widget.id === "orders") {
+                                if (widget.id === "profit") {
                                     return (
-                                        <ChartPanel key={widget.id} title="Orders by day">
+                                        <ChartPanel
+                                            key={widget.id}
+                                            title="Profit over time"
+                                            controls={widgetControls(widget, index)}
+                                        >
                                             <ResponsiveContainer width="100%" height={260}>
                                                 {renderSeriesChart(
-                                                    analytics.orders_over_time,
+                                                    currentAnalytics.profit_over_time,
+                                                    widget.chart_type,
+                                                    "#f2ad4b",
+                                                    (value) => formatPrice(value),
+                                                )}
+                                            </ResponsiveContainer>
+                                            <div className={styles.compactList}>
+                                                <div>
+                                                    <span>Estimated profit</span>
+                                                    <strong>{formatPrice(currentAnalytics.estimated_profit)}</strong>
+                                                </div>
+                                                <div>
+                                                    <span>Margin</span>
+                                                    <strong>{currentAnalytics.profit_margin_percent}%</strong>
+                                                </div>
+                                            </div>
+                                        </ChartPanel>
+                                    );
+                                }
+                                if (widget.id === "orders") {
+                                    return (
+                                        <ChartPanel
+                                            key={widget.id}
+                                            title="Orders by day"
+                                            controls={widgetControls(widget, index)}
+                                        >
+                                            <ResponsiveContainer width="100%" height={260}>
+                                                {renderSeriesChart(
+                                                    currentAnalytics.orders_over_time,
                                                     widget.chart_type,
                                                     "#c84f3f",
                                                 )}
@@ -646,10 +760,14 @@ const DashboardPanel = () => {
                                 }
                                 if (widget.id === "visitors") {
                                     return (
-                                        <ChartPanel key={widget.id} title="Visitors and page views">
+                                        <ChartPanel
+                                            key={widget.id}
+                                            title="Visitors and page views"
+                                            controls={widgetControls(widget, index)}
+                                        >
                                             <ResponsiveContainer width="100%" height={260}>
                                                 {renderSeriesChart(
-                                                    analytics.visitors_over_time,
+                                                    currentAnalytics.visitors_over_time,
                                                     widget.chart_type,
                                                     "#5f6fb2",
                                                 )}
@@ -658,7 +776,7 @@ const DashboardPanel = () => {
                                                 <div>
                                                     <span>Page views over time</span>
                                                     <strong>
-                                                        {analytics.page_views_over_time.reduce(
+                                                        {currentAnalytics.page_views_over_time.reduce(
                                                             (sum, point) => sum + point.value,
                                                             0,
                                                         )} views
@@ -670,18 +788,22 @@ const DashboardPanel = () => {
                                 }
                                 if (widget.id === "status") {
                                     return (
-                                        <ChartPanel key={widget.id} title="Order status mix">
-                                            {analytics.orders_by_status.length > 0 ? (
+                                        <ChartPanel
+                                            key={widget.id}
+                                            title="Order status mix"
+                                            controls={widgetControls(widget, index)}
+                                        >
+                                            {currentAnalytics.orders_by_status.length > 0 ? (
                                                 <ResponsiveContainer width="100%" height={260}>
                                                     <PieChart>
                                                         <Pie
-                                                            data={analytics.orders_by_status}
+                                                            data={currentAnalytics.orders_by_status}
                                                             dataKey="count"
                                                             nameKey="status"
                                                             outerRadius={88}
                                                             label
                                                         >
-                                                            {analytics.orders_by_status.map((entry, index) => (
+                                                            {currentAnalytics.orders_by_status.map((entry, index) => (
                                                                 <Cell
                                                                     key={entry.status}
                                                                     fill={CHART_COLORS[index % CHART_COLORS.length]}
@@ -699,14 +821,18 @@ const DashboardPanel = () => {
                                 }
                                 if (widget.id === "top-products") {
                                     return (
-                                        <ChartPanel key={widget.id} title="Top products">
-                                            {analytics.top_products.length > 0 ? (
+                                        <ChartPanel
+                                            key={widget.id}
+                                            title="Top products"
+                                            controls={widgetControls(widget, index)}
+                                        >
+                                            {currentAnalytics.top_products.length > 0 ? (
                                                 <div className={styles.compactList}>
-                                                    {analytics.top_products.map((product) => (
+                                                    {currentAnalytics.top_products.map((product) => (
                                                         <div key={product.name}>
                                                             <span>{product.name}</span>
                                                             <strong>
-                                                                {product.quantity} sold - {formatPrice(product.revenue)}
+                                                                {product.quantity} sold - {formatPrice(product.revenue)} revenue - {formatPrice(product.profit)} profit
                                                             </strong>
                                                         </div>
                                                     ))}
@@ -719,10 +845,14 @@ const DashboardPanel = () => {
                                 }
                                 if (widget.id === "low-stock") {
                                     return (
-                                        <ChartPanel key={widget.id} title="Low stock">
-                                            {analytics.low_stock_products.length > 0 ? (
+                                        <ChartPanel
+                                            key={widget.id}
+                                            title="Low stock"
+                                            controls={widgetControls(widget, index)}
+                                        >
+                                            {currentAnalytics.low_stock_products.length > 0 ? (
                                                 <div className={styles.compactList}>
-                                                    {analytics.low_stock_products.map((product) => (
+                                                    {currentAnalytics.low_stock_products.map((product) => (
                                                         <div key={product.product_id}>
                                                             <span>{product.name}</span>
                                                             <strong>{product.stock_quantity} left</strong>
@@ -737,10 +867,14 @@ const DashboardPanel = () => {
                                 }
                                 if (widget.id === "recent-orders") {
                                     return (
-                                        <ChartPanel key={widget.id} title="Recent orders">
-                                            {analytics.recent_orders.length > 0 ? (
+                                        <ChartPanel
+                                            key={widget.id}
+                                            title="Recent orders"
+                                            controls={widgetControls(widget, index)}
+                                        >
+                                            {currentAnalytics.recent_orders.length > 0 ? (
                                                 <div className={styles.compactList}>
-                                                    {analytics.recent_orders.map((order) => (
+                                                    {currentAnalytics.recent_orders.map((order) => (
                                                         <div key={order.order_id}>
                                                             <span>{order.email}</span>
                                                             <strong>
@@ -764,9 +898,20 @@ const DashboardPanel = () => {
     );
 };
 
-const ChartPanel = ({title, children}: {title: string; children: ReactNode}) => (
+const ChartPanel = ({
+    title,
+    children,
+    controls,
+}: {
+    title: string;
+    children: ReactNode;
+    controls?: ReactNode;
+}) => (
     <article className={styles.chartPanel}>
-        <h3>{title}</h3>
+        <div className={styles.chartHeader}>
+            <h3>{title}</h3>
+            {controls}
+        </div>
         {children}
     </article>
 );
@@ -818,7 +963,9 @@ const ProductsPanel = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [isDraggingImage, setIsDraggingImage] = useState(false);
     const [isTranslating, setIsTranslating] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
     const formatPrice = useCurrencyFormatter();
 
     const loadProducts = useCallback(async () => {
@@ -956,6 +1103,19 @@ const ProductsPanel = () => {
             form.translations[0];
         if (!source?.product_name.trim() || !source.product_description.trim()) {
             setError("Add an English name and description before translating.");
+            return;
+        }
+        const filledTargets = form.translations.filter(
+            (translation) =>
+                targetLanguages.includes(translation.language_code) &&
+                translation.language_code !== "en" &&
+                (translation.product_name.trim() ||
+                    translation.product_description.trim()),
+        );
+        if (
+            filledTargets.length > 0 &&
+            !window.confirm("Replace existing translated text for the selected language?")
+        ) {
             return;
         }
         setIsTranslating(true);
@@ -1102,6 +1262,12 @@ const ProductsPanel = () => {
         }
     };
 
+    const handleImageDrop = (event: DragEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        setIsDraggingImage(false);
+        void uploadImage(event.dataTransfer.files?.[0]);
+    };
+
     return (
         <section>
             <PanelHeader
@@ -1230,6 +1396,17 @@ const ProductsPanel = () => {
                             />
                         </label>
                         <label>
+                            Cost
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={form.cost_price}
+                                onChange={(event) => setForm({...form, cost_price: event.target.value})}
+                                placeholder="Production cost in UAH"
+                            />
+                        </label>
+                        <label>
                             Stock
                             <input
                                 type="number"
@@ -1251,22 +1428,6 @@ const ProductsPanel = () => {
                                 <option value="Other">Other</option>
                             </select>
                         </label>
-                        <label>
-                            Image URL
-                            <input
-                                value={form.image_src}
-                                onChange={(event) => setForm({...form, image_src: event.target.value})}
-                                required
-                            />
-                        </label>
-                        <label>
-                            Upload image
-                            <input
-                                type="file"
-                                accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
-                                onChange={(event) => void uploadImage(event.target.files?.[0])}
-                            />
-                        </label>
                         <label className={styles.fullWidth}>
                             Tags
                             <input
@@ -1276,14 +1437,38 @@ const ProductsPanel = () => {
                             />
                         </label>
                     </div>
-                    <div className={styles.mediaPreview}>
-                        {form.image_src ? (
-                            <img src={form.image_src} alt="Product preview" />
-                        ) : (
-                            <span>No image selected.</span>
-                        )}
-                        {isUploadingImage && <span>Uploading image.</span>}
-                    </div>
+                    <button
+                        type="button"
+                        className={`${styles.mediaDropzone} ${isDraggingImage ? styles.mediaDropzoneActive : ""}`}
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={(event) => {
+                            event.preventDefault();
+                            setIsDraggingImage(true);
+                        }}
+                        onDragLeave={() => setIsDraggingImage(false)}
+                        onDrop={handleImageDrop}
+                    >
+                        <img
+                            src={form.image_src || categoryFallbackSvg(form.category)}
+                            alt="Product preview"
+                            onError={(event) => {
+                                event.currentTarget.src = categoryFallbackSvg(form.category);
+                            }}
+                        />
+                        <span>
+                            {isUploadingImage
+                                ? "Uploading image"
+                                : "Drop product image here or click to upload"}
+                        </span>
+                        <small>PNG, JPEG, WebP, GIF, or SVG. Stored in local media storage.</small>
+                    </button>
+                    <input
+                        ref={fileInputRef}
+                        className={styles.hiddenFileInput}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                        onChange={(event) => void uploadImage(event.target.files?.[0])}
+                    />
                     <div className={styles.formActions}>
                         <button type="submit" className={styles.primaryButton} disabled={isSaving || isUploadingImage}>
                             {isSaving ? "Saving" : editingProductId ? "Update product" : "Create product"}
@@ -1301,10 +1486,16 @@ const ProductsPanel = () => {
                     {!isLoading && products.length === 0 && <InlineState>No products found.</InlineState>}
                     {!isLoading && products.length > 0 && (
                         <ResponsiveTable
-                            headers={["Product", "Category", "Tags", "Price", "Stock", "Actions"]}
+                            headers={["Product", "Category", "Tags", "Price", "Cost", "Stock", "Actions"]}
                             rows={products.map((product) => [
                                 <div className={styles.productCell}>
-                                    <img src={product.image_src} alt="" />
+                                    <img
+                                        src={product.image_src || categoryFallbackSvg(product.category)}
+                                        alt=""
+                                        onError={(event) => {
+                                            event.currentTarget.src = categoryFallbackSvg(product.category);
+                                        }}
+                                    />
                                     <strong>{product.name}</strong>
                                 </div>,
                                 product.category,
@@ -1312,6 +1503,7 @@ const ProductsPanel = () => {
                                     {product.tags?.length ? product.tags.join(", ") : "No tags"}
                                 </span>,
                                 formatPrice(product.price),
+                                formatPrice(product.cost_price || 0),
                                 product.stock_quantity,
                                 <div className={styles.rowActions}>
                                     <button type="button" onClick={() => void editProduct(product.product_id)}>
@@ -1334,6 +1526,12 @@ const OrdersPanel = () => {
     const [orders, setOrders] = useState<AdminOrder[]>([]);
     const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
     const [adminNotes, setAdminNotes] = useState("");
+    const [filters, setFilters] = useState({
+        q: "",
+        status: "" as OrderStatus | "",
+        date_from: "",
+        date_to: "",
+    });
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(true);
@@ -1355,7 +1553,7 @@ const OrdersPanel = () => {
         setIsLoading(true);
         setError("");
         try {
-            const nextOrders = await fetchOrders();
+            const nextOrders = await fetchOrders(filters);
             setOrders(nextOrders);
             setSelectedOrderId((previousId) => previousId || nextOrders[0]?.order_id || null);
         } catch (requestError) {
@@ -1363,7 +1561,7 @@ const OrdersPanel = () => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [filters]);
 
     useEffect(() => {
         const timeoutId = window.setTimeout(() => {
@@ -1421,6 +1619,49 @@ const OrdersPanel = () => {
             />
             {message && <InlineState tone="success">{message}</InlineState>}
             {error && <InlineState tone="error">{error}</InlineState>}
+            <div className={styles.filterBar}>
+                <label>
+                    Search orders
+                    <input
+                        value={filters.q}
+                        onChange={(event) => setFilters({...filters, q: event.target.value})}
+                        placeholder="Email, order id, product, or notes"
+                    />
+                </label>
+                <label>
+                    Status
+                    <select
+                        value={filters.status}
+                        onChange={(event) =>
+                            setFilters({...filters, status: event.target.value as OrderStatus | ""})
+                        }
+                    >
+                        <option value="">All statuses</option>
+                        {ORDER_STATUSES.map((status) => (
+                            <option key={status} value={status}>{status}</option>
+                        ))}
+                    </select>
+                </label>
+                <label>
+                    From
+                    <input
+                        type="date"
+                        value={filters.date_from}
+                        onChange={(event) => setFilters({...filters, date_from: event.target.value})}
+                    />
+                </label>
+                <label>
+                    To
+                    <input
+                        type="date"
+                        value={filters.date_to}
+                        onChange={(event) => setFilters({...filters, date_to: event.target.value})}
+                    />
+                </label>
+                <button type="button" className={styles.secondaryButton} onClick={() => void loadOrders()}>
+                    Search
+                </button>
+            </div>
             {isLoading && <InlineState>Loading orders.</InlineState>}
             {!isLoading && orders.length === 0 && <InlineState>No orders yet.</InlineState>}
             {!isLoading && orders.length > 0 && (
@@ -1436,7 +1677,7 @@ const OrdersPanel = () => {
                                 >
                                     {order.email}
                                 </button>,
-                                order.status,
+                                <span className={styles.statusChip}>{order.status}</span>,
                                 formatPrice(order.total_price || 0),
                                 new Date(order.created_at).toLocaleString(),
                             ])}
@@ -1507,9 +1748,16 @@ const OrdersPanel = () => {
                                         <span>{product.name}</span>
                                         <span>
                                             {product.quantity} x {formatPrice(product.price)}
+                                            {product.cost_price > 0
+                                                ? ` · profit ${formatPrice((product.price - product.cost_price) * product.quantity)}`
+                                                : ""}
                                         </span>
                                     </div>
                                 ))}
+                                <div className={styles.orderItemTotal}>
+                                    <span>Total</span>
+                                    <strong>{formatPrice(selectedOrder.total_price || 0)}</strong>
+                                </div>
                             </div>
                         </article>
                     )}
@@ -1521,6 +1769,12 @@ const OrdersPanel = () => {
 
 const UsersPanel = ({currentUser}: {currentUser: AdminUser}) => {
     const [users, setUsers] = useState<AdminUser[]>([]);
+    const [filters, setFilters] = useState({
+        q: "",
+        is_active: "" as boolean | "",
+        is_verified: "" as boolean | "",
+        is_superuser: "" as boolean | "",
+    });
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [flags, setFlags] = useState({
@@ -1536,13 +1790,13 @@ const UsersPanel = ({currentUser}: {currentUser: AdminUser}) => {
         setIsLoading(true);
         setError("");
         try {
-            setUsers(await fetchUsers());
+            setUsers(await fetchUsers(filters));
         } catch (requestError) {
             setError(getAdminErrorMessage(requestError, "Unable to load users."));
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [filters]);
 
     useEffect(() => {
         const timeoutId = window.setTimeout(() => {
@@ -1615,6 +1869,38 @@ const UsersPanel = ({currentUser}: {currentUser: AdminUser}) => {
             />
             {message && <InlineState tone="success">{message}</InlineState>}
             {error && <InlineState tone="error">{error}</InlineState>}
+            <div className={styles.filterBar}>
+                <label>
+                    Search users
+                    <input
+                        value={filters.q}
+                        onChange={(event) => setFilters({...filters, q: event.target.value})}
+                        placeholder="Email address"
+                    />
+                </label>
+                {(["is_active", "is_verified", "is_superuser"] as const).map((field) => (
+                    <label key={field}>
+                        {field.replace("is_", "").replace("_", " ")}
+                        <select
+                            value={String(filters[field])}
+                            onChange={(event) => {
+                                const value = event.target.value;
+                                setFilters({
+                                    ...filters,
+                                    [field]: value === "" ? "" : value === "true",
+                                });
+                            }}
+                        >
+                            <option value="">Any</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </label>
+                ))}
+                <button type="button" className={styles.secondaryButton} onClick={() => void loadUsers()}>
+                    Search
+                </button>
+            </div>
             <div className={styles.splitGrid}>
                 <form className={styles.formPanel} onSubmit={submitUser}>
                     <h3>Create user</h3>
@@ -1702,6 +1988,7 @@ const SettingsPanel = () => {
     const dispatch = useAppDispatch();
     const currentCurrency = useAppSelector((state) => state.settings.currency);
     const [defaultCurrency, setDefaultCurrency] = useState(currentCurrency.default_currency);
+    const [baseCurrency, setBaseCurrency] = useState(currentCurrency.base_currency);
     const [supportedInput, setSupportedInput] = useState(
         currentCurrency.supported_currencies.join(","),
     );
@@ -1718,6 +2005,8 @@ const SettingsPanel = () => {
     );
     const [languageInput, setLanguageInput] = useState(DEFAULT_PRODUCT_LANGUAGES.join(","));
     const [autoTranslateProducts, setAutoTranslateProducts] = useState(true);
+    const [fallbackProfitMargin, setFallbackProfitMargin] = useState("0.35");
+    const [translationStatus, setTranslationStatus] = useState("unknown");
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [isSaving, setIsSaving] = useState(false);
@@ -1742,6 +2031,7 @@ const SettingsPanel = () => {
         setError("");
         try {
             const settings = await fetchAdminPublicSettings();
+            setBaseCurrency(settings.currency.base_currency);
             setDefaultCurrency(settings.currency.default_currency);
             setSupportedInput(settings.currency.supported_currencies.join(","));
             setRates(
@@ -1754,6 +2044,8 @@ const SettingsPanel = () => {
             setSymbols(settings.currency.currency_symbols);
             setLanguageInput(settings.product_languages.product_languages.join(","));
             setAutoTranslateProducts(settings.product_languages.auto_translate_products);
+            setFallbackProfitMargin(String(settings.profit.fallback_profit_margin));
+            setTranslationStatus(settings.translation.status);
         } catch (requestError) {
             setError(getAdminErrorMessage(requestError, "Unable to load settings."));
         }
@@ -1823,6 +2115,21 @@ const SettingsPanel = () => {
         }
     };
 
+    const submitProfitSettings = async () => {
+        setIsSaving(true);
+        setMessage("");
+        setError("");
+
+        try {
+            await updateProfitSettings(Number(fallbackProfitMargin));
+            setMessage("Profit assumptions updated.");
+        } catch (requestError) {
+            setError(getAdminErrorMessage(requestError, "Unable to save profit settings."));
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const runTranslationBackfill = async () => {
         setIsBackfillingTranslations(true);
         setMessage("");
@@ -1857,11 +2164,17 @@ const SettingsPanel = () => {
             {error && <InlineState tone="error">{error}</InlineState>}
             <div className={styles.settingsSections}>
                 <form className={styles.settingsPanel} onSubmit={submitSettings}>
-                    <h3>Currency</h3>
+                    <div className={styles.settingsPanelHeader}>
+                        <div>
+                            <p className={styles.eyebrow}>Display</p>
+                            <h3>Currency</h3>
+                        </div>
+                        <span>Controls storefront and CMS price formatting.</span>
+                    </div>
                     <div className={styles.formGrid}>
                         <label>
                             Base currency
-                            <input value={currentCurrency.base_currency} disabled />
+                            <input value={baseCurrency} disabled />
                         </label>
                         <label>
                             Default display currency
@@ -1920,7 +2233,49 @@ const SettingsPanel = () => {
                     </button>
                 </form>
                 <div className={styles.settingsPanel}>
-                    <h3>Product languages</h3>
+                    <div className={styles.settingsPanelHeader}>
+                        <div>
+                            <p className={styles.eyebrow}>Finance</p>
+                            <h3>Profit assumptions</h3>
+                        </div>
+                        <span>Used only when older order lines do not have a saved cost.</span>
+                    </div>
+                    <div className={styles.formGrid}>
+                        <label>
+                            Fallback profit margin
+                            <input
+                                type="number"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                value={fallbackProfitMargin}
+                                onChange={(event) => setFallbackProfitMargin(event.target.value)}
+                            />
+                        </label>
+                        <div className={styles.settingsPreview}>
+                            <span>Example</span>
+                            <strong>{Math.round(Number(fallbackProfitMargin || 0) * 100)}% estimated margin</strong>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        className={styles.primaryButton}
+                        disabled={isSaving}
+                        onClick={() => void submitProfitSettings()}
+                    >
+                        {isSaving ? "Saving" : "Save profit settings"}
+                    </button>
+                </div>
+                <div className={styles.settingsPanel}>
+                    <div className={styles.settingsPanelHeader}>
+                        <div>
+                            <p className={styles.eyebrow}>Catalog</p>
+                            <h3>Product languages</h3>
+                        </div>
+                        <span className={translationStatus === "ok" ? styles.statusGood : styles.statusWarning}>
+                            Translator: {translationStatus}
+                        </span>
+                    </div>
                     <div className={styles.formGrid}>
                         <label>
                             Language codes

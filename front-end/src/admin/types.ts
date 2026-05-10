@@ -26,6 +26,12 @@ export interface AdminSummary {
     pending_orders_count: number;
     unique_visitors_today: number;
     page_views_today: number;
+    total_revenue: number;
+    total_recorded_cost: number;
+    gross_profit: number;
+    estimated_profit: number;
+    profit_margin_percent: number;
+    average_order_value: number;
 }
 
 export interface ProductTranslation {
@@ -39,6 +45,7 @@ export interface AdminProduct {
     name?: string;
     description?: string;
     price: number;
+    cost_price: number;
     category: string;
     stock_quantity: number;
     image_src: string;
@@ -53,6 +60,7 @@ export interface ProductListResponse {
 
 export interface ProductFormState {
     price: string;
+    cost_price: string;
     category: string;
     stock_quantity: string;
     image_src: string;
@@ -88,6 +96,7 @@ export interface TopProduct {
     name: string;
     quantity: number;
     revenue: number;
+    profit: number;
 }
 
 export interface RecentOrder {
@@ -103,11 +112,22 @@ export interface AdminAnalytics {
     orders_by_status: StatusCount[];
     orders_over_time: TimeSeriesPoint[];
     revenue_over_time: TimeSeriesPoint[];
+    cost_over_time: TimeSeriesPoint[];
+    profit_over_time: TimeSeriesPoint[];
     visitors_over_time: TimeSeriesPoint[];
     page_views_over_time: TimeSeriesPoint[];
     low_stock_products: LowStockProduct[];
     top_products: TopProduct[];
     recent_orders: RecentOrder[];
+    total_revenue: number;
+    total_recorded_cost: number;
+    gross_profit: number;
+    estimated_profit: number;
+    profit_margin_percent: number;
+    average_order_value: number;
+    total_orders: number;
+    total_visitors: number;
+    total_page_views: number;
 }
 
 export interface MediaUploadResponse {
@@ -143,6 +163,7 @@ export interface AdminOrderProduct {
     product_status: string;
     name: string;
     price: number;
+    cost_price: number;
     category: string;
     image_src: string;
     quantity: number;
@@ -179,6 +200,8 @@ export interface DashboardWidgetPreference {
     visible: boolean;
     chart_type?: DashboardChartType | null;
     position: number;
+    timespan_days: number;
+    period: "day" | "week" | "month";
 }
 
 export interface DashboardPreferences {

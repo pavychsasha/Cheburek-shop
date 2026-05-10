@@ -19,7 +19,7 @@ import type {
     ProductTranslation,
     ProductTranslationPreviewResponse,
 } from "./types.ts";
-import type {CurrencySettings, ProductLanguageSettings, PublicSettings} from "../types/settings.ts";
+import type {CurrencySettings, ProductLanguageSettings, ProfitSettings, PublicSettings} from "../types/settings.ts";
 
 export const ADMIN_TOKEN_KEY = "cheburek_admin_token";
 
@@ -118,6 +118,19 @@ export const fetchAdminAnalytics = async () => {
     return response.data;
 };
 
+export const fetchAdminAnalyticsForWidget = async (
+    timespanDays: number,
+    period: "day" | "week" | "month",
+) => {
+    const response = await adminApiClient.get<AdminAnalytics>("/admin/analytics", {
+        params: {
+            timespan_days: timespanDays,
+            period,
+        },
+    });
+    return response.data;
+};
+
 export const fetchDashboardPreferences = async () => {
     const response = await adminApiClient.get<DashboardPreferences>(
         "/admin/dashboard/preferences",
@@ -152,6 +165,14 @@ export const updateProductLanguageSettings = async (
     const response = await adminApiClient.patch<ProductLanguageSettings>(
         "/admin/settings/languages",
         payload,
+    );
+    return response.data;
+};
+
+export const updateProfitSettings = async (fallbackProfitMargin: number) => {
+    const response = await adminApiClient.patch<ProfitSettings>(
+        "/admin/settings/profit",
+        {fallback_profit_margin: fallbackProfitMargin},
     );
     return response.data;
 };
@@ -206,6 +227,7 @@ export const fetchProduct = async (productId: string) => {
 
 const toProductPayload = (form: ProductFormState) => ({
     price: Number(form.price),
+    cost_price: Number(form.cost_price || 0),
     category: form.category,
     stock_quantity: Number(form.stock_quantity),
     image_src: form.image_src,
@@ -249,8 +271,24 @@ export const seedProducts = async () => {
     return response.data;
 };
 
-export const fetchOrders = async () => {
-    const response = await adminApiClient.get<AdminOrder[]>("/orders/");
+export interface OrderSearchParams {
+    q?: string;
+    status?: OrderStatus | "";
+    date_from?: string;
+    date_to?: string;
+}
+
+export const fetchOrders = async (params: OrderSearchParams = {}) => {
+    const response = await adminApiClient.get<AdminOrder[]>("/orders/", {
+        params: {
+            ...params,
+            status: params.status || undefined,
+            q: params.q || undefined,
+            date_from: params.date_from || undefined,
+            date_to: params.date_to || undefined,
+            per_page: 200,
+        },
+    });
     return response.data;
 };
 
@@ -268,8 +306,23 @@ export const deleteOrder = async (orderId: string) => {
     await adminApiClient.delete(`/orders/${orderId}`);
 };
 
-export const fetchUsers = async () => {
-    const response = await adminApiClient.get<AdminUser[]>("/users/");
+export interface UserSearchParams {
+    q?: string;
+    is_active?: boolean | "";
+    is_verified?: boolean | "";
+    is_superuser?: boolean | "";
+}
+
+export const fetchUsers = async (params: UserSearchParams = {}) => {
+    const response = await adminApiClient.get<AdminUser[]>("/users/", {
+        params: {
+            q: params.q || undefined,
+            is_active: params.is_active === "" ? undefined : params.is_active,
+            is_verified: params.is_verified === "" ? undefined : params.is_verified,
+            is_superuser: params.is_superuser === "" ? undefined : params.is_superuser,
+            per_page: 200,
+        },
+    });
     return response.data;
 };
 
