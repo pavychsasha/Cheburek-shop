@@ -34,6 +34,7 @@ services:
       APP_CONFIG__DB__URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Run ./setup.sh to generate local secrets before starting Compose}@postgres:5432/${POSTGRES_DB:-cheburek_db}
       APP_CONFIG__DB__TEST_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Run ./setup.sh to generate local secrets before starting Compose}@postgres:5432/${POSTGRES_TEST_DB:-test_db}
       APP_CONFIG__DB__ECHO: ${APP_CONFIG__DB__ECHO:-0}
+      APP_CONFIG__ACCESS_TOKEN__LIFETIME_SECONDS: ${ACCESS_TOKEN_LIFETIME_SECONDS:-2592000}
       APP_CONFIG__ACCESS_TOKEN__RESET_PASSWORD_TOKEN_SECRET: ${RESET_PASSWORD_TOKEN_SECRET:?Run ./setup.sh to generate local secrets before starting Compose}
       APP_CONFIG__ACCESS_TOKEN__VERIFICATION_TOKEN_SECRET: ${VERIFICATION_TOKEN_SECRET:?Run ./setup.sh to generate local secrets before starting Compose}
       APP_CONFIG__MONGO_DB__HOST: mongo

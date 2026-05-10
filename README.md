@@ -133,6 +133,7 @@ Important root `.env` values:
 - `RESET_PASSWORD_TOKEN_SECRET`: generated local reset-token secret
 - `VERIFICATION_TOKEN_SECRET`: generated local verification-token secret
 - `SESSION_SECRET_KEY`: generated local session secret
+- `ACCESS_TOKEN_LIFETIME_SECONDS`: bearer token lifetime; default local value is `2592000` seconds, or 30 days
 - `ADMIN_EMAIL`: generated local admin email
 - `ADMIN_PASSWORD`: generated local admin password
 
@@ -231,6 +232,7 @@ docker compose run --rm fastapi python -m app.actions.create_super_user
 - Backend tests require PostgreSQL, MongoDB, and Redis. Start dependencies before running the full pytest suite.
 - After rotating local secrets, reset local volumes if database authentication no longer works.
 - Admin login fails after rotating secrets: rerun `docker compose run --rm fastapi python -m app.actions.create_super_user` so the local admin password matches the generated env value.
+- Users are signed out too quickly: confirm `ACCESS_TOKEN_LIFETIME_SECONDS` in root `.env` and `APP_CONFIG__ACCESS_TOKEN__LIFETIME_SECONDS` in `back-end/.env` are set to the desired duration, then restart the API container.
 
 ## Dependency And Security Notes
 

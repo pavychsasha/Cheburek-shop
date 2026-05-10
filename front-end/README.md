@@ -62,7 +62,7 @@ npm audit
 - Keep `VITE_API_BASE_URL` aligned with the backend hostname. The default local-domain URL uses the root local proxy at `http://api.local.cheburek-shop.com/api/v1`.
 - When the app is opened through `localhost`, API calls fall back to the localhost backend if the configured API URL points at the preferred local API domain.
 - The storefront renders on the storefront local domain and localhost. The admin portal renders only on the admin local domain.
-- Admin tokens are stored in `sessionStorage` and are cleared on unauthorized or forbidden API responses.
+- Admin tokens are stored in `sessionStorage` and are cleared on unauthorized or forbidden API responses. Token lifetime is controlled by backend `APP_CONFIG__ACCESS_TOKEN__LIFETIME_SECONDS`, which defaults to 30 days for local development.
 - Admin access is enforced by backend superuser checks; frontend route selection is only a rendering concern.
 - Product images are uploaded through admin media APIs and displayed from backend `/media/...` URLs backed by MinIO.
 - Seeded category visuals are loaded from backend media URLs and displayed in the storefront category strip.
@@ -75,7 +75,7 @@ npm audit
 - The storefront ships baseline SEO metadata, canonical URLs, Open Graph/Twitter metadata, and restaurant structured data. The admin host sets `noindex,nofollow`.
 - Product-specific SEO requires stable product detail routes plus server-side rendering or prerendering in a later production hardening pass.
 - If the browser reports CORS errors, add the frontend origin to backend `APP_CONFIG__CORS__ALLOWED_ORIGINS`.
-- The app stores bearer tokens in `localStorage` and sends session cookies for cart and language flows.
+- The storefront stores bearer tokens in `localStorage` and sends session cookies for cart, visitor, and language flows.
 
 ## Troubleshooting
 

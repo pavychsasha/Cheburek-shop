@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
@@ -181,7 +181,7 @@ class ProductLanguageConfig(BaseModel):
 
 
 class AccessToken(BaseModel):
-    lifetime_seconds: int = 3600
+    lifetime_seconds: int = Field(default=60 * 60 * 24 * 30, ge=300)
     reset_password_token_secret: str
     verification_token_secret: str
 

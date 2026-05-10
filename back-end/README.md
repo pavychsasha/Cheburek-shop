@@ -34,6 +34,7 @@ Important variables:
 - `APP_CONFIG__MEDIA__BUCKET`: product image bucket
 - `APP_CONFIG__MEDIA__PUBLIC_BASE_URL`: public backend media base URL
 - `APP_CONFIG__MEDIA__MAX_IMAGE_UPLOAD_MB`: upload size limit
+- `APP_CONFIG__ACCESS_TOKEN__LIFETIME_SECONDS`: bearer token lifetime in seconds; default local value is `2592000`, or 30 days
 - `APP_CONFIG__CURRENCY__BASE_CURRENCY`: stored base currency, currently UAH
 - `APP_CONFIG__CURRENCY__DEFAULT_CURRENCY`: default display currency
 - `APP_CONFIG__CURRENCY__SUPPORTED_CURRENCIES`: comma-separated display currencies
@@ -186,6 +187,7 @@ Public and admin settings/media endpoints:
 - Local-domain URLs do not resolve: add the hosts entry printed by root `./setup.sh`.
 - After rotating local secrets, reset local volumes if database authentication no longer works.
 - Admin login fails after rotating local secrets: rerun the admin bootstrap command so the database user matches the generated env values.
+- Users are signed out too quickly: set `APP_CONFIG__ACCESS_TOKEN__LIFETIME_SECONDS` to the desired duration and restart the API container.
 - Product seed creates duplicates: confirm seed products still have unique English names before running the seed.
 - Admin status updates fail with validation errors: use one of `PENDING`, `CONFIRMED`, `PREPARING`, `READY`, `DELIVERED`, or `CANCELLED`.
 
