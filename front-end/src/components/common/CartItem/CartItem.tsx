@@ -42,7 +42,7 @@ const CartItem: React.FC<ICartItemProps> = ({
     }
 
     return (
-        <div className={styles.cart__item}>
+        <div className={`${styles.cart__item} ${isOrder ? styles.orderItemCard : ""}`}>
             <div className={styles.info}>
                 {(!isOrder || isEditable) && <img src={image_src} alt=""/>}
                 <h3 className={isOrder ? styles.orderTitle : undefined}>{name}</h3>

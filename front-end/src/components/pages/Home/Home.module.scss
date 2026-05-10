@@ -11,6 +11,12 @@
     url("../../../assets/cheburek.png") right 32px center / 180px auto no-repeat;
   border-radius: 8px;
   box-shadow: var(--shadow-soft);
+  overflow: hidden;
+
+  > div {
+    min-width: 0;
+    width: 100%;
+  }
 
   p {
     margin: 0 0 8px;
@@ -44,12 +50,22 @@
       url("../../../assets/cheburek.png") right -24px bottom -12px / 130px auto no-repeat;
 
     span {
-      max-width: 78%;
+      max-width: 100%;
       font-size: 15px;
     }
 
     h2 {
+      max-width: 100%;
       font-size: 32px;
+    }
+  }
+
+  @media (max-width: 620px) {
+    padding: 22px 20px;
+    background: linear-gradient(120deg, rgba(37, 33, 31, 0.94), rgba(47, 111, 94, 0.9));
+
+    h2 {
+      font-size: 28px;
     }
   }
 }
@@ -67,8 +83,8 @@
   }
 
   @media (max-width: 768px) {
-    overflow-x: auto;
-    padding-bottom: 4px;
+    display: block;
+    overflow: visible;
   }
 }
 

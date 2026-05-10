@@ -11,8 +11,19 @@ export interface ProductLanguageSettings {
     auto_translate_products: boolean;
 }
 
+export interface ProfitSettings {
+    fallback_profit_margin: number;
+}
+
+export interface TranslationServiceStatus {
+    enabled: boolean;
+    status: string;
+}
+
 export interface PublicSettings {
     currency: CurrencySettings;
     product_languages: ProductLanguageSettings;
     category_media: Record<string, string>;
+    profit: ProfitSettings;
+    translation: TranslationServiceStatus;
 }
