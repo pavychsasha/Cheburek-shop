@@ -68,9 +68,10 @@ npm audit
 - Seeded category visuals are loaded from backend media URLs and displayed in the storefront category strip.
 - Similar item shelves use backend product-tag recommendations with category fallback.
 - Checkout includes optional customer notes for delivery and fulfillment context.
-- The admin CMS includes customizable dashboard charts, visitor/page-view analytics, products with image upload/preview, product tags, translation tabs, order notes, users, currency settings, and product language settings.
+- The admin CMS includes customizable dashboard charts, visitor/page-view analytics, products with image upload/preview, product tags, translation tabs with local auto-translation previews, order notes, users, currency settings, and product language settings.
 - Dashboard widget visibility, chart type, and order are stored per admin user by the backend.
-- Product-language drafts are generated from the English fallback and are meant to be reviewed in the CMS before publishing as final localized copy.
+- Product translations are generated through the local translator when enabled and are meant to be reviewed in the CMS before publishing as final localized copy.
+- The product grid keeps existing items visible while category/search/sort refreshes are in flight, so users do not see a blank blink between filter changes.
 - Visitor analytics are first-party only and use anonymous aggregate tracking; no third-party analytics script is included.
 - The storefront ships baseline SEO metadata, canonical URLs, Open Graph/Twitter metadata, and restaurant structured data. The admin host sets `noindex,nofollow`.
 - Product-specific SEO requires stable product detail routes plus server-side rendering or prerendering in a later production hardening pass.
@@ -86,5 +87,6 @@ npm audit
 - Product images do not load: verify the backend health endpoint reports MinIO as healthy and rerun the root migration helper.
 - Currency values look stale: refresh the page after saving admin currency settings.
 - Product language tabs look stale: reload Admin Settings, save the language list, run product translation backfill, then refresh Products.
+- Product auto-translation fails: confirm the backend health check is green and the root Compose stack has the `translator` service running.
 - Local-domain URLs do not resolve: run root `./setup.sh` and add the printed hosts entry.
 - Admin portal shows the login page but login fails: rerun root `./setup.sh`, then rerun the backend admin bootstrap command from the root README.

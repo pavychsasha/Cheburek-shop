@@ -6,7 +6,7 @@ FastAPI backend for the Cheburek Shop storefront.
 
 - Python `3.12`
 - Poetry
-- PostgreSQL, MongoDB, Redis, and MinIO for full local operation
+- PostgreSQL, MongoDB, Redis, MinIO, and the local translator for full local operation
 
 Docker Compose from the repository root is the simplest way to run the required services.
 
@@ -41,7 +41,11 @@ Important variables:
 - `APP_CONFIG__CURRENCY__CURRENCY_RATES`: static display rates from base UAH
 - `APP_CONFIG__CURRENCY__CURRENCY_SYMBOLS`: display symbols for supported currencies
 - `APP_CONFIG__PRODUCT_LANGUAGES__SUPPORTED_LANGUAGES`: comma-separated product translation languages
-- `APP_CONFIG__PRODUCT_LANGUAGES__AUTO_TRANSLATE_PRODUCTS`: enables editable draft translations for missing product languages
+- `APP_CONFIG__PRODUCT_LANGUAGES__AUTO_TRANSLATE_PRODUCTS`: enables generated translations for missing product languages
+- `APP_CONFIG__TRANSLATION__ENABLED`: enables backend calls to the local translation service
+- `APP_CONFIG__TRANSLATION__BASE_URL`: local translation service URL
+- `APP_CONFIG__TRANSLATION__TIMEOUT_SECONDS`: translation request timeout
+- `APP_CONFIG__TRANSLATION__SOURCE_LANGUAGE`: source language for generated product translations
 - `APP_CONFIG__CORS__ALLOWED_ORIGINS`: comma-separated frontend origins
 - `APP_CONFIG__ACCESS_TOKEN__RESET_PASSWORD_TOKEN_SECRET`: reset-token secret
 - `APP_CONFIG__ACCESS_TOKEN__VERIFICATION_TOKEN_SECRET`: verification-token secret
@@ -94,13 +98,21 @@ docker compose run --rm fastapi python -m app.actions.seed_demo_orders
 
 Demo orders are matched by local demo email address and can be run repeatedly without creating duplicates.
 
+Seed local visitor and page-view analytics for dashboard charts:
+
+```bash
+docker compose run --rm fastapi python -m app.actions.seed_demo_analytics
+```
+
+Demo analytics use deterministic anonymous visitor hashes and can be run repeatedly without duplicating rows.
+
 Backfill configured product languages across existing products:
 
 ```bash
 docker compose run --rm fastapi python -m app.actions.backfill_product_translations
 ```
 
-Backfilled translations are editable drafts based on the English fallback. Review them in the admin CMS before treating them as final localized copy.
+Backfilled translations use the local translator when enabled. Review generated copy in the admin CMS before treating it as final localized copy.
 
 Bootstrap or refresh the generated local admin user:
 
@@ -135,7 +147,7 @@ curl http://localhost:8091/health
 From the repository root:
 
 ```bash
-docker compose up -d postgres mongo redis minio fastapi
+docker compose up -d postgres mongo redis minio translator fastapi
 docker compose run --rm fastapi alembic upgrade head
 ```
 
@@ -155,7 +167,8 @@ Public and admin settings/media endpoints:
 - `GET /api/v1/settings/public`: currency display settings
 - `PATCH /api/v1/admin/settings/currency`: update display currencies and rates
 - `PATCH /api/v1/admin/settings/languages`: update configured product languages
-- `POST /api/v1/admin/translations/backfill`: create missing product translation drafts
+- `POST /api/v1/admin/translations/backfill`: create missing product translations
+- `POST /api/v1/admin/translations/preview`: generate editable product translation previews
 - `POST /api/v1/admin/media/products`: upload product images
 - `GET /media/{object_name}`: public media served through the backend from MinIO
 - `GET /api/v1/admin/analytics`: dashboard chart and operational datasets
@@ -174,14 +187,16 @@ Public and admin settings/media endpoints:
 - Visitor analytics store anonymous daily visitor hashes and aggregate page-view counts. Raw IP addresses are not stored.
 - Dashboard preferences are stored per admin user so chart layout and visibility follow the signed-in admin account.
 - Category and product placeholder visuals are generated into MinIO during the idempotent seed flow.
+- The local translator exposes a LibreTranslate-compatible `/translate` shape for development without API keys.
 
 ## Troubleshooting
 
 - Settings validation fails: run root `./setup.sh` to generate local env files.
-- Health check is `degraded`: one of PostgreSQL, MongoDB, Redis, or MinIO is not reachable.
+- Health check is `degraded`: PostgreSQL, MongoDB, Redis, MinIO, or the translator is not reachable.
 - Tests fail to connect to databases: start dependencies with Docker Compose first.
 - Product image upload fails with unsupported media type: use JPEG, PNG, WebP, GIF, or SVG within the configured size limit.
 - Product seed does not show local images: rerun `../scripts/migrate.sh` after MinIO is healthy.
+- Auto-translation is unavailable: confirm the `translator` service is healthy and `APP_CONFIG__TRANSLATION__ENABLED=true`.
 - Currency update fails validation: every supported currency must include a positive rate and a symbol.
 - Browser CORS errors: make sure the frontend origin is listed in `APP_CONFIG__CORS__ALLOWED_ORIGINS`.
 - Local-domain URLs do not resolve: add the hosts entry printed by root `./setup.sh`.
@@ -197,3 +212,4 @@ Public and admin settings/media endpoints:
 - `pip-audit` is included for dependency vulnerability checks.
 - `aioredis` is not required because the code uses `redis.asyncio`.
 - MinIO credentials are local-only generated values and must stay in ignored `.env` files.
+- Translation uses a local service by default; no translation provider credentials are stored in the repository.

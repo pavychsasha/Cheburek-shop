@@ -116,6 +116,7 @@ Important root `.env` values:
 - `REDIS_PORT`: host Redis port
 - `MINIO_API_PORT`: host MinIO API port
 - `MINIO_CONSOLE_PORT`: host MinIO console port
+- `TRANSLATOR_PORT`: host port for the local translation service
 - `MINIO_ROOT_USER`: generated local MinIO access key
 - `MINIO_ROOT_PASSWORD`: generated local MinIO secret key
 - `MINIO_BUCKET`: local product image bucket
@@ -126,7 +127,10 @@ Important root `.env` values:
 - `CURRENCY_RATES`: static display rates from base UAH
 - `CURRENCY_SYMBOLS`: display symbols for supported currencies
 - `PRODUCT_LANGUAGES`: comma-separated product translation languages
-- `AUTO_TRANSLATE_PRODUCTS`: creates editable draft translations for missing product languages
+- `AUTO_TRANSLATE_PRODUCTS`: enables local auto-translation for missing product languages
+- `TRANSLATION_ENABLED`: enables the local translation service integration
+- `TRANSLATION_TIMEOUT_SECONDS`: backend timeout for translation requests
+- `TRANSLATION_SOURCE_LANGUAGE`: source language used for generated product translations
 - `VITE_API_BASE_URL`: browser API base URL
 - `CORS_ALLOWED_ORIGINS`: comma-separated frontend origins allowed by the API
 - `POSTGRES_PASSWORD`: generated local database password
@@ -182,7 +186,7 @@ Backend through Docker Compose:
 
 ```bash
 docker compose build fastapi
-docker compose up -d postgres mongo redis minio fastapi
+docker compose up -d postgres mongo redis minio translator fastapi
 curl http://localhost:8091/health
 ```
 
@@ -191,6 +195,7 @@ Admin and seed helpers:
 ```bash
 docker compose run --rm fastapi python -m app.actions.seed_products
 docker compose run --rm fastapi python -m app.actions.seed_demo_orders
+docker compose run --rm fastapi python -m app.actions.seed_demo_analytics
 docker compose run --rm fastapi python -m app.actions.backfill_product_translations
 docker compose run --rm fastapi python -m app.actions.create_super_user
 ```
@@ -200,7 +205,7 @@ docker compose run --rm fastapi python -m app.actions.create_super_user
 - Product creation in the admin CMS uses translation tabs instead of separate hardcoded fields.
 - Product tags are managed in the admin CMS and power similar-item recommendations in the storefront.
 - Add global product languages in Admin Settings, then run the product translation backfill action from the same screen.
-- Missing translations are filled as editable drafts from the English fallback. No external translation provider is configured, so review generated drafts before publishing them as final copy.
+- Missing translations are generated through the local translator service when enabled, then remain editable in the admin CMS before publishing.
 - The storefront includes baseline SEO metadata, Open Graph/Twitter metadata, canonical URLs, and restaurant structured data.
 - The admin host sets `noindex,nofollow` at runtime.
 - For production-grade per-product SEO, add stable product detail routes plus server-side rendering or prerendering so crawlers receive product-specific HTML.
@@ -212,7 +217,7 @@ docker compose run --rm fastapi python -m app.actions.create_super_user
 - Dashboard widget visibility, order, and chart type are stored per admin user in the backend.
 - Visitor analytics are first-party and privacy-safe: the app stores an anonymous visitor cookie, records aggregate daily unique visitors and page views, and does not persist raw IP addresses.
 - Similar-item recommendations use shared product tags first and category fallback second.
-- Local demo orders are seeded by default so dashboard charts are useful on a fresh setup. The demo-order seed is idempotent and local-development oriented.
+- Local demo orders and visitor/page-view analytics are seeded by default so dashboard charts are useful on a fresh setup. Demo seeds are idempotent and local-development oriented.
 
 ## Troubleshooting
 
@@ -223,11 +228,12 @@ docker compose run --rm fastapi python -m app.actions.create_super_user
 - MinIO console login is needed: read the generated local MinIO values from ignored `.env`; do not copy them into documentation or commits.
 - Currency selector shows stale values: reload settings in the admin Settings panel or refresh the page after saving currency changes.
 - Product translation languages look stale: reload Admin Settings, save the language list, then run the backfill action.
+- Auto-translation is unavailable: confirm the `translator` container is healthy and `TRANSLATION_ENABLED=true`, then rerun the backfill or use the Products panel translation action.
 - Port already in use: update `.env`, `front-end/.env`, and `back-end/.env` so ports, `VITE_API_BASE_URL`, and `CORS_ALLOWED_ORIGINS` stay aligned. If host port `80` is busy, set `LOCAL_HTTP_PORT` to another value and include that port in local-domain URLs.
 - Frontend cannot reach the API: confirm `VITE_API_BASE_URL` points to the backend URL visible from the browser.
 - Storefront works on localhost but local domains fail: rerun `./setup.sh` in a terminal and accept or manually add the printed hosts entry.
 - CORS errors: add the frontend origin to `CORS_ALLOWED_ORIGINS`.
-- Health check returns `degraded`: PostgreSQL, MongoDB, Redis, or MinIO is not reachable from the backend container.
+- Health check returns `degraded`: PostgreSQL, MongoDB, Redis, MinIO, or the translator is not reachable from the backend container.
 - Compose waits indefinitely or reports an unhealthy service: inspect logs with `docker compose logs <service>` and rerun `./setup.sh`.
 - Backend tests require PostgreSQL, MongoDB, and Redis. Start dependencies before running the full pytest suite.
 - After rotating local secrets, reset local volumes if database authentication no longer works.
