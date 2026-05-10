@@ -1,4 +1,4 @@
-import cheburekLogo from "../../../assets/cheburekLogo.png";
+import cheburekLogo from "../../../assets/cheburekLogo.svg";
 import {CiShoppingCart} from "react-icons/ci";
 import styles from './Header.module.scss';
 import Searchbar from "../Searchbar/Searchbar.tsx";

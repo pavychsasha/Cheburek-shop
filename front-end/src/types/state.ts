@@ -3,7 +3,9 @@ import {IItem} from "./items.ts";
 export interface IItemsState {
     items: IItem[];
     status: string;
-    pagesCount: number
+    pagesCount: number;
+    currentRequestId?: string;
+    lastError?: string;
 }
 
 export interface ICartState {

@@ -16,7 +16,7 @@ const Home = () => {
     const category = useAppSelector((state) => state.filter.category);
     const sort = useAppSelector((state) => state.filter.sort);
     const searchValue = useAppSelector((state) => state.filter.searchValue);
-    const { items, status } = useAppSelector((state) => state.items);
+    const { items, status, lastError } = useAppSelector((state) => state.items);
     const isLanguageSet = useAppSelector((state) => state.lang.isLanguageSet);
     const categoryMedia = useAppSelector((state) => state.settings.categoryMedia);
 
@@ -56,7 +56,6 @@ const Home = () => {
         };
 
         dispatch(fetchItems(params));
-        window.scrollTo(0, 0);
     }, [category, currentPage, dispatch, searchValue, sort.sortOrder, sort.sortType]);
 
     useEffect(() => {
@@ -86,30 +85,42 @@ const Home = () => {
                 <Sort value={sort} onChangeSort={onChangeSort}/>
             </div>
             <main>
-                <div className={styles.grid__wrapper}>
-                    {status === 'loading' && [...new Array(8)].map((_, index) => <Skeleton key={index}/>)}
-                    {status === 'success' && items.map(item => (
+                <div className={styles.gridShell}>
+                    {status === 'refreshing' && (
+                        <div className={styles.refreshing} role="status" aria-live="polite">
+                            {t('home.loading')}
+                        </div>
+                    )}
+                    {lastError && items.length > 0 && (
+                        <div className={styles.refreshError} role="status">
+                            {t('home.error.text')}
+                        </div>
+                    )}
+                    <div className={styles.grid__wrapper} aria-busy={status === 'refreshing'}>
+                        {status === 'loading' && items.length === 0 && [...new Array(8)].map((_, index) => <Skeleton key={index}/>)}
+                        {items.map(item => (
                             <Card
                                 key={item.product_id}
                                 product_id={item.product_id}
                                 name={item.name}
                                 image_src={item.image_src}
                                 price={item.price}
+                                category={item.category}
                             />
-                        ))
-                    }
-                    {status === 'success' && items.length === 0 && (
-                        <section className={styles.empty}>
-                            <h3>{t('home.empty.title')}</h3>
-                            <p>{t('home.empty.text')}</p>
-                        </section>
-                    )}
-                    {status === 'error' && (
-                        <section className={styles.empty}>
-                            <h3>{t('home.error.title')}</h3>
-                            <p>{t('home.error.text')}</p>
-                        </section>
-                    )}
+                        ))}
+                        {status === 'success' && items.length === 0 && (
+                            <section className={styles.empty}>
+                                <h3>{t('home.empty.title')}</h3>
+                                <p>{t('home.empty.text')}</p>
+                            </section>
+                        )}
+                        {status === 'error' && items.length === 0 && (
+                            <section className={styles.empty}>
+                                <h3>{t('home.error.title')}</h3>
+                                <p>{t('home.error.text')}</p>
+                            </section>
+                        )}
+                    </div>
                 </div>
                 <Pagination setCurrentPage={setCurrentPage} currentPage={currentPage}/>
             </main>

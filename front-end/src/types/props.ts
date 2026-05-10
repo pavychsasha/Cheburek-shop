@@ -26,4 +26,5 @@ export interface ICartItemProps {
     count: number;
     price: number;
     isOrder?: boolean;
+    isEditable?: boolean;
 }

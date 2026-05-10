@@ -1,6 +1,7 @@
 import styles from './Categories.module.scss';
 import React from "react";
 import {ICategoriesProps} from "../../../types/props.ts";
+import {categoryFallbackSvg} from "../../../utils/productVisuals.ts";
 
 const Categories: React.FC<ICategoriesProps> = ({
     value,
@@ -26,9 +27,15 @@ const Categories: React.FC<ICategoriesProps> = ({
                             onClick={() => handleOnClickCategory(index)}
                             className={value === categoriesEn[index] ? `${styles.item} ${styles.active}` : styles.item}
                         >
-                            {categoryMedia[categoriesEn[index]] && (
-                                <img src={categoryMedia[categoriesEn[index]]} alt="" />
-                            )}
+                            <span className={styles.mediaFrame} aria-hidden="true">
+                                <img
+                                    src={
+                                        categoryMedia[categoriesEn[index]] ||
+                                        categoryFallbackSvg(categoriesEn[index])
+                                    }
+                                    alt=""
+                                />
+                            </span>
                             <span>{category}</span>
                         </button>
                     </li>

@@ -40,9 +40,10 @@
         width: 58px;
         height: 58px;
         margin-right: 10px;
-        border-radius: 18px;
-        object-fit: cover;
-        box-shadow: 0 10px 24px rgba(200, 79, 63, 0.22);
+        border-radius: 20px;
+        object-fit: contain;
+        background: var(--color-surface);
+        box-shadow: 0 10px 24px rgba(207, 83, 67, 0.16);
       }
 
       .name__and__slogan {

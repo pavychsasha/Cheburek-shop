@@ -13,10 +13,10 @@
   }
 
   select {
+    width: 74px;
     min-height: 40px;
-    max-width: 86px;
     margin: 0;
-    padding: 8px 26px 8px 10px;
+    padding: 8px 18px;
     border: 1px solid var(--color-border);
     border-radius: 999px;
     background: var(--color-panel);
@@ -25,6 +25,7 @@
     cursor: pointer;
     text-align: center;
     text-align-last: center;
+    appearance: none;
 
     &:focus-visible {
       border-color: var(--color-primary);

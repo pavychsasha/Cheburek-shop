@@ -70,6 +70,7 @@ const SimilarItems = ({productIds}: SimilarItemsProps) => {
                         name={item.name}
                         image_src={item.image_src}
                         price={item.price}
+                        category={item.category}
                     />
                 ))}
             </div>

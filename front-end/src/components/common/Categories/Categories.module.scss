@@ -10,14 +10,14 @@
 
   .item {
     display: grid;
-    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-columns: 58px minmax(0, 1fr);
     align-items: center;
     width: 100%;
     min-height: 72px;
     min-width: 0;
     gap: 12px;
     padding: 10px 12px;
-    background-color: #fff5ec;
+    background-color: #fff6ec;
     color: var(--color-muted);
     font-size: 16px;
     font-weight: 800;
@@ -36,12 +36,21 @@
       outline-offset: 2px;
     }
 
-    img {
-      width: 52px;
-      height: 52px;
+    .mediaFrame {
+      display: grid;
+      place-items: center;
+      width: 58px;
+      height: 58px;
       border-radius: 8px;
       background: #fff;
-      object-fit: cover;
+      overflow: hidden;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      padding: 4px;
+      object-fit: contain;
     }
 
     span {
@@ -51,12 +60,14 @@
   }
 
   .active {
-    background-color: var(--color-ink);
-    color: #fff;
+    background-color: #fbe1d7;
+    color: var(--color-ink);
+    border-color: rgba(207, 83, 67, 0.36);
+    box-shadow: 0 12px 30px rgba(207, 83, 67, 0.13);
 
     &:hover {
-      background-color: var(--color-ink);
-      color: #fff;
+      background-color: #fbe1d7;
+      color: var(--color-ink);
     }
   }
 

@@ -10,7 +10,15 @@ import {ICartItemProps} from "../../../types/props.ts";
 import {useAppDispatch} from "../../../redux/hooks.ts";
 import {useCurrencyFormatter} from "../../../hooks/useCurrencyFormatter.ts";
 
-const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count, price, isOrder}) => {
+const CartItem: React.FC<ICartItemProps> = ({
+    product_id,
+    name,
+    image_src,
+    count,
+    price,
+    isOrder,
+    isEditable,
+}) => {
     const dispatch = useAppDispatch();
     const formatPrice = useCurrencyFormatter();
 
@@ -36,14 +44,12 @@ const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count,
     return (
         <div className={styles.cart__item}>
             <div className={styles.info}>
-                {
-                    !isOrder && <img src={image_src} alt=""/>
-                }
+                {(!isOrder || isEditable) && <img src={image_src} alt=""/>}
                 <h3 className={isOrder ? styles.orderTitle : undefined}>{name}</h3>
             </div>
 
-            {!isOrder
-                ?
+            {!isOrder || isEditable
+                ? (
                 <>
                     <p>{formatPrice(price * count)}</p>
                     <div className={styles.count} aria-label={`${name} quantity`}>
@@ -55,13 +61,12 @@ const CartItem: React.FC<ICartItemProps> = ({product_id, name, image_src, count,
                         <ImCross/>
                     </button>
                 </>
-
+                )
                 :
                 <>
                     <p className={styles.orderQuantity}>x{count}</p>
                     <p className={styles.orderPrice}>{formatPrice(price * count)}</p>
                 </>
-
             }
 
 

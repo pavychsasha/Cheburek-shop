@@ -13,6 +13,7 @@
     "eyebrow": "Open menu",
     "title": "Hot chebureks, pies, and drinks",
     "subtitle": "Choose favorites for a quick lunch, snack, or group order.",
+    "loading": "Refreshing menu",
     "empty": {
       "title": "No products found",
       "text": "Try a different search term or category."

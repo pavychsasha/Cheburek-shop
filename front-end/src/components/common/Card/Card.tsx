@@ -5,19 +5,25 @@ import React from "react";
 import {useTranslation} from "react-i18next";
 import {useAppDispatch, useAppSelector} from "../../../redux/hooks.ts";
 import {useCurrencyFormatter} from "../../../hooks/useCurrencyFormatter.ts";
+import {categoryFallbackSvg} from "../../../utils/productVisuals.ts";
 
 interface ICardProps {
     product_id: string;
     name: string;
     image_src: string;
     price: number;
+    category?: string;
 }
 
-const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
+const Card: React.FC<ICardProps> = ({product_id, name, image_src, price, category}) => {
     const cartItem = useAppSelector((state) =>
         state.cart.items.find((item) => item.product_id === product_id));
 
     const dispatch = useAppDispatch();
+    const fallbackImage = React.useMemo(() => categoryFallbackSvg(category), [category]);
+    const sourceImage = image_src || fallbackImage;
+    const [failedSource, setFailedSource] = React.useState<string | null>(null);
+    const visibleImage = failedSource === sourceImage ? fallbackImage : sourceImage;
 
     const [t] = useTranslation('global');
     const formatPrice = useCurrencyFormatter();
@@ -42,8 +48,11 @@ const Card: React.FC<ICardProps> = ({product_id, name, image_src, price,}) => {
     return (
         <div className={styles.wrapper}>
             <div className={styles.card}>
-                <img src={image_src}
-                     alt={name}/>
+                <img
+                    src={visibleImage}
+                    alt={name}
+                    onError={() => setFailedSource(sourceImage)}
+                />
                 <h3>{name}</h3>
                 <div className={styles.bottom}>
                     <p>{t('card.price')}: {formatPrice(price)}</p>

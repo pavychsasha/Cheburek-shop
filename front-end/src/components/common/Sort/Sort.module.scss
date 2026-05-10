@@ -1,55 +1,98 @@
 .filter {
+  position: relative;
   display: flex;
   width: fit-content;
   align-items: center;
   gap: 10px;
-  
-  @media (max-width: 1360px) {
-    margin-top: 0;
-  }
 
   span {
     font-size: 16px;
     color: var(--color-muted);
-    font-weight: 700;
+    font-weight: 800;
+    white-space: nowrap;
   }
+}
 
-  select {
-    min-height: 42px;
-    padding: 8px 14px;
-    border: 1px solid var(--color-border);
-    border-radius: 999px;
-    background-color: white;
-    font-size: 15px;
-    font-weight: bold;
-    color: var(--color-ink);
-    cursor: pointer;
+.menu {
+  position: relative;
+  min-width: 174px;
+}
+
+.trigger {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 38px 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--color-muted) 50%) right 18px top 18px / 7px 7px no-repeat,
+    linear-gradient(135deg, var(--color-muted) 50%, transparent 50%) right 13px top 18px / 7px 7px no-repeat,
+    #fff;
+  color: var(--color-ink);
+  font-size: 15px;
+  font-weight: 900;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgba(207, 83, 67, 0.42);
+    outline: 3px solid rgba(207, 83, 67, 0.13);
+  }
+}
+
+.options {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+  display: grid;
+  min-width: 210px;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: #fffdf8;
+  box-shadow: 0 18px 46px rgba(67, 43, 24, 0.16);
+}
+
+.option,
+.selectedOption {
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-ink);
+  font-weight: 850;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: #fff0eb;
     outline: none;
-
-    &:hover {
-      border-color: #d8c9ba;
-    }
-
-    &:focus {
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 4px rgba(200, 79, 63, 0.12);
-    }
-
-    option {
-      background-color: white;
-      color: #333;
-    }
   }
+}
 
-  @media (max-width: 640px) {
+.selectedOption {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+@media (max-width: 640px) {
+  .filter {
     width: 100%;
     align-items: stretch;
     flex-direction: column;
     gap: 8px;
+  }
 
-    select {
-      width: 100%;
-      max-width: none;
-    }
+  .menu {
+    width: 100%;
+  }
+
+  .options {
+    left: 0;
+    right: auto;
+    width: 100%;
   }
 }

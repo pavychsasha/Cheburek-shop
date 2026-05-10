@@ -29,8 +29,10 @@ export const fetchItems = createAsyncThunk('items/fetchItemsStatus',
 
 const initialState: IItemsState = {
     items: [],
-    status: '',
-    pagesCount: 1
+    status: 'idle',
+    pagesCount: 1,
+    currentRequestId: undefined,
+    lastError: undefined,
 };
 
 const itemsSlice = createSlice({
@@ -45,18 +47,27 @@ const itemsSlice = createSlice({
     //Checking for status of fetching
     extraReducers: (builder) => {
         builder
-            .addCase(fetchItems.pending, (state) => {
-                state.status = 'loading';
-                state.items = [];
+            .addCase(fetchItems.pending, (state, action) => {
+                state.currentRequestId = action.meta.requestId;
+                state.status = state.items.length > 0 ? 'refreshing' : 'loading';
+                state.lastError = undefined;
             })
             .addCase(fetchItems.fulfilled, (state, action) => {
+                if (state.currentRequestId !== action.meta.requestId) {
+                    return;
+                }
                 state.status = 'success';
                 state.items = action.payload.products;
                 state.pagesCount = action.payload.pages;
+                state.currentRequestId = undefined;
             })
-            .addCase(fetchItems.rejected, (state) => {
-                state.status = 'error';
-                state.items = [];
+            .addCase(fetchItems.rejected, (state, action) => {
+                if (state.currentRequestId !== action.meta.requestId) {
+                    return;
+                }
+                state.status = state.items.length > 0 ? 'success' : 'error';
+                state.lastError = action.error.message;
+                state.currentRequestId = undefined;
             })
     },
 });

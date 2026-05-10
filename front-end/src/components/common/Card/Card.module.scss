@@ -31,19 +31,23 @@
       border-radius: 6px;
       background: #fff7ef;
       object-fit: contain;
+      padding: 10px;
     }
 
     h3 {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: -webkit-box;
       font-size: 19px;
       line-height: 1.22;
       width: 100%;
       min-height: 58px;
+      max-height: 74px;
       text-align: center;
       margin: 18px 0;
       color: var(--color-ink);
+      overflow: hidden;
+      overflow-wrap: break-word;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
     }
 
     .bottom {
@@ -55,18 +59,22 @@
       min-height: 48px;
       gap: 12px;
       min-width: 0;
+      flex-wrap: wrap;
 
       p {
-        min-width: 0;
+        flex: 1 1 128px;
+        min-width: min(100%, 128px);
         margin: 0;
-        font-size: 18px;
+        font-size: 16px;
+        line-height: 1.25;
         font-weight: bold;
         color: var(--color-ink);
-        overflow-wrap: anywhere;
+        overflow-wrap: break-word;
       }
 
       .button,
       .counter {
+        flex: 0 0 auto;
         display: flex;
         align-items: center;
         justify-content: center;

@@ -176,7 +176,8 @@ const Order = () => {
                                   price={item.price}
                                   count={item.count}
                                   image_src={item.image_src}
-                                  isOrder={true}/>)
+                                  isOrder={true}
+                                  isEditable={true}/>)
                 ) : (
                     <p className={styles.empty}>{t('order.empty')}</p>
                 )}

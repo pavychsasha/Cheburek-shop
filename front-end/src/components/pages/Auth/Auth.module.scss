@@ -8,8 +8,9 @@ $font-size-small: 14px;
   min-height: 100vh;
   padding: 24px;
   background:
-    linear-gradient(135deg, rgba(37, 33, 31, 0.88), rgba(47, 111, 94, 0.82)),
-    url("../../../assets/cheburekLogo.jpg") center / cover;
+    radial-gradient(circle at 18% 20%, rgba(244, 177, 76, 0.2), transparent 28%),
+    linear-gradient(135deg, rgba(255, 248, 238, 0.96), rgba(237, 246, 237, 0.94)),
+    url("../../../assets/cheburekLogo.svg") center / 220px no-repeat;
   box-sizing: border-box;
 
   .login__box {
