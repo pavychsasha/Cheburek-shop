@@ -130,6 +130,14 @@ export interface ProductTranslationBackfillResponse {
     product_languages: string[];
 }
 
+export interface ProductTranslationPreviewItem extends ProductTranslation {
+    provider_status: "translated" | "source" | "draft" | "unavailable";
+}
+
+export interface ProductTranslationPreviewResponse {
+    translations: ProductTranslationPreviewItem[];
+}
+
 export interface AdminOrderProduct {
     product_id?: string | null;
     product_status: string;

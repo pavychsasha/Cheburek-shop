@@ -16,6 +16,8 @@ import type {
     ProductListResponse,
     ProductSeedResponse,
     ProductTranslationBackfillResponse,
+    ProductTranslation,
+    ProductTranslationPreviewResponse,
 } from "./types.ts";
 import type {CurrencySettings, ProductLanguageSettings, PublicSettings} from "../types/settings.ts";
 
@@ -157,6 +159,20 @@ export const updateProductLanguageSettings = async (
 export const backfillProductTranslations = async () => {
     const response = await adminApiClient.post<ProductTranslationBackfillResponse>(
         "/admin/translations/backfill",
+    );
+    return response.data;
+};
+
+export const previewProductTranslations = async (
+    translations: ProductTranslation[],
+    targetLanguages: string[],
+) => {
+    const response = await adminApiClient.post<ProductTranslationPreviewResponse>(
+        "/admin/translations/preview",
+        {
+            translations,
+            target_languages: targetLanguages,
+        },
     );
     return response.data;
 };

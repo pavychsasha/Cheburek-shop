@@ -36,6 +36,7 @@ import {
     fetchUsers,
     getAdminErrorMessage,
     loginAdmin,
+    previewProductTranslations,
     seedProducts,
     updateCurrencySettings,
     updateDashboardPreferences,
@@ -385,6 +386,7 @@ const DashboardPanel = () => {
     });
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const [showPreferences, setShowPreferences] = useState(false);
     const formatPrice = useCurrencyFormatter();
 
     const loadSummary = useCallback(async () => {
@@ -530,59 +532,73 @@ const DashboardPanel = () => {
             {error && <InlineState tone="error">{error}</InlineState>}
             {!isLoading && !error && analytics && (
                 <>
-                    <div className={styles.preferencePanel}>
-                        <strong>Dashboard layout</strong>
-                        <div className={styles.preferenceGrid}>
-                            {sortedWidgets.map((widget, index) => (
-                                <div key={widget.id} className={styles.preferenceItem}>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={widget.visible}
-                                            onChange={(event) =>
-                                                updateWidget(widget.id, {
-                                                    visible: event.target.checked,
-                                                })
-                                            }
-                                        />
-                                        {DASHBOARD_WIDGET_LABELS[widget.id] || widget.id}
-                                    </label>
-                                    {widget.chart_type && (
-                                        <select
-                                            value={widget.chart_type}
-                                            onChange={(event) =>
-                                                updateWidget(widget.id, {
-                                                    chart_type: event.target.value as DashboardChartType,
-                                                })
-                                            }
-                                        >
-                                            {CHART_TYPES.map((chartType) => (
-                                                <option key={chartType} value={chartType}>
-                                                    {chartType}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    )}
-                                    <div className={styles.preferenceActions}>
-                                        <button
-                                            type="button"
-                                            onClick={() => moveWidget(widget.id, -1)}
-                                            disabled={index === 0}
-                                        >
-                                            Up
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => moveWidget(widget.id, 1)}
-                                            disabled={index === sortedWidgets.length - 1}
-                                        >
-                                            Down
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                    <div className={styles.dashboardActions}>
+                        <button
+                            type="button"
+                            className={styles.secondaryButton}
+                            onClick={() => setShowPreferences((isVisible) => !isVisible)}
+                        >
+                            {showPreferences ? "Hide customization" : "Customize dashboard"}
+                        </button>
                     </div>
+                    {showPreferences && (
+                        <div className={styles.preferencePanel}>
+                            <div>
+                                <strong>Dashboard customization</strong>
+                                <span>Choose visible widgets, chart styles, and display order.</span>
+                            </div>
+                            <div className={styles.preferenceGrid}>
+                                {sortedWidgets.map((widget, index) => (
+                                    <div key={widget.id} className={styles.preferenceItem}>
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                checked={widget.visible}
+                                                onChange={(event) =>
+                                                    updateWidget(widget.id, {
+                                                        visible: event.target.checked,
+                                                    })
+                                                }
+                                            />
+                                            {DASHBOARD_WIDGET_LABELS[widget.id] || widget.id}
+                                        </label>
+                                        {widget.chart_type && (
+                                            <select
+                                                value={widget.chart_type}
+                                                onChange={(event) =>
+                                                    updateWidget(widget.id, {
+                                                        chart_type: event.target.value as DashboardChartType,
+                                                    })
+                                                }
+                                            >
+                                                {CHART_TYPES.map((chartType) => (
+                                                    <option key={chartType} value={chartType}>
+                                                        {chartType}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )}
+                                        <div className={styles.preferenceActions}>
+                                            <button
+                                                type="button"
+                                                onClick={() => moveWidget(widget.id, -1)}
+                                                disabled={index === 0}
+                                            >
+                                                Up
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => moveWidget(widget.id, 1)}
+                                                disabled={index === sortedWidgets.length - 1}
+                                            >
+                                                Down
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     <div className={styles.dashboardGrid}>
                         {sortedWidgets
                             .filter((widget) => widget.visible)
@@ -802,6 +818,7 @@ const ProductsPanel = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [isTranslating, setIsTranslating] = useState(false);
     const formatPrice = useCurrencyFormatter();
 
     const loadProducts = useCallback(async () => {
@@ -933,6 +950,91 @@ const ProductsPanel = () => {
         }));
     };
 
+    const applyTranslationPreview = async (targetLanguages: string[]) => {
+        const source =
+            form.translations.find((translation) => translation.language_code === "en") ||
+            form.translations[0];
+        if (!source?.product_name.trim() || !source.product_description.trim()) {
+            setError("Add an English name and description before translating.");
+            return;
+        }
+        setIsTranslating(true);
+        setMessage("");
+        setError("");
+        try {
+            const preview = await previewProductTranslations(
+                form.translations,
+                targetLanguages,
+            );
+            if (preview.translations.length === 0) {
+                setMessage("No translations needed.");
+                return;
+            }
+            const unavailable = preview.translations.filter(
+                (translation) => translation.provider_status === "unavailable",
+            );
+            setForm((currentForm) => {
+                const translationsByLanguage = new Map(
+                    currentForm.translations.map((translation) => [
+                        translation.language_code,
+                        translation,
+                    ]),
+                );
+                preview.translations.forEach((translation) => {
+                    if (translation.provider_status === "unavailable") {
+                        return;
+                    }
+                    translationsByLanguage.set(translation.language_code, {
+                        language_code: translation.language_code,
+                        product_name: translation.product_name,
+                        product_description: translation.product_description,
+                    });
+                });
+                return {
+                    ...currentForm,
+                    translations: ensureProductTranslations(
+                        productLanguages,
+                        Array.from(translationsByLanguage.values()),
+                    ),
+                };
+            });
+            setMessage(
+                unavailable.length
+                    ? "Some translations were unavailable; manual editing is still available."
+                    : "Translations generated. Review them before saving.",
+            );
+        } catch (requestError) {
+            setError(getAdminErrorMessage(requestError, "Unable to translate product."));
+        } finally {
+            setIsTranslating(false);
+        }
+    };
+
+    const translateMissingTranslations = () => {
+        const missingLanguages = form.translations
+            .filter(
+                (translation) =>
+                    translation.language_code !== "en" &&
+                    (!translation.product_name.trim() ||
+                        !translation.product_description.trim()),
+            )
+            .map((translation) => translation.language_code);
+        if (missingLanguages.length === 0) {
+            draftMissingTranslations();
+            setMessage("Translations already have content.");
+            return;
+        }
+        void applyTranslationPreview(missingLanguages);
+    };
+
+    const regenerateActiveTranslation = () => {
+        if (!activeTranslation || activeTranslation.language_code === "en") {
+            setMessage("Choose a non-English language to regenerate.");
+            return;
+        }
+        void applyTranslationPreview([activeTranslation.language_code]);
+    };
+
     const submitProduct = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setIsSaving(true);
@@ -1035,9 +1137,10 @@ const ProductsPanel = () => {
                             <button
                                 type="button"
                                 className={styles.secondaryButton}
-                                onClick={draftMissingTranslations}
+                                onClick={translateMissingTranslations}
+                                disabled={isTranslating}
                             >
-                                Draft missing
+                                {isTranslating ? "Translating" : "Translate missing"}
                             </button>
                         </div>
                         <div className={styles.languageTabs} role="tablist" aria-label="Product translations">
@@ -1071,6 +1174,14 @@ const ProductsPanel = () => {
                             />
                             <button type="button" className={styles.secondaryButton} onClick={addProductLanguage}>
                                 Add language
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.secondaryButton}
+                                onClick={regenerateActiveTranslation}
+                                disabled={isTranslating || activeTranslation?.language_code === "en"}
+                            >
+                                Regenerate selected
                             </button>
                         </div>
                         {activeTranslation && (
