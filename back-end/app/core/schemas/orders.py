@@ -1,7 +1,7 @@
 from typing import Literal, Optional, List, Annotated
 from datetime import datetime
 import uuid
-from pydantic import BaseModel, ConfigDict, EmailStr, ValidationError
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, ValidationError
 
 from fastapi import Query, HTTPException
 
@@ -127,7 +127,7 @@ class OrderResponseModel(BaseModel):
 
 
 class OrderResponse(BaseModel):
-    orders: List[Optional[OrderResponseModel]] = []
+    orders: List[OrderResponseModel] = Field(default_factory=list)
 
 
 class ContactData(BaseModel):
