@@ -34,15 +34,22 @@ export const formatCurrency = (
         ? displayCurrency
         : settings.default_currency;
     const convertedAmount = convertFromBaseCurrency(amount, settings, normalizedCurrency);
+    const fractionDigits = normalizedCurrency === settings.base_currency ? 0 : 2;
 
     try {
-        return new Intl.NumberFormat("uk-UA", {
-            style: "currency",
-            currency: normalizedCurrency,
-            maximumFractionDigits: normalizedCurrency === settings.base_currency ? 0 : 2,
+        const formattedAmount = new Intl.NumberFormat("uk-UA", {
+            maximumFractionDigits: fractionDigits,
+            minimumFractionDigits: fractionDigits,
         }).format(convertedAmount);
+        const symbol = settings.currency_symbols[normalizedCurrency];
+
+        if (symbol) {
+            return `${symbol}${formattedAmount}`;
+        }
+
+        return `${formattedAmount} ${normalizedCurrency}`;
     } catch {
         const symbol = settings.currency_symbols[normalizedCurrency] ?? normalizedCurrency;
-        return `${convertedAmount.toFixed(2)} ${symbol}`;
+        return `${symbol}${convertedAmount.toFixed(fractionDigits)}`;
     }
 };

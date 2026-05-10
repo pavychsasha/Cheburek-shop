@@ -22,7 +22,15 @@ const Home = () => {
 
     const dispatch = useAppDispatch();
     const { i18n, t } = useTranslation('global');
-    const [currentPage, setCurrentPage] = useState(1);
+    const queryKey = [
+        category,
+        searchValue,
+        sort.sortType,
+        sort.sortOrder,
+        i18n.language,
+    ].join("|");
+    const [pageState, setPageState] = useState({queryKey: "", page: 1});
+    const currentPage = pageState.queryKey === queryKey ? pageState.page : 1;
 
     const categoriesEn = ['All', 'Chebureks', 'Pies', 'Drinks', 'Other'];
     const categoriesUkr = ['Все', 'Чебуреки', 'Пиріжки', 'Напої', 'Інше'];
@@ -60,7 +68,7 @@ const Home = () => {
 
     useEffect(() => {
         if (isLanguageSet) getItems();
-    }, [getItems, i18n.language, isLanguageSet]);
+    }, [getItems, isLanguageSet]);
 
     return (
         <>
@@ -122,7 +130,13 @@ const Home = () => {
                         )}
                     </div>
                 </div>
-                <Pagination setCurrentPage={setCurrentPage} currentPage={currentPage}/>
+                <Pagination
+                    setCurrentPage={(page) => {
+                        const nextPage = typeof page === "function" ? page(currentPage) : page;
+                        setPageState({queryKey, page: nextPage});
+                    }}
+                    currentPage={currentPage}
+                />
             </main>
         </>
     );

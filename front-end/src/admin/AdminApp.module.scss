@@ -320,8 +320,7 @@
   gap: 6px;
   max-width: 100%;
 
-  select,
-  button {
+  > button {
     width: auto;
     min-height: 32px;
     padding: 6px 9px;
@@ -330,11 +329,7 @@
     font-weight: 900;
   }
 
-  select {
-    background: #fffaf4;
-  }
-
-  button {
+  > button {
     background: #eef2f0;
     color: #33433d;
     cursor: pointer;
@@ -351,6 +346,117 @@
     font-size: 12px;
     font-weight: 900;
   }
+}
+
+.selectField {
+  display: grid;
+  gap: 7px;
+  color: #33433d;
+  font-size: 14px;
+  font-weight: 800;
+  min-width: 0;
+
+  > span {
+    color: #33433d;
+  }
+}
+
+.adminSelect {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+}
+
+.adminSelectButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 38px 10px 12px;
+  border: 1px solid #cfd9d5;
+  border-radius: 8px;
+  background:
+    linear-gradient(45deg, transparent 50%, #756a60 50%) right 18px top 18px / 7px 7px no-repeat,
+    linear-gradient(135deg, #756a60 50%, transparent 50%) right 13px top 18px / 7px 7px no-repeat,
+    #fff;
+  color: #132620;
+  font-weight: 900;
+  text-align: left;
+  cursor: pointer;
+
+  span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgba(207, 83, 67, 0.42);
+    outline: 3px solid rgba(207, 83, 67, 0.13);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+}
+
+.adminSelectMenu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  display: grid;
+  width: max(100%, 176px);
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #eadfce;
+  border-radius: 12px;
+  background: #fffdf8;
+  box-shadow: 0 18px 46px rgba(67, 43, 24, 0.16);
+}
+
+.adminSelectOption,
+.adminSelectOptionSelected {
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  color: #2b2420;
+  font-weight: 850;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: #fff0eb;
+    outline: none;
+  }
+}
+
+.adminSelectOptionSelected {
+  background: #e7f0e7;
+  color: #2f6f5e;
+}
+
+.widgetControls .adminSelect {
+  width: auto;
+  min-width: 112px;
+}
+
+.widgetControls .adminSelectButton {
+  min-height: 32px;
+  padding: 6px 30px 6px 9px;
+  background:
+    linear-gradient(45deg, transparent 50%, #756a60 50%) right 14px top 14px / 6px 6px no-repeat,
+    linear-gradient(135deg, #756a60 50%, transparent 50%) right 10px top 14px / 6px 6px no-repeat,
+    #fffaf4;
+  font-size: 12px;
 }
 
 .chartPanel:first-child {
@@ -485,11 +591,18 @@
 }
 
 .translationTools {
-  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  grid-template-columns: minmax(170px, 1fr) max-content max-content;
+  align-items: end;
 }
 
 .translationFields {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.compactField {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
 }
 
 .toolbar {

@@ -205,6 +205,91 @@ const DASHBOARD_WIDGET_LABELS: Record<string, string> = {
 
 const CHART_TYPES: DashboardChartType[] = ["line", "bar", "area", "pie"];
 
+interface AdminSelectOption {
+    value: string;
+    label: string;
+}
+
+interface AdminSelectProps {
+    value: string;
+    options: AdminSelectOption[];
+    ariaLabel: string;
+    onChange: (value: string) => void;
+    disabled?: boolean;
+}
+
+const AdminSelect = ({
+    value,
+    options,
+    ariaLabel,
+    onChange,
+    disabled = false,
+}: AdminSelectProps) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const selectRef = useRef<HTMLDivElement | null>(null);
+    const selectedOption = options.find((option) => option.value === value) || options[0];
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
+        const closeOnOutsideClick = (event: PointerEvent) => {
+            if (
+                selectRef.current &&
+                !selectRef.current.contains(event.target as Node)
+            ) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener("pointerdown", closeOnOutsideClick);
+        return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
+    }, [isOpen]);
+
+    return (
+        <div className={styles.adminSelect} ref={selectRef}>
+            <button
+                type="button"
+                className={styles.adminSelectButton}
+                aria-haspopup="listbox"
+                aria-expanded={isOpen}
+                aria-label={ariaLabel}
+                disabled={disabled}
+                onClick={() => setIsOpen((current) => !current)}
+            >
+                <span>{selectedOption?.label || "Select"}</span>
+            </button>
+            {isOpen && !disabled && (
+                <div className={styles.adminSelectMenu} role="listbox" aria-label={ariaLabel}>
+                    {options.map((option) => {
+                        const isSelected = option.value === value;
+                        return (
+                            <button
+                                key={option.value}
+                                type="button"
+                                role="option"
+                                aria-selected={isSelected}
+                                className={
+                                    isSelected
+                                        ? styles.adminSelectOptionSelected
+                                        : styles.adminSelectOption
+                                }
+                                onClick={() => {
+                                    onChange(option.value);
+                                    setIsOpen(false);
+                                }}
+                            >
+                                {option.label}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const AdminApp = () => {
     const [authState, setAuthState] = useState<"loading" | "login" | "ready" | "forbidden">(
         "loading",
@@ -575,49 +660,49 @@ const DashboardPanel = () => {
     const widgetControls = (widget: DashboardWidgetPreference, index: number) => (
         <div className={styles.widgetControls}>
             {widget.chart_type && (
-                <select
+                <AdminSelect
                     value={widget.chart_type}
-                    onChange={(event) =>
+                    onChange={(nextValue) =>
                         updateWidget(widget.id, {
-                            chart_type: event.target.value as DashboardChartType,
+                            chart_type: nextValue as DashboardChartType,
                         })
                     }
-                    aria-label={`${DASHBOARD_WIDGET_LABELS[widget.id] || widget.id} chart type`}
-                >
-                    {CHART_TYPES.map((chartType) => (
-                        <option key={chartType} value={chartType}>
-                            {chartType}
-                        </option>
-                    ))}
-                </select>
+                    ariaLabel={`${DASHBOARD_WIDGET_LABELS[widget.id] || widget.id} chart type`}
+                    options={CHART_TYPES.map((chartType) => ({
+                        value: chartType,
+                        label: chartType,
+                    }))}
+                />
             )}
-            <select
-                value={widget.timespan_days}
-                onChange={(event) =>
+            <AdminSelect
+                value={String(widget.timespan_days)}
+                onChange={(nextValue) =>
                     updateWidget(widget.id, {
-                        timespan_days: Number(event.target.value),
+                        timespan_days: Number(nextValue),
                     })
                 }
-                aria-label={`${DASHBOARD_WIDGET_LABELS[widget.id] || widget.id} timespan`}
-            >
-                <option value={7}>7 days</option>
-                <option value={14}>14 days</option>
-                <option value={30}>30 days</option>
-                <option value={90}>90 days</option>
-            </select>
-            <select
+                ariaLabel={`${DASHBOARD_WIDGET_LABELS[widget.id] || widget.id} timespan`}
+                options={[
+                    {value: "7", label: "7 days"},
+                    {value: "14", label: "14 days"},
+                    {value: "30", label: "30 days"},
+                    {value: "90", label: "90 days"},
+                ]}
+            />
+            <AdminSelect
                 value={widget.period}
-                onChange={(event) =>
+                onChange={(nextValue) =>
                     updateWidget(widget.id, {
-                        period: event.target.value as DashboardWidgetPreference["period"],
+                        period: nextValue as DashboardWidgetPreference["period"],
                     })
                 }
-                aria-label={`${DASHBOARD_WIDGET_LABELS[widget.id] || widget.id} period`}
-            >
-                <option value="day">Daily</option>
-                <option value="week">Weekly</option>
-                <option value="month">Monthly</option>
-            </select>
+                ariaLabel={`${DASHBOARD_WIDGET_LABELS[widget.id] || widget.id} period`}
+                options={[
+                    {value: "day", label: "Daily"},
+                    {value: "week", label: "Weekly"},
+                    {value: "month", label: "Monthly"},
+                ]}
+            />
             <button type="button" onClick={() => moveWidget(widget.id, -1)} disabled={index === 0}>
                 Up
             </button>
@@ -1055,9 +1140,20 @@ const ProductsPanel = () => {
 
     const addProductLanguage = () => {
         const languageCode = normalizeLanguageCode(newLanguage);
-        if (!languageCode || productLanguages.includes(languageCode)) {
+        const existingCodes = form.translations.map((translation) => translation.language_code);
+        setError("");
+        setMessage("");
+
+        if (!languageCode) {
+            setError("Enter a language code before adding a language.");
             return;
         }
+
+        if (productLanguages.includes(languageCode) || existingCodes.includes(languageCode)) {
+            setError(`${languageLabel(languageCode)} is already available for this product.`);
+            return;
+        }
+
         const nextLanguages = [...productLanguages, languageCode];
         setProductLanguages(nextLanguages);
         setForm((currentForm) => ({
@@ -1069,6 +1165,7 @@ const ProductsPanel = () => {
         }));
         setSelectedTranslation(languageCode);
         setNewLanguage("");
+        setMessage(`${languageLabel(languageCode)} translation is ready to edit.`);
     };
 
     const draftMissingTranslations = () => {
@@ -1332,12 +1429,15 @@ const ProductsPanel = () => {
                             ))}
                         </div>
                         <div className={styles.translationTools}>
-                            <input
-                                value={newLanguage}
-                                onChange={(event) => setNewLanguage(event.target.value)}
-                                placeholder="Language code, for example de"
-                                aria-label="New product language code"
-                            />
+                            <label className={styles.compactField}>
+                                New language
+                                <input
+                                    value={newLanguage}
+                                    onChange={(event) => setNewLanguage(event.target.value)}
+                                    placeholder="Language code, for example de"
+                                    aria-label="New product language code"
+                                />
+                            </label>
                             <button type="button" className={styles.secondaryButton} onClick={addProductLanguage}>
                                 Add language
                             </button>
@@ -1416,18 +1516,20 @@ const ProductsPanel = () => {
                                 required
                             />
                         </label>
-                        <label>
-                            Category
-                            <select
+                        <div className={styles.selectField}>
+                            <span>Category</span>
+                            <AdminSelect
                                 value={form.category}
-                                onChange={(event) => setForm({...form, category: event.target.value})}
-                            >
-                                <option value="Chebureks">Chebureks</option>
-                                <option value="Pies">Pies</option>
-                                <option value="Drinks">Drinks</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </label>
+                                onChange={(nextValue) => setForm({...form, category: nextValue})}
+                                ariaLabel="Product category"
+                                options={[
+                                    {value: "Chebureks", label: "Chebureks"},
+                                    {value: "Pies", label: "Pies"},
+                                    {value: "Drinks", label: "Drinks"},
+                                    {value: "Other", label: "Other"},
+                                ]}
+                            />
+                        </div>
                         <label className={styles.fullWidth}>
                             Tags
                             <input
@@ -1628,20 +1730,23 @@ const OrdersPanel = () => {
                         placeholder="Email, order id, product, or notes"
                     />
                 </label>
-                <label>
-                    Status
-                    <select
+                <div className={styles.selectField}>
+                    <span>Status</span>
+                    <AdminSelect
                         value={filters.status}
-                        onChange={(event) =>
-                            setFilters({...filters, status: event.target.value as OrderStatus | ""})
+                        onChange={(nextValue) =>
+                            setFilters({...filters, status: nextValue as OrderStatus | ""})
                         }
-                    >
-                        <option value="">All statuses</option>
-                        {ORDER_STATUSES.map((status) => (
-                            <option key={status} value={status}>{status}</option>
-                        ))}
-                    </select>
-                </label>
+                        ariaLabel="Order status filter"
+                        options={[
+                            {value: "", label: "All statuses"},
+                            ...ORDER_STATUSES.map((status) => ({
+                                value: status,
+                                label: status,
+                            })),
+                        ]}
+                    />
+                </div>
                 <label>
                     From
                     <input
@@ -1698,24 +1803,23 @@ const OrdersPanel = () => {
                                     Delete
                                 </button>
                             </div>
-                            <label>
-                                Status
-                                <select
+                            <div className={styles.selectField}>
+                                <span>Status</span>
+                                <AdminSelect
                                     value={selectedOrder.status}
-                                    onChange={(event) =>
+                                    onChange={(nextValue) =>
                                         void changeStatus(
                                             selectedOrder.order_id,
-                                            event.target.value as OrderStatus,
+                                            nextValue as OrderStatus,
                                         )
                                     }
-                                >
-                                    {ORDER_STATUSES.map((status) => (
-                                        <option key={status} value={status}>
-                                            {status}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                                    ariaLabel="Selected order status"
+                                    options={ORDER_STATUSES.map((status) => ({
+                                        value: status,
+                                        label: status,
+                                    }))}
+                                />
+                            </div>
                             <div className={styles.orderAddress}>
                                 <strong>Delivery</strong>
                                 <span>
@@ -1879,23 +1983,24 @@ const UsersPanel = ({currentUser}: {currentUser: AdminUser}) => {
                     />
                 </label>
                 {(["is_active", "is_verified", "is_superuser"] as const).map((field) => (
-                    <label key={field}>
-                        {field.replace("is_", "").replace("_", " ")}
-                        <select
+                    <div className={styles.selectField} key={field}>
+                        <span>{field.replace("is_", "").replace("_", " ")}</span>
+                        <AdminSelect
                             value={String(filters[field])}
-                            onChange={(event) => {
-                                const value = event.target.value;
+                            onChange={(value) => {
                                 setFilters({
                                     ...filters,
                                     [field]: value === "" ? "" : value === "true",
                                 });
                             }}
-                        >
-                            <option value="">Any</option>
-                            <option value="true">Yes</option>
-                            <option value="false">No</option>
-                        </select>
-                    </label>
+                            ariaLabel={`${field.replace("is_", "").replace("_", " ")} filter`}
+                            options={[
+                                {value: "", label: "Any"},
+                                {value: "true", label: "Yes"},
+                                {value: "false", label: "No"},
+                            ]}
+                        />
+                    </div>
                 ))}
                 <button type="button" className={styles.secondaryButton} onClick={() => void loadUsers()}>
                     Search
@@ -2176,19 +2281,18 @@ const SettingsPanel = () => {
                             Base currency
                             <input value={baseCurrency} disabled />
                         </label>
-                        <label>
-                            Default display currency
-                            <select
+                        <div className={styles.selectField}>
+                            <span>Default display currency</span>
+                            <AdminSelect
                                 value={defaultCurrency}
-                                onChange={(event) => setDefaultCurrency(event.target.value)}
-                            >
-                                {supportedCurrencies.map((currencyCode) => (
-                                    <option key={currencyCode} value={currencyCode}>
-                                        {currencyCode}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
+                                onChange={setDefaultCurrency}
+                                ariaLabel="Default display currency"
+                                options={supportedCurrencies.map((currencyCode) => ({
+                                    value: currencyCode,
+                                    label: currencyCode,
+                                }))}
+                            />
+                        </div>
                         <label>
                             Supported currencies
                             <input
