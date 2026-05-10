@@ -39,6 +39,8 @@ Important variables:
 - `APP_CONFIG__CURRENCY__SUPPORTED_CURRENCIES`: comma-separated display currencies
 - `APP_CONFIG__CURRENCY__CURRENCY_RATES`: static display rates from base UAH
 - `APP_CONFIG__CURRENCY__CURRENCY_SYMBOLS`: display symbols for supported currencies
+- `APP_CONFIG__PRODUCT_LANGUAGES__SUPPORTED_LANGUAGES`: comma-separated product translation languages
+- `APP_CONFIG__PRODUCT_LANGUAGES__AUTO_TRANSLATE_PRODUCTS`: enables editable draft translations for missing product languages
 - `APP_CONFIG__CORS__ALLOWED_ORIGINS`: comma-separated frontend origins
 - `APP_CONFIG__ACCESS_TOKEN__RESET_PASSWORD_TOKEN_SECRET`: reset-token secret
 - `APP_CONFIG__ACCESS_TOKEN__VERIFICATION_TOKEN_SECRET`: verification-token secret
@@ -82,6 +84,14 @@ docker compose run --rm fastapi python -m app.actions.seed_products
 ```
 
 Known seed products are matched by English product name. The seed creates missing products, uploads deterministic local product images to MinIO, updates known seed fields and translations, and leaves unrelated catalog records, carts, and orders untouched. Use `--reset` only for an explicit local seed-product reset.
+
+Backfill configured product languages across existing products:
+
+```bash
+docker compose run --rm fastapi python -m app.actions.backfill_product_translations
+```
+
+Backfilled translations are editable drafts based on the English fallback. Review them in the admin CMS before treating them as final localized copy.
 
 Bootstrap or refresh the generated local admin user:
 
@@ -135,6 +145,8 @@ Public and admin settings/media endpoints:
 
 - `GET /api/v1/settings/public`: currency display settings
 - `PATCH /api/v1/admin/settings/currency`: update display currencies and rates
+- `PATCH /api/v1/admin/settings/languages`: update configured product languages
+- `POST /api/v1/admin/translations/backfill`: create missing product translation drafts
 - `POST /api/v1/admin/media/products`: upload product images
 - `GET /media/{object_name}`: public media served through the backend from MinIO
 - `GET /api/v1/admin/analytics`: dashboard chart and operational datasets

@@ -45,7 +45,7 @@ The friendly local-domain URLs are served through the local proxy on `LOCAL_HTTP
 ./start.sh
 ```
 
-`setup.sh` creates local env files, generates local-only secrets, installs frontend dependencies when npm is available, validates Docker Compose, starts PostgreSQL, MongoDB, Redis, and MinIO, waits for them to become healthy, runs migrations, seeds the product catalog and product media idempotently, bootstraps the local admin user, and offers to add these hostnames to `/etc/hosts`:
+`setup.sh` creates local env files, generates local-only secrets, installs frontend dependencies when npm is available, validates Docker Compose, starts PostgreSQL, MongoDB, Redis, and MinIO, waits for them to become healthy, runs migrations, seeds the product catalog and product media idempotently, backfills configured product-language drafts, bootstraps the local admin user, and offers to add these hostnames to `/etc/hosts`:
 
 ```text
 127.0.0.1 app.local.cheburek-shop.com api.local.cheburek-shop.com admin.local.cheburek-shop.com
@@ -79,7 +79,7 @@ Run migrations and the idempotent product seed after services are available:
 ./scripts/migrate.sh
 ```
 
-The product seed creates missing seed products, uploads deterministic local product images to MinIO, and updates known seed product fields by English product name. It does not delete unrelated products, carts, or orders. A destructive seed reset is available only as an explicit local maintenance action:
+The product seed creates missing seed products, uploads deterministic local product images to MinIO, updates known seed product fields by English product name, and backfills missing configured product-language drafts. It does not delete unrelated products, carts, or orders. A destructive seed reset is available only as an explicit local maintenance action:
 
 ```bash
 docker compose run --rm fastapi python -m app.actions.seed_products --reset
@@ -125,6 +125,8 @@ Important root `.env` values:
 - `SUPPORTED_CURRENCIES`: comma-separated display currencies
 - `CURRENCY_RATES`: static display rates from base UAH
 - `CURRENCY_SYMBOLS`: display symbols for supported currencies
+- `PRODUCT_LANGUAGES`: comma-separated product translation languages
+- `AUTO_TRANSLATE_PRODUCTS`: creates editable draft translations for missing product languages
 - `VITE_API_BASE_URL`: browser API base URL
 - `CORS_ALLOWED_ORIGINS`: comma-separated frontend origins allowed by the API
 - `POSTGRES_PASSWORD`: generated local database password
@@ -187,8 +189,18 @@ Admin and seed helpers:
 
 ```bash
 docker compose run --rm fastapi python -m app.actions.seed_products
+docker compose run --rm fastapi python -m app.actions.backfill_product_translations
 docker compose run --rm fastapi python -m app.actions.create_super_user
 ```
+
+## Product Languages And SEO
+
+- Product creation in the admin CMS uses translation tabs instead of separate hardcoded fields.
+- Add global product languages in Admin Settings, then run the product translation backfill action from the same screen.
+- Missing translations are filled as editable drafts from the English fallback. No external translation provider is configured, so review generated drafts before publishing them as final copy.
+- The storefront includes baseline SEO metadata, Open Graph/Twitter metadata, canonical URLs, and restaurant structured data.
+- The admin host sets `noindex,nofollow` at runtime.
+- For production-grade per-product SEO, add stable product detail routes plus server-side rendering or prerendering so crawlers receive product-specific HTML.
 
 ## Troubleshooting
 
@@ -198,6 +210,7 @@ docker compose run --rm fastapi python -m app.actions.create_super_user
 - Product images do not load: confirm `/health` reports `minio: ok`, then rerun `./scripts/migrate.sh` to recreate seed media.
 - MinIO console login is needed: read the generated local MinIO values from ignored `.env`; do not copy them into documentation or commits.
 - Currency selector shows stale values: reload settings in the admin Settings panel or refresh the page after saving currency changes.
+- Product translation languages look stale: reload Admin Settings, save the language list, then run the backfill action.
 - Port already in use: update `.env`, `front-end/.env`, and `back-end/.env` so ports, `VITE_API_BASE_URL`, and `CORS_ALLOWED_ORIGINS` stay aligned. If host port `80` is busy, set `LOCAL_HTTP_PORT` to another value and include that port in local-domain URLs.
 - Frontend cannot reach the API: confirm `VITE_API_BASE_URL` points to the backend URL visible from the browser.
 - Storefront works on localhost but local domains fail: rerun `./setup.sh` in a terminal and accept or manually add the printed hosts entry.
