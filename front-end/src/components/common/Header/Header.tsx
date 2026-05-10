@@ -53,9 +53,14 @@ const Header = () => {
                     </div>
                 </div>
             </NavLink>
-            {shouldShowSearchbar && <Searchbar searchValue={searchValue}
-                                                         onChangeSearch={onChangeSearch}
-            />}
+            {shouldShowSearchbar && (
+                <div className={styles.searchSlot}>
+                    <Searchbar
+                        searchValue={searchValue}
+                        onChangeSearch={onChangeSearch}
+                    />
+                </div>
+            )}
             <div className={styles.left}>
                 <LangSelector/>
                 <CurrencySelector/>

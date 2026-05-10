@@ -15,6 +15,7 @@ import Order from "./components/pages/Order/Order.tsx";
 import {apiClient, getAuthHeaders} from "./api/api.ts";
 import {useAppDispatch, useAppSelector} from "./redux/hooks.ts";
 import {fetchPublicSettings} from "./redux/slices/settingsSlice.ts";
+import Seo from "./components/common/Seo/Seo.tsx";
 
 const isAdminHost = window.location.hostname === "admin.local.cheburek-shop.com";
 const AdminApp = React.lazy(() => import("./admin/AdminApp.tsx"));
@@ -79,9 +80,26 @@ const StorefrontApp = () => {
     const location = useLocation();
 
     const shouldShowHeader = !['/login', '/register'].includes(location.pathname);
+    const storefrontDescription =
+        "Order hot chebureks, pies, snacks, and drinks from Cheburek Shop with a fast local checkout experience.";
+    const restaurantJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Restaurant",
+        name: "Cheburek Shop",
+        servesCuisine: ["Ukrainian", "Street food"],
+        url: window.location.origin,
+        acceptsReservations: false,
+        hasMenu: `${window.location.origin}/`,
+    };
 
     return (
         <div className={shouldShowHeader ? 'app__wrapper' : ''}>
+            <Seo
+                title="Cheburek Shop | Hot Chebureks, Pies, Snacks, and Drinks"
+                description={storefrontDescription}
+                canonicalPath={location.pathname}
+                jsonLd={restaurantJsonLd}
+            />
             {shouldShowHeader && <Header/>}
             <Routes>
                 <Route path={'/'} element={<Home/>}/>
@@ -105,6 +123,11 @@ const App = () => {
     if (isAdminHost) {
         return (
             <Suspense fallback={<div className="app__loading">Loading admin portal.</div>}>
+                <Seo
+                    title="Cheburek Shop Admin"
+                    description="Private catalog and order management workspace."
+                    noindex
+                />
                 <AdminApp/>
             </Suspense>
         );
