@@ -10,6 +10,10 @@ The same frontend service also hosts a protected admin CMS for catalog, media, o
 - Services: PostgreSQL 16, MongoDB 7, Redis 7, MinIO object storage
 - Local orchestration: Docker Compose
 
+## Project Contributors
+
+- Frontend lead: [@ost1qq](https://github.com/ost1qq)
+
 ## Local URLs
 
 Preferred local-domain URLs:
