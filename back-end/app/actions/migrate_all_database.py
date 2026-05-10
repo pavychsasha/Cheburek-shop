@@ -339,15 +339,38 @@ def _seed_svg(product_name: str, category: str | None) -> bytes:
         "Other": ("#f3d27a", "#745132"),
     }
     primary, accent = category_colors.get(category or "Other", category_colors["Other"])
+    if category == "Drinks":
+        foreground = """
+    <rect x="210" y="112" width="88" height="260" rx="34" fill="#d94b3d" stroke="#78322e" stroke-width="13"/>
+    <rect x="230" y="70" width="48" height="58" rx="14" fill="#75b6c9" stroke="#234d59" stroke-width="10"/>
+    <rect x="374" y="160" width="130" height="172" rx="28" fill="#fffaf4" stroke="#d94b3d" stroke-width="15"/>
+    <path d="M392 204h92M390 334h120" stroke="#d94b3d" stroke-width="13" stroke-linecap="round"/>
+"""
+    elif category == "Pies":
+        foreground = """
+    <ellipse cx="360" cy="285" rx="190" ry="102" fill="#d9a45f" stroke="#74624f" stroke-width="17"/>
+    <path d="M214 276c78-48 212-55 304-10" fill="none" stroke="#fff4d2" stroke-width="17" stroke-linecap="round"/>
+    <path d="M284 232c18 25 22 54 10 88M362 218c16 34 14 70-4 106M444 232c-16 28-24 58-22 90" fill="none" stroke="#74624f" stroke-width="12" stroke-linecap="round" opacity=".55"/>
+"""
+    elif category == "Other":
+        foreground = """
+    <rect x="210" y="176" width="275" height="160" rx="36" fill="#f3d27a" stroke="#745132" stroke-width="16"/>
+    <path d="M248 222h198M248 278h138" stroke="#fff9dd" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="494" cy="346" r="56" fill="#75b6c9" stroke="#234d59" stroke-width="12"/>
+"""
+    else:
+        foreground = """
+    <path d="M55 205c58-154 250-205 403-94 29 21 43 62 25 94-56 99-308 121-428 0Z" fill="{primary}" stroke="{accent}" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M76 203c91 30 262 28 388-4" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round" opacity="0.72"/>
+    <path d="M136 174c35-35 77-53 124-59" fill="none" stroke="{accent}" stroke-width="10" stroke-linecap="round" opacity="0.55"/>
+    <path d="M312 112c39 7 75 24 109 52" fill="none" stroke="{accent}" stroke-width="10" stroke-linecap="round" opacity="0.45"/>
+""".format(primary=primary, accent=accent)
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="720" height="520" viewBox="0 0 720 520" role="img" aria-label="Seed product image">
   <rect width="720" height="520" rx="42" fill="#fff8ee"/>
   <circle cx="520" cy="128" r="92" fill="{primary}" opacity="0.22"/>
   <circle cx="190" cy="398" r="118" fill="{accent}" opacity="0.13"/>
   <g transform="translate(108 110)">
-    <path d="M55 205c58-154 250-205 403-94 29 21 43 62 25 94-56 99-308 121-428 0Z" fill="{primary}" stroke="{accent}" stroke-width="16" stroke-linejoin="round"/>
-    <path d="M76 203c91 30 262 28 388-4" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round" opacity="0.72"/>
-    <path d="M136 174c35-35 77-53 124-59" fill="none" stroke="{accent}" stroke-width="10" stroke-linecap="round" opacity="0.55"/>
-    <path d="M312 112c39 7 75 24 109 52" fill="none" stroke="{accent}" stroke-width="10" stroke-linecap="round" opacity="0.45"/>
+{foreground}
   </g>
 </svg>"""
     return svg.encode("utf-8")

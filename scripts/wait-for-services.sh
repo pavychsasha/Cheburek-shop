@@ -48,3 +48,7 @@ wait_for \
 wait_for \
   "MinIO" \
   "docker compose exec -T minio sh -c 'mc ready local >/dev/null 2>&1 || wget -q -O /dev/null http://127.0.0.1:9000/minio/health/live'"
+
+wait_for \
+  "Translator" \
+  "docker compose exec -T translator python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=3).read()\""

@@ -63,8 +63,29 @@ class ProductTranslationBackfillResponse(BaseModel):
     product_languages: list[str]
 
 
+class ProductTranslationPreviewRequest(BaseModel):
+    translations: list["ProductTranslations"]
+    target_languages: list[str] = Field(..., min_length=1)
+
+
+class ProductTranslationPreviewItem(BaseModel):
+    language_code: str
+    product_name: str
+    product_description: str
+    provider_status: str
+
+
+class ProductTranslationPreviewResponse(BaseModel):
+    translations: list[ProductTranslationPreviewItem]
+
+
 class MediaUploadResponse(BaseModel):
     object_name: str
     url: str
     content_type: str
     size: int
+
+
+from app.core.schemas.products import ProductTranslations  # noqa: E402
+
+ProductTranslationPreviewRequest.model_rebuild()

@@ -38,8 +38,14 @@ from app.core.schemas.settings import (
     ProductLanguageSettings,
     ProductLanguageSettingsUpdate,
     ProductTranslationBackfillResponse,
+    ProductTranslationPreviewRequest,
+    ProductTranslationPreviewResponse,
+    ProductTranslationPreviewItem,
 )
-from app.core.services.product_translations import backfill_product_translations
+from app.core.services.product_translations import (
+    backfill_product_translations,
+    preview_product_translations,
+)
 from app.core.services.store_settings import (
     update_currency_settings,
     update_product_language_settings,
@@ -324,6 +330,32 @@ async def backfill_admin_product_translations(
     superuser: Annotated[User, Security(current_active_superuser)],
 ):
     return await backfill_product_translations(session=session)
+
+
+@router.post(
+    "/translations/preview",
+    response_model=ProductTranslationPreviewResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def preview_admin_product_translations(
+    preview_request: ProductTranslationPreviewRequest,
+    superuser: Annotated[User, Security(current_active_superuser)],
+):
+    previews = await preview_product_translations(
+        translations=preview_request.translations,
+        target_languages=preview_request.target_languages,
+    )
+    return ProductTranslationPreviewResponse(
+        translations=[
+            ProductTranslationPreviewItem(
+                language_code=preview.language_code,
+                product_name=preview.product_name,
+                product_description=preview.product_description,
+                provider_status=preview.provider_status,
+            )
+            for preview in previews
+        ]
+    )
 
 
 @router.post(

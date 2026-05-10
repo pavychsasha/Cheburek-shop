@@ -10,6 +10,10 @@ from app.core.schemas.settings import (
     ProductTranslationBackfillResponse,
 )
 from app.core.services.store_settings import get_product_language_settings
+from app.core.services.translation import (
+    TranslationPreviewItem,
+    translate_product_fields,
+)
 
 
 def _draft_translation_name(source_name: str, language_code: str) -> str:
@@ -85,14 +89,14 @@ async def complete_product_translations(
     }
     for language_code in settings.product_languages:
         if language_code not in translations_by_language:
+            translated = await translate_product_fields(source, language_code)
+            if translated.provider_status == "unavailable":
+                continue
             normalized.append(
                 ProductTranslations(
                     language_code=language_code,
-                    product_name=_draft_translation_name(
-                        source.product_name,
-                        language_code,
-                    ),
-                    product_description=source.product_description,
+                    product_name=translated.product_name,
+                    product_description=translated.product_description,
                 )
             )
 
@@ -123,14 +127,14 @@ async def backfill_product_translations(
         for language_code in settings.product_languages:
             if language_code in translations_by_language:
                 continue
+            translated = await translate_product_fields(source, language_code)
+            if translated.provider_status == "unavailable":
+                continue
             product.translations.append(
                 ProductTranslation(
                     language_code=language_code,
-                    product_name=_draft_translation_name(
-                        source.product_name,
-                        language_code,
-                    ),
-                    product_description=source.product_description,
+                    product_name=translated.product_name,
+                    product_description=translated.product_description,
                 )
             )
             created += 1
@@ -144,3 +148,22 @@ async def backfill_product_translations(
         translations_created=created,
         product_languages=settings.product_languages,
     )
+
+
+async def preview_product_translations(
+    translations: list[ProductTranslations],
+    target_languages: list[str],
+) -> list[TranslationPreviewItem]:
+    normalized = _normalize_translations(translations)
+    source = _source_translation(normalized)
+    if source is None:
+        return []
+
+    source_language = source.language_code
+    previews: list[TranslationPreviewItem] = []
+    for language_code in target_languages:
+        normalized_language = language_code.strip().lower()
+        if not normalized_language or normalized_language == source_language:
+            continue
+        previews.append(await translate_product_fields(source, normalized_language))
+    return previews

@@ -180,6 +180,13 @@ class ProductLanguageConfig(BaseModel):
         return list(dict.fromkeys(normalized)) or ["en", "ukr"]
 
 
+class TranslationConfig(BaseModel):
+    enabled: bool = False
+    base_url: str = "http://translator:5000"
+    timeout_seconds: float = Field(default=3.0, gt=0)
+    source_language: str = "en"
+
+
 class AccessToken(BaseModel):
     lifetime_seconds: int = Field(default=60 * 60 * 24 * 30, ge=300)
     reset_password_token_secret: str
@@ -215,6 +222,7 @@ class Settings(BaseSettings):
     media: MediaConfig
     currency: CurrencyConfig = CurrencyConfig()
     product_languages: ProductLanguageConfig = ProductLanguageConfig()
+    translation: TranslationConfig = TranslationConfig()
     session: Session
 
 

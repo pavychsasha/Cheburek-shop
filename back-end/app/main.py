@@ -11,6 +11,7 @@ import uvicorn
 from app.core.events import register_product_event_listeners
 from app.core.config import settings
 from app.core.models import sql_db_helper, mongo_db_helper, redis_db_helper
+from app.core.services.translation import check_translation_service
 from app.core.storage import check_media_storage, ensure_media_bucket, get_media_object
 from app.api import router as router_v1
 
@@ -78,7 +79,13 @@ async def health_check(response: Response):
     except Exception as exc:
         checks["minio"] = f"error: {exc.__class__.__name__}"
 
-    is_healthy = all(value == "ok" for value in checks.values())
+    try:
+        await check_translation_service()
+        checks["translator"] = "ok" if settings.translation.enabled else "disabled"
+    except Exception as exc:
+        checks["translator"] = f"error: {exc.__class__.__name__}"
+
+    is_healthy = all(value in {"ok", "disabled"} for value in checks.values())
     if not is_healthy:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return {
