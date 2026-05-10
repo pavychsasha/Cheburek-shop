@@ -234,6 +234,7 @@ async def seed_demo_orders(session=None) -> DemoOrderSeedResult:
                         quantity=quantity,
                         name=localized.name,
                         price=product.price,
+                        cost_price=product.cost_price,
                         category=product.category,
                         image_src=product.image_src,
                     )

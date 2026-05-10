@@ -166,6 +166,10 @@ class CurrencyConfig(BaseModel):
         }
 
 
+class ProfitConfig(BaseModel):
+    fallback_margin: float = Field(default=0.35, ge=0, le=1)
+
+
 class ProductLanguageConfig(BaseModel):
     supported_languages: str = "en,ukr"
     auto_translate_products: bool = True
@@ -221,6 +225,7 @@ class Settings(BaseSettings):
     redis: RedisDatabaseConfig = RedisDatabaseConfig()
     media: MediaConfig
     currency: CurrencyConfig = CurrencyConfig()
+    profit: ProfitConfig = ProfitConfig()
     product_languages: ProductLanguageConfig = ProductLanguageConfig()
     translation: TranslationConfig = TranslationConfig()
     session: Session

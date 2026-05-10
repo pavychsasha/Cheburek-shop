@@ -42,6 +42,7 @@ class StoreSettings(Document):
     )
     product_languages: list[str] = Field(default_factory=lambda: ["en", "ukr"])
     auto_translate_products: bool = Field(default=True)
+    fallback_profit_margin: float = Field(default=0.35, ge=0, le=1)
 
     class Settings:
         name = "store_settings"

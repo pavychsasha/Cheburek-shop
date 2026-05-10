@@ -1,7 +1,7 @@
 from typing import Annotated
 import contextlib
 
-from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 from fastapi_users.exceptions import UserAlreadyExists
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,8 +34,24 @@ async def list_users(
         Depends(sql_db_helper.session_dependency),
     ],
     superuser: Annotated[User, Security(current_active_superuser)],
+    q: Annotated[str | None, Query(max_length=150)] = None,
+    is_active: bool | None = None,
+    is_verified: bool | None = None,
+    is_superuser: bool | None = None,
+    page: Annotated[int, Query(ge=1, le=2000)] = 1,
+    per_page: Annotated[int, Query(ge=1, le=200)] = 100,
 ):
-    result = await session.execute(select(User).order_by(User.email))
+    stmt = select(User)
+    if q:
+        stmt = stmt.where(User.email.ilike(f"%{q.strip()}%"))
+    if is_active is not None:
+        stmt = stmt.where(User.is_active == is_active)
+    if is_verified is not None:
+        stmt = stmt.where(User.is_verified == is_verified)
+    if is_superuser is not None:
+        stmt = stmt.where(User.is_superuser == is_superuser)
+    stmt = stmt.order_by(User.email).limit(per_page).offset((page - 1) * per_page)
+    result = await session.execute(stmt)
     return result.scalars().all()
 
 

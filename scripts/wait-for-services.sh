@@ -51,4 +51,6 @@ wait_for \
 
 wait_for \
   "Translator" \
-  "docker compose exec -T translator python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=3).read()\""
+  "docker compose exec -T translator python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/languages', timeout=5).read()\"" \
+  90 \
+  3

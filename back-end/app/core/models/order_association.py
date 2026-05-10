@@ -2,7 +2,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, UniqueConstraint, event
+from sqlalchemy import CheckConstraint, Float, ForeignKey, UniqueConstraint, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -36,6 +36,13 @@ class OrderProductAssociation(Base):
 
     name: Mapped[str]
     price: Mapped[float]
+    cost_price: Mapped[float] = mapped_column(
+        Float,
+        CheckConstraint("cost_price >= 0"),
+        nullable=False,
+        default=0,
+        server_default="0",
+    )
     category: Mapped[str]
     image_src: Mapped[str]
 

@@ -1,6 +1,8 @@
-from typing import Annotated
+from collections import defaultdict
+from datetime import date, datetime, timedelta
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, File, Security, UploadFile, status
+from fastapi import APIRouter, Depends, File, Query, Security, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,6 +39,8 @@ from app.core.schemas.settings import (
     MediaUploadResponse,
     ProductLanguageSettings,
     ProductLanguageSettingsUpdate,
+    ProfitSettings,
+    ProfitSettingsUpdate,
     ProductTranslationBackfillResponse,
     ProductTranslationPreviewRequest,
     ProductTranslationPreviewResponse,
@@ -47,6 +51,8 @@ from app.core.services.product_translations import (
     preview_product_translations,
 )
 from app.core.services.store_settings import (
+    get_profit_settings,
+    update_profit_settings,
     update_currency_settings,
     update_product_language_settings,
 )
@@ -58,6 +64,137 @@ from app.core.services.visitor_analytics import (
 from app.core.storage import upload_product_image
 
 router = APIRouter(tags=["Admin"])
+
+
+def _period_bucket(value: datetime, period: str) -> date:
+    current = value.date()
+    if period == "week":
+        return current - timedelta(days=current.weekday())
+    if period == "month":
+        return current.replace(day=1)
+    return current
+
+
+def _empty_profit_metrics() -> dict[str, float]:
+    return {
+        "total_revenue": 0.0,
+        "total_recorded_cost": 0.0,
+        "gross_profit": 0.0,
+        "estimated_profit": 0.0,
+        "profit_margin_percent": 0.0,
+        "average_order_value": 0.0,
+    }
+
+
+async def _profit_metrics(
+    session: AsyncSession,
+    *,
+    fallback_margin: float,
+    since: datetime | None = None,
+) -> dict[str, float]:
+    stmt = select(
+        Order.order_id,
+        OrderProductAssociation.price,
+        OrderProductAssociation.cost_price,
+        OrderProductAssociation.quantity,
+    ).join(
+        OrderProductAssociation,
+        OrderProductAssociation.order_id == Order.order_id,
+    )
+    if since is not None:
+        stmt = stmt.where(Order.created_at >= since)
+
+    rows = (await session.execute(stmt)).all()
+    if not rows:
+        return _empty_profit_metrics()
+
+    revenue = 0.0
+    recorded_cost = 0.0
+    actual_profit = 0.0
+    estimated_profit = 0.0
+    order_ids: set = set()
+    for order_id, price, cost_price, quantity in rows:
+        line_revenue = float(price or 0) * int(quantity or 0)
+        line_cost = float(cost_price or 0) * int(quantity or 0)
+        revenue += line_revenue
+        recorded_cost += line_cost
+        order_ids.add(order_id)
+        if line_cost > 0:
+            actual_profit += line_revenue - line_cost
+            estimated_profit += line_revenue - line_cost
+        else:
+            estimated_profit += line_revenue * fallback_margin
+
+    return {
+        "total_revenue": round(revenue, 2),
+        "total_recorded_cost": round(recorded_cost, 2),
+        "gross_profit": round(actual_profit, 2),
+        "estimated_profit": round(estimated_profit, 2),
+        "profit_margin_percent": round(
+            (estimated_profit / revenue * 100) if revenue else 0,
+            2,
+        ),
+        "average_order_value": round(
+            revenue / len(order_ids) if order_ids else 0,
+            2,
+        ),
+    }
+
+
+async def _analytics_series(
+    session: AsyncSession,
+    *,
+    fallback_margin: float,
+    since: datetime,
+    period: str,
+) -> dict[str, list[TimeSeriesPoint]]:
+    rows = (
+        await session.execute(
+            select(
+                Order.created_at,
+                OrderProductAssociation.price,
+                OrderProductAssociation.cost_price,
+                OrderProductAssociation.quantity,
+            )
+            .join(
+                OrderProductAssociation,
+                OrderProductAssociation.order_id == Order.order_id,
+            )
+            .where(Order.created_at >= since)
+            .order_by(Order.created_at)
+        )
+    ).all()
+
+    buckets: dict[date, dict[str, float]] = defaultdict(
+        lambda: {"revenue": 0.0, "cost": 0.0, "profit": 0.0}
+    )
+    for created_at, price, cost_price, quantity in rows:
+        bucket = _period_bucket(created_at, period)
+        line_revenue = float(price or 0) * int(quantity or 0)
+        line_cost = float(cost_price or 0) * int(quantity or 0)
+        buckets[bucket]["revenue"] += line_revenue
+        buckets[bucket]["cost"] += line_cost
+        buckets[bucket]["profit"] += (
+            line_revenue - line_cost
+            if line_cost > 0
+            else line_revenue * fallback_margin
+        )
+
+    ordered = sorted(buckets.items(), key=lambda item: item[0])
+    return {
+        "revenue_over_time": [
+            TimeSeriesPoint(date=bucket, value=round(values["revenue"], 2))
+            for bucket, values in ordered
+        ],
+        "cost_over_time": [
+            TimeSeriesPoint(date=bucket, value=round(values["cost"], 2))
+            for bucket, values in ordered
+        ],
+        "profit_over_time": [
+            TimeSeriesPoint(date=bucket, value=round(values["profit"], 2))
+            for bucket, values in ordered
+        ],
+    }
 
 
 @router.get(
@@ -89,6 +226,11 @@ async def get_admin_summary(
         .select_from(Order)
         .where(Order.status == "PENDING")
     )
+    profit_settings = await get_profit_settings()
+    profit_metrics = await _profit_metrics(
+        session,
+        fallback_margin=profit_settings.fallback_profit_margin,
+    )
     unique_visitors_today = await get_today_unique_visitors(session)
     page_views_today = await get_today_page_views(session)
 
@@ -100,6 +242,7 @@ async def get_admin_summary(
         pending_orders_count=pending_orders_count or 0,
         unique_visitors_today=unique_visitors_today,
         page_views_today=page_views_today,
+        **profit_metrics,
     )
 
 
@@ -114,35 +257,51 @@ async def get_admin_analytics(
         Depends(sql_db_helper.session_dependency),
     ],
     superuser: Annotated[User, Security(current_active_superuser)],
+    timespan_days: Annotated[int, Query(ge=1, le=365)] = 30,
+    period: Annotated[Literal["day", "week", "month"], Query()] = "day",
 ):
+    since = datetime.now() - timedelta(days=timespan_days)
+    profit_settings = await get_profit_settings()
+    fallback_margin = profit_settings.fallback_profit_margin
+
     status_rows = (
         await session.execute(
             select(Order.status, func.count(Order.order_id))
+            .where(Order.created_at >= since)
             .group_by(Order.status)
             .order_by(Order.status)
         )
     ).all()
 
-    date_bucket = func.date(Order.created_at)
-    order_time_rows = (
+    order_rows = (
         await session.execute(
-            select(date_bucket, func.count(Order.order_id))
-            .group_by(date_bucket)
-            .order_by(date_bucket.desc())
-            .limit(14)
+            select(Order.created_at)
+            .where(Order.created_at >= since)
+            .order_by(Order.created_at)
         )
     ).all()
-    revenue_time_rows = (
-        await session.execute(
-            select(date_bucket, func.coalesce(func.sum(Order.total_price), 0))
-            .group_by(date_bucket)
-            .order_by(date_bucket.desc())
-            .limit(14)
-        )
-    ).all()
+    order_buckets: dict[date, int] = defaultdict(int)
+    for row in order_rows:
+        order_buckets[_period_bucket(row[0], period)] += 1
+    orders_over_time = [
+        TimeSeriesPoint(date=bucket, value=float(count))
+        for bucket, count in sorted(order_buckets.items(), key=lambda item: item[0])
+    ]
+
+    series = await _analytics_series(
+        session,
+        fallback_margin=fallback_margin,
+        since=since,
+        period=period,
+    )
     visitors_over_time, page_views_over_time = await get_visitor_time_series(
         session,
-        days=14,
+        days=timespan_days,
+    )
+    profit_metrics = await _profit_metrics(
+        session,
+        fallback_margin=fallback_margin,
+        since=since,
     )
 
     low_stock_rows = (
@@ -171,7 +330,19 @@ async def get_admin_analytics(
                     ),
                     0,
                 ),
+                func.coalesce(
+                    func.sum(
+                        (
+                            OrderProductAssociation.price
+                            - OrderProductAssociation.cost_price
+                        )
+                        * OrderProductAssociation.quantity
+                    ),
+                    0,
+                ),
             )
+            .join(Order, Order.order_id == OrderProductAssociation.order_id)
+            .where(Order.created_at >= since)
             .group_by(OrderProductAssociation.name)
             .order_by(
                 func.coalesce(func.sum(OrderProductAssociation.quantity), 0).desc()
@@ -183,6 +354,7 @@ async def get_admin_analytics(
     recent_order_rows = (
         await session.execute(
             select(Order)
+            .where(Order.created_at >= since)
             .order_by(Order.created_at.desc())
             .limit(8)
         )
@@ -193,14 +365,10 @@ async def get_admin_analytics(
             StatusCount(status=row[0], count=row[1] or 0)
             for row in status_rows
         ],
-        orders_over_time=[
-            TimeSeriesPoint(date=row[0], value=float(row[1] or 0))
-            for row in reversed(order_time_rows)
-        ],
-        revenue_over_time=[
-            TimeSeriesPoint(date=row[0], value=float(row[1] or 0))
-            for row in reversed(revenue_time_rows)
-        ],
+        orders_over_time=orders_over_time,
+        revenue_over_time=series["revenue_over_time"],
+        cost_over_time=series["cost_over_time"],
+        profit_over_time=series["profit_over_time"],
         visitors_over_time=visitors_over_time,
         page_views_over_time=page_views_over_time,
         low_stock_products=[
@@ -216,6 +384,7 @@ async def get_admin_analytics(
                 name=row[0],
                 quantity=row[1] or 0,
                 revenue=float(row[2] or 0),
+                profit=float(row[3] or 0),
             )
             for row in top_product_rows
         ],
@@ -230,6 +399,10 @@ async def get_admin_analytics(
             )
             for order in recent_order_rows.scalars().all()
         ],
+        total_orders=len(order_rows),
+        total_visitors=int(sum(point.value for point in visitors_over_time)),
+        total_page_views=int(sum(point.value for point in page_views_over_time)),
+        **profit_metrics,
     )
 
 
@@ -315,6 +488,18 @@ async def update_admin_language_settings(
     superuser: Annotated[User, Security(current_active_superuser)],
 ):
     return await update_product_language_settings(language_settings)
+
+
+@router.patch(
+    "/settings/profit",
+    response_model=ProfitSettings,
+    status_code=status.HTTP_200_OK,
+)
+async def update_admin_profit_settings(
+    profit_settings: ProfitSettingsUpdate,
+    superuser: Annotated[User, Security(current_active_superuser)],
+):
+    return await update_profit_settings(profit_settings)
 
 
 @router.post(

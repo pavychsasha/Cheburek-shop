@@ -130,6 +130,7 @@ class ProductsService:
                     name=translation.product_name,
                     description=translation.product_description,
                     price=product.price,
+                    cost_price=product.cost_price,
                     category=product.category,
                     stock_quantity=product.stock_quantity,
                     image_src=product.image_src,
@@ -145,6 +146,7 @@ class ProductsService:
             name=fallback_translation.product_name,
             description=fallback_translation.product_description,
             price=product.price,
+            cost_price=product.cost_price,
             category=product.category,
             stock_quantity=product.stock_quantity,
             image_src=product.image_src,
@@ -404,6 +406,7 @@ class ProductsService:
 
         product = Product(
             price=product_in.price,
+            cost_price=product_in.cost_price,
             category=product_in.category,
             stock_quantity=product_in.stock_quantity,
             image_src=product_in.image_src,
@@ -459,6 +462,7 @@ class ProductsService:
             products.append(
                 Product(
                     price=product.price,
+                    cost_price=product.cost_price,
                     category=product.category,
                     stock_quantity=product.stock_quantity,
                     image_src=product.image_src,

@@ -56,6 +56,7 @@ services:
       APP_CONFIG__CURRENCY__SUPPORTED_CURRENCIES: ${SUPPORTED_CURRENCIES:-UAH,USD,EUR}
       APP_CONFIG__CURRENCY__CURRENCY_RATES: ${CURRENCY_RATES:-UAH:1,USD:0.024,EUR:0.022}
       APP_CONFIG__CURRENCY__CURRENCY_SYMBOLS: ${CURRENCY_SYMBOLS:-UAH:₴,USD:$$,EUR:€}
+      APP_CONFIG__PROFIT__FALLBACK_MARGIN: ${FALLBACK_PROFIT_MARGIN:-0.35}
       APP_CONFIG__PRODUCT_LANGUAGES__SUPPORTED_LANGUAGES: ${PRODUCT_LANGUAGES:-en,ukr}
       APP_CONFIG__PRODUCT_LANGUAGES__AUTO_TRANSLATE_PRODUCTS: ${AUTO_TRANSLATE_PRODUCTS:-true}
       APP_CONFIG__TRANSLATION__ENABLED: ${TRANSLATION_ENABLED:-true}
@@ -148,20 +149,27 @@ services:
       start_period: 10s
 
   translator:
-    build: ./infra/translator
+    image: libretranslate/libretranslate:v1.9.5
+    user: "0:0"
     ports:
       - "${TRANSLATOR_PORT:-5001}:5000"
     environment:
-      TRANSLATOR_HOST: 0.0.0.0
-      TRANSLATOR_PORT: 5000
+      LT_HOST: 0.0.0.0
+      LT_PORT: 5000
+      LT_LOAD_ONLY: en,uk
+      LT_THREADS: 4
+      LT_UPDATE_MODELS: "true"
+      LT_DISABLE_WEB_UI: "true"
+    volumes:
+      - translator-data:/home/libretranslate/.local/share
     healthcheck:
       test:
         - CMD-SHELL
-        - 'python -c "import urllib.request; urllib.request.urlopen(''http://127.0.0.1:5000/health'', timeout=3).read()"'
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 5s
+        - 'python -c "import urllib.request; urllib.request.urlopen(''http://127.0.0.1:5000/languages'', timeout=5).read()"'
+      interval: 10s
+      timeout: 8s
+      retries: 30
+      start_period: 120s
 
   mongo:
     image: mongo:7.0.18
@@ -217,4 +225,6 @@ volumes:
   redis-data:
     driver: local
   minio-data:
+    driver: local
+  translator-data:
     driver: local

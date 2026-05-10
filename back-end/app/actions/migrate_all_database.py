@@ -287,6 +287,7 @@ def _seed_products() -> ProductBulkCreate:
         raise ValueError("Seed products must have unique English names.")
     for product in products_in.products:
         product.tags = _default_seed_tags(product)
+        product.cost_price = _default_seed_cost_price(product)
     return products_in
 
 
@@ -329,6 +330,17 @@ def _default_seed_tags(product) -> list[str]:
     if category == "pies":
         tags.add("baked")
     return sorted(tags)
+
+
+def _default_seed_cost_price(product) -> float:
+    category_margins = {
+        "chebureks": 0.42,
+        "pies": 0.46,
+        "drinks": 0.58,
+        "other": 0.5,
+    }
+    margin = category_margins.get((product.category or "other").lower(), 0.45)
+    return round(product.price * (1 - margin), 2)
 
 
 def _seed_svg(product_name: str, category: str | None) -> bytes:
@@ -483,7 +495,7 @@ async def _get_existing_seed_products(
 
 def _apply_seed_product(existing_product: Product, seed_product) -> bool:
     changed = False
-    scalar_fields = ("price", "category", "stock_quantity", "image_src")
+    scalar_fields = ("price", "cost_price", "category", "stock_quantity", "image_src")
 
     for field_name in scalar_fields:
         new_value = getattr(seed_product, field_name)
@@ -588,6 +600,7 @@ async def seed_products(session=None, *, reset: bool = False) -> ProductSeedResu
                 session.add(
                     Product(
                         price=seed_product.price,
+                        cost_price=seed_product.cost_price,
                         category=seed_product.category,
                         stock_quantity=seed_product.stock_quantity,
                         image_src=seed_product.image_src,

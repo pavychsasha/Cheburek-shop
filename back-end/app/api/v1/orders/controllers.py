@@ -1,7 +1,8 @@
 from typing import Annotated
+from datetime import date
 import uuid
 
-from fastapi import APIRouter, HTTPException, status, Depends, Security
+from fastapi import APIRouter, HTTPException, Query, status, Depends, Security
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies.session import current_language
@@ -20,6 +21,7 @@ from app.core.schemas.orders import (
     OrderResponseModel,
     OrderNotesResponse,
     OrderNotesUpdate,
+    OrderStatus,
     OrderStatusResponse,
     OrderStatusUpdate,
 )
@@ -37,8 +39,23 @@ async def get_orders(
     session: Annotated[AsyncSession, Depends(sql_db_helper.session_dependency)],
     language: Annotated[str, Depends(current_language)],
     superuser: Annotated[User, Security(current_active_superuser)],
+    q: Annotated[str | None, Query(max_length=150)] = None,
+    status_filter: Annotated[OrderStatus | None, Query(alias="status")] = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    page: Annotated[int, Query(ge=1, le=2000)] = 1,
+    per_page: Annotated[int, Query(ge=1, le=200)] = 100,
 ):
-    orders = await OrderService.get_orders_response(session=session, language=language)
+    orders = await OrderService.get_orders_response(
+        session=session,
+        language=language,
+        q=q,
+        status=status_filter,
+        date_from=date_from,
+        date_to=date_to,
+        page=page,
+        per_page=per_page,
+    )
     return orders.orders
 
 

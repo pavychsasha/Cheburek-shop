@@ -14,10 +14,25 @@ class ProductLanguageSettings(BaseModel):
     auto_translate_products: bool
 
 
+class ProfitSettings(BaseModel):
+    fallback_profit_margin: float = Field(..., ge=0, le=1)
+
+
+class ProfitSettingsUpdate(BaseModel):
+    fallback_profit_margin: float = Field(..., ge=0, le=1)
+
+
+class TranslationServiceStatus(BaseModel):
+    enabled: bool
+    status: str
+
+
 class PublicSettings(BaseModel):
     currency: CurrencySettings
     product_languages: ProductLanguageSettings
     category_media: dict[str, str]
+    profit: ProfitSettings
+    translation: TranslationServiceStatus
 
 
 class CurrencySettingsUpdate(BaseModel):

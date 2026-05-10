@@ -12,12 +12,13 @@ from app.core.schemas.admin import DashboardPreferences, DashboardWidgetPreferen
 DEFAULT_DASHBOARD_WIDGETS = [
     DashboardWidgetPreference(id="metrics", position=0),
     DashboardWidgetPreference(id="revenue", chart_type="line", position=1),
-    DashboardWidgetPreference(id="orders", chart_type="bar", position=2),
-    DashboardWidgetPreference(id="visitors", chart_type="area", position=3),
-    DashboardWidgetPreference(id="status", chart_type="pie", position=4),
-    DashboardWidgetPreference(id="top-products", position=5),
-    DashboardWidgetPreference(id="low-stock", position=6),
-    DashboardWidgetPreference(id="recent-orders", position=7),
+    DashboardWidgetPreference(id="profit", chart_type="area", position=2),
+    DashboardWidgetPreference(id="orders", chart_type="bar", position=3),
+    DashboardWidgetPreference(id="visitors", chart_type="area", position=4),
+    DashboardWidgetPreference(id="status", chart_type="pie", position=5),
+    DashboardWidgetPreference(id="top-products", position=6),
+    DashboardWidgetPreference(id="low-stock", position=7),
+    DashboardWidgetPreference(id="recent-orders", position=8),
 ]
 
 

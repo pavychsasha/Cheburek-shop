@@ -74,6 +74,7 @@ class ProductOrder(BaseModel):
     stock_quantity: int
     image_src: str
     price: float
+    cost_price: float = 0
     category: str
     translations: List[ProductTranslation]
 
@@ -109,6 +110,7 @@ class OrderProductResponseModel(BaseModel):
     product_status: str
     name: str
     price: float
+    cost_price: float = 0
     category: str
     image_src: str
     quantity: int

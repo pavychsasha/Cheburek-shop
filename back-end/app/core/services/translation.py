@@ -75,7 +75,7 @@ async def translate_text(text: str, target_language: str) -> str:
 
 
 def _check_translation_service_sync() -> None:
-    health_url = settings.translation.base_url.rstrip("/") + "/health"
+    health_url = settings.translation.base_url.rstrip("/") + "/languages"
     req = request.Request(health_url, method="GET")
     with request.urlopen(req, timeout=settings.translation.timeout_seconds) as response:
         if response.status >= 400:

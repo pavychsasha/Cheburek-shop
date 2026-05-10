@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 import uuid
-from sqlalchemy import func, CheckConstraint, Index
+from sqlalchemy import func, CheckConstraint, Float, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
@@ -21,6 +21,13 @@ class Product(Base):
         default=uuid.uuid4,
     )
     price: Mapped[float] = mapped_column(CheckConstraint("price >= 0"), nullable=False)
+    cost_price: Mapped[float] = mapped_column(
+        Float,
+        CheckConstraint("cost_price >= 0"),
+        nullable=False,
+        default=0,
+        server_default="0",
+    )
     category: Mapped[str] = mapped_column(index=True)
     stock_quantity: Mapped[int] = mapped_column(
         CheckConstraint("stock_quantity >= 0"), nullable=False

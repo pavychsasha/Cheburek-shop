@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 from app.api.v1.products.services import ProductsService
 from app.core.exceptions import ZeroProductsOrderError
@@ -49,7 +50,7 @@ class OrderService:
                 .joinedload(City.state)
                 .joinedload(State.country),  # Load Address for the Order
             )
-            .order_by(Order.created_at)
+            .order_by(Order.created_at.desc())
         )
         result = await session.execute(stmt)
         return result.unique().scalars().all()
@@ -78,9 +79,44 @@ class OrderService:
 
     @classmethod
     async def get_orders_response(
-        cls, session: AsyncSession, language: str = "en"
+        cls,
+        session: AsyncSession,
+        language: str = "en",
+        q: str | None = None,
+        status: OrderStatus | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        page: int = 1,
+        per_page: int = 100,
     ) -> OrderResponse:
         orders = await cls.get_orders(session)
+        query = q.strip().lower() if q else ""
+        filtered_orders: list[Order] = []
+        for order in orders:
+            if status and order.status != status:
+                continue
+            order_date = order.created_at.date()
+            if date_from and order_date < date_from:
+                continue
+            if date_to and order_date > date_to:
+                continue
+            if query:
+                product_names = " ".join(product.name for product in order.products)
+                haystack = " ".join(
+                    [
+                        str(order.order_id),
+                        order.email or "",
+                        order.status or "",
+                        order.customer_notes or "",
+                        order.admin_notes or "",
+                        product_names,
+                    ]
+                ).lower()
+                if query not in haystack:
+                    continue
+            filtered_orders.append(order)
+        start = (page - 1) * per_page
+        orders = filtered_orders[start : start + per_page]
         order_response = list()
         for order in orders:
             product_response = []
@@ -112,6 +148,7 @@ class OrderService:
                         product_status=product_status,
                         image_src=image_src,
                         price=price,  # allways keeping the same price as was during ordering
+                        cost_price=product_order_association.cost_price,
                         category=category,  # allways keeping the same category as was during ordering
                         name=name,
                         quantity=product_order_association.quantity,
@@ -234,6 +271,7 @@ class OrderService:
                     quantity=product.quantity,
                     name=localized_product.name,
                     price=product_in_database.price,
+                    cost_price=product_in_database.cost_price,
                     category=product_in_database.category,
                     image_src=product_in_database.image_src,
                 )

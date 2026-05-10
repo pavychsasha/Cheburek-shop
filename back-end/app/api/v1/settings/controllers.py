@@ -3,8 +3,10 @@ from fastapi import APIRouter, status
 from app.core.schemas.settings import PublicSettings
 from app.core.services.store_settings import (
     get_category_media_settings,
+    get_profit_settings,
     get_product_language_settings,
     get_public_currency_settings,
+    get_translation_service_status,
 )
 
 router = APIRouter(tags=["Settings"])
@@ -20,4 +22,6 @@ async def get_public_settings():
         currency=await get_public_currency_settings(),
         product_languages=await get_product_language_settings(),
         category_media=get_category_media_settings(),
+        profit=await get_profit_settings(),
+        translation=await get_translation_service_status(),
     )

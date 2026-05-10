@@ -46,9 +46,10 @@ class ProductTranslationsPartial(BaseModel):
 class ProductBase(BaseModel):
     translations: list[ProductTranslations]
     price: float = Field(..., gt=0)
+    cost_price: float = Field(default=0, ge=0)
     category: Optional[str] = Field(None, max_length=50)
     stock_quantity: Optional[int] = Field(default=0, ge=0)
-    image_src: str = Field(..., min_length=1, max_length=350)
+    image_src: str = Field(default="", max_length=350)
     tags: list[str] = Field(default_factory=list, max_length=20)
 
     @field_validator("category")
@@ -77,6 +78,7 @@ class ProductPartialUpdate(BaseModel):
 
     translations: Optional[list[ProductTranslationsPartial]] = Field(None, min_length=1)
     price: Optional[float] = Field(None, gt=0)
+    cost_price: Optional[float] = Field(None, ge=0)
     category: Optional[str] = Field(None, max_length=50)
     stock_quantity: Optional[int] = Field(None, ge=0)
     points: Optional[int] = Field(None, ge=0)
@@ -107,9 +109,10 @@ class ProductResponse(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
     price: float = Field(..., gt=0)
+    cost_price: float = Field(default=0, ge=0)
     category: Optional[str] = Field(None, max_length=50)
     stock_quantity: Optional[int] = Field(default=0, ge=0)
-    image_src: str = Field(..., min_length=1, max_length=350)
+    image_src: str = Field(default="", max_length=350)
     tags: list[str] = Field(default_factory=list)
 
 

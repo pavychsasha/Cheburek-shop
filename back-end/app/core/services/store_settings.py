@@ -6,9 +6,13 @@ from app.core.storage import public_media_url
 from app.core.schemas.settings import (
     CurrencySettings,
     CurrencySettingsUpdate,
+    ProfitSettings,
+    ProfitSettingsUpdate,
     ProductLanguageSettings,
     ProductLanguageSettingsUpdate,
+    TranslationServiceStatus,
 )
+from app.core.services.translation import check_translation_service
 
 
 def _configured_currency_settings() -> CurrencySettings:
@@ -32,6 +36,12 @@ def _configured_product_language_settings() -> ProductLanguageSettings:
     return ProductLanguageSettings(
         product_languages=settings.product_languages.language_codes,
         auto_translate_products=settings.product_languages.auto_translate_products,
+    )
+
+
+def _configured_profit_settings() -> ProfitSettings:
+    return ProfitSettings(
+        fallback_profit_margin=settings.profit.fallback_margin,
     )
 
 
@@ -92,6 +102,7 @@ async def get_store_settings() -> StoreSettings:
         currency_symbols=configured.currency_symbols,
         product_languages=language_settings.product_languages,
         auto_translate_products=language_settings.auto_translate_products,
+        fallback_profit_margin=_configured_profit_settings().fallback_profit_margin,
     )
     await store_settings.insert()
     return store_settings
@@ -103,6 +114,27 @@ async def get_public_currency_settings() -> CurrencySettings:
 
 async def get_product_language_settings() -> ProductLanguageSettings:
     return _language_settings_to_schema(await get_store_settings())
+
+
+async def get_profit_settings() -> ProfitSettings:
+    store_settings = await get_store_settings()
+    return ProfitSettings(
+        fallback_profit_margin=getattr(
+            store_settings,
+            "fallback_profit_margin",
+            settings.profit.fallback_margin,
+        )
+    )
+
+
+async def get_translation_service_status() -> TranslationServiceStatus:
+    if not settings.translation.enabled:
+        return TranslationServiceStatus(enabled=False, status="disabled")
+    try:
+        await check_translation_service()
+        return TranslationServiceStatus(enabled=True, status="ok")
+    except Exception:
+        return TranslationServiceStatus(enabled=True, status="unavailable")
 
 
 def validate_currency_settings(
@@ -189,3 +221,12 @@ async def update_product_language_settings(
     store_settings.auto_translate_products = update.auto_translate_products
     await store_settings.save()
     return _language_settings_to_schema(store_settings)
+
+
+async def update_profit_settings(update: ProfitSettingsUpdate) -> ProfitSettings:
+    store_settings = await get_store_settings()
+    store_settings.fallback_profit_margin = update.fallback_profit_margin
+    await store_settings.save()
+    return ProfitSettings(
+        fallback_profit_margin=store_settings.fallback_profit_margin,
+    )
