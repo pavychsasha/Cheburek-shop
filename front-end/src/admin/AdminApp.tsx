@@ -16,6 +16,7 @@ import {
 
 import {
     ADMIN_TOKEN_KEY,
+    backfillProductTranslations,
     clearAdminToken,
     createProduct,
     createUser,
@@ -36,6 +37,7 @@ import {
     updateCurrencySettings,
     updateOrderStatus,
     updateProduct,
+    updateProductLanguageSettings,
     updateUserFlags,
     uploadProductImage,
 } from "./api.ts";
@@ -50,6 +52,7 @@ import type {
     CurrencySettingsUpdate,
     OrderStatus,
     ProductFormState,
+    ProductTranslation,
 } from "./types.ts";
 import {useCurrencyFormatter} from "../hooks/useCurrencyFormatter.ts";
 import {useAppDispatch, useAppSelector} from "../redux/hooks.ts";
@@ -64,36 +67,99 @@ const ORDER_STATUSES: OrderStatus[] = [
     "CANCELLED",
 ];
 
-const emptyProductForm = (): ProductFormState => ({
+const DEFAULT_PRODUCT_LANGUAGES = ["en", "ukr"];
+
+const normalizeLanguageCode = (value: string) =>
+    value.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+
+const uniqueLanguageCodes = (languages: string[]) =>
+    Array.from(
+        new Set(
+            languages
+                .map(normalizeLanguageCode)
+                .filter(Boolean),
+        ),
+    );
+
+const languageLabel = (languageCode: string) => languageCode.toUpperCase();
+
+const draftTranslation = (
+    languageCode: string,
+    source?: ProductTranslation,
+): ProductTranslation => ({
+    language_code: languageCode,
+    product_name: source?.product_name
+        ? `${source.product_name}${languageCode === "en" ? "" : ` (${languageLabel(languageCode)})`}`
+        : "",
+    product_description: source?.product_description || "",
+});
+
+const ensureProductTranslations = (
+    languages: string[],
+    translations: ProductTranslation[] = [],
+): ProductTranslation[] => {
+    const configuredLanguages = uniqueLanguageCodes(languages).length
+        ? uniqueLanguageCodes(languages)
+        : DEFAULT_PRODUCT_LANGUAGES;
+    const normalizedTranslations = translations
+        .map((translation) => ({
+            ...translation,
+            language_code: normalizeLanguageCode(translation.language_code),
+        }))
+        .filter((translation) => translation.language_code);
+    const translationsByLanguage = new Map(
+        normalizedTranslations.map((translation) => [
+            translation.language_code,
+            translation,
+        ]),
+    );
+    const source =
+        translationsByLanguage.get("en") ||
+        normalizedTranslations[0] ||
+        undefined;
+
+    configuredLanguages.forEach((languageCode) => {
+        if (!translationsByLanguage.has(languageCode)) {
+            translationsByLanguage.set(languageCode, draftTranslation(languageCode, source));
+        }
+    });
+
+    return configuredLanguages
+        .map((languageCode) => translationsByLanguage.get(languageCode))
+        .filter((translation): translation is ProductTranslation => Boolean(translation));
+};
+
+const emptyProductForm = (
+    languages: string[] = DEFAULT_PRODUCT_LANGUAGES,
+): ProductFormState => ({
     price: "",
     category: "Chebureks",
     stock_quantity: "0",
     image_src: "",
-    en_name: "",
-    en_description: "",
-    ukr_name: "",
-    ukr_description: "",
+    translations: ensureProductTranslations(languages),
 });
 
-const productToForm = (product: AdminProduct): ProductFormState => {
-    const englishTranslation = product.translations?.find(
-        (translation) => translation.language_code === "en",
-    );
-    const ukrainianTranslation = product.translations?.find(
-        (translation) => translation.language_code === "ukr",
-    );
-
-    return {
-        price: String(product.price),
-        category: product.category || "Chebureks",
-        stock_quantity: String(product.stock_quantity),
-        image_src: product.image_src,
-        en_name: englishTranslation?.product_name || product.name || "",
-        en_description: englishTranslation?.product_description || product.description || "",
-        ukr_name: ukrainianTranslation?.product_name || "",
-        ukr_description: ukrainianTranslation?.product_description || "",
-    };
-};
+const productToForm = (
+    product: AdminProduct,
+    languages: string[] = DEFAULT_PRODUCT_LANGUAGES,
+): ProductFormState => ({
+    price: String(product.price),
+    category: product.category || "Chebureks",
+    stock_quantity: String(product.stock_quantity),
+    image_src: product.image_src,
+    translations: ensureProductTranslations(
+        languages,
+        product.translations?.length
+            ? product.translations
+            : [
+                  {
+                      language_code: "en",
+                      product_name: product.name || "",
+                      product_description: product.description || "",
+                  },
+              ],
+    ),
+});
 
 const CHART_COLORS = ["#2f6f5e", "#c84f3f", "#f2ad4b", "#6b7280", "#5f6fb2", "#9a6438"];
 
@@ -485,7 +551,14 @@ const InlineState = ({
 const ProductsPanel = () => {
     const [products, setProducts] = useState<AdminProduct[]>([]);
     const [query, setQuery] = useState("");
-    const [form, setForm] = useState<ProductFormState>(emptyProductForm);
+    const [productLanguages, setProductLanguages] = useState<string[]>(
+        DEFAULT_PRODUCT_LANGUAGES,
+    );
+    const [selectedTranslation, setSelectedTranslation] = useState("en");
+    const [newLanguage, setNewLanguage] = useState("");
+    const [form, setForm] = useState<ProductFormState>(() =>
+        emptyProductForm(DEFAULT_PRODUCT_LANGUAGES),
+    );
     const [editingProductId, setEditingProductId] = useState<string | null>(null);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
@@ -513,9 +586,38 @@ const ProductsPanel = () => {
         return () => window.clearTimeout(timeoutId);
     }, [loadProducts]);
 
+    useEffect(() => {
+        const loadProductLanguageSettings = async () => {
+            try {
+                const settings = await fetchAdminPublicSettings();
+                const languages = uniqueLanguageCodes(
+                    settings.product_languages.product_languages,
+                );
+                if (languages.length) {
+                    setProductLanguages(languages);
+                    setSelectedTranslation((currentLanguage) =>
+                        languages.includes(currentLanguage) ? currentLanguage : languages[0],
+                    );
+                    setForm((currentForm) => ({
+                        ...currentForm,
+                        translations: ensureProductTranslations(
+                            languages,
+                            currentForm.translations,
+                        ),
+                    }));
+                }
+            } catch {
+                setProductLanguages(DEFAULT_PRODUCT_LANGUAGES);
+            }
+        };
+
+        void loadProductLanguageSettings();
+    }, []);
+
     const resetForm = () => {
         setEditingProductId(null);
-        setForm(emptyProductForm());
+        setForm(emptyProductForm(productLanguages));
+        setSelectedTranslation(productLanguages[0] || "en");
     };
 
     const editProduct = async (productId: string) => {
@@ -523,10 +625,75 @@ const ProductsPanel = () => {
         try {
             const product = await fetchProduct(productId);
             setEditingProductId(productId);
-            setForm(productToForm(product));
+            setForm(productToForm(product, productLanguages));
+            setSelectedTranslation(productLanguages[0] || "en");
         } catch (requestError) {
             setError(getAdminErrorMessage(requestError, "Unable to load product."));
         }
+    };
+
+    const activeTranslation =
+        form.translations.find(
+            (translation) => translation.language_code === selectedTranslation,
+        ) || form.translations[0];
+
+    const updateTranslation = (
+        languageCode: string,
+        field: keyof Pick<ProductTranslation, "product_name" | "product_description">,
+        value: string,
+    ) => {
+        setForm((currentForm) => ({
+            ...currentForm,
+            translations: currentForm.translations.map((translation) =>
+                translation.language_code === languageCode
+                    ? {...translation, [field]: value}
+                    : translation,
+            ),
+        }));
+    };
+
+    const addProductLanguage = () => {
+        const languageCode = normalizeLanguageCode(newLanguage);
+        if (!languageCode || productLanguages.includes(languageCode)) {
+            return;
+        }
+        const nextLanguages = [...productLanguages, languageCode];
+        setProductLanguages(nextLanguages);
+        setForm((currentForm) => ({
+            ...currentForm,
+            translations: ensureProductTranslations(
+                nextLanguages,
+                currentForm.translations,
+            ),
+        }));
+        setSelectedTranslation(languageCode);
+        setNewLanguage("");
+    };
+
+    const draftMissingTranslations = () => {
+        const source =
+            form.translations.find((translation) => translation.language_code === "en") ||
+            form.translations[0];
+        setForm((currentForm) => ({
+            ...currentForm,
+            translations: currentForm.translations.map((translation) => {
+                if (
+                    translation.product_name.trim() &&
+                    translation.product_description.trim()
+                ) {
+                    return translation;
+                }
+                return {
+                    ...translation,
+                    product_name: translation.product_name.trim()
+                        ? translation.product_name
+                        : draftTranslation(translation.language_code, source).product_name,
+                    product_description: translation.product_description.trim()
+                        ? translation.product_description
+                        : source?.product_description || "",
+                };
+            }),
+        }));
     };
 
     const submitProduct = async (event: FormEvent<HTMLFormElement>) => {
@@ -622,39 +789,87 @@ const ProductsPanel = () => {
             <div className={styles.splitGrid}>
                 <form className={styles.formPanel} onSubmit={submitProduct}>
                     <h3>{editingProductId ? "Edit product" : "Create product"}</h3>
+                    <div className={styles.translationPanel}>
+                        <div className={styles.translationHeader}>
+                            <div>
+                                <strong>Translations</strong>
+                                <span>Each language can be edited before publishing.</span>
+                            </div>
+                            <button
+                                type="button"
+                                className={styles.secondaryButton}
+                                onClick={draftMissingTranslations}
+                            >
+                                Draft missing
+                            </button>
+                        </div>
+                        <div className={styles.languageTabs} role="tablist" aria-label="Product translations">
+                            {form.translations.map((translation) => (
+                                <button
+                                    key={translation.language_code}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={
+                                        translation.language_code === selectedTranslation
+                                    }
+                                    className={
+                                        translation.language_code === selectedTranslation
+                                            ? styles.languageActive
+                                            : styles.languageButton
+                                    }
+                                    onClick={() =>
+                                        setSelectedTranslation(translation.language_code)
+                                    }
+                                >
+                                    {languageLabel(translation.language_code)}
+                                </button>
+                            ))}
+                        </div>
+                        <div className={styles.translationTools}>
+                            <input
+                                value={newLanguage}
+                                onChange={(event) => setNewLanguage(event.target.value)}
+                                placeholder="Language code, for example de"
+                                aria-label="New product language code"
+                            />
+                            <button type="button" className={styles.secondaryButton} onClick={addProductLanguage}>
+                                Add language
+                            </button>
+                        </div>
+                        {activeTranslation && (
+                            <div className={styles.translationFields}>
+                                <label>
+                                    {languageLabel(activeTranslation.language_code)} name
+                                    <input
+                                        value={activeTranslation.product_name}
+                                        onChange={(event) =>
+                                            updateTranslation(
+                                                activeTranslation.language_code,
+                                                "product_name",
+                                                event.target.value,
+                                            )
+                                        }
+                                        required
+                                    />
+                                </label>
+                                <label>
+                                    {languageLabel(activeTranslation.language_code)} description
+                                    <textarea
+                                        value={activeTranslation.product_description}
+                                        onChange={(event) =>
+                                            updateTranslation(
+                                                activeTranslation.language_code,
+                                                "product_description",
+                                                event.target.value,
+                                            )
+                                        }
+                                        required
+                                    />
+                                </label>
+                            </div>
+                        )}
+                    </div>
                     <div className={styles.formGrid}>
-                        <label>
-                            English name
-                            <input
-                                value={form.en_name}
-                                onChange={(event) => setForm({...form, en_name: event.target.value})}
-                                required
-                            />
-                        </label>
-                        <label>
-                            Ukrainian name
-                            <input
-                                value={form.ukr_name}
-                                onChange={(event) => setForm({...form, ukr_name: event.target.value})}
-                                required
-                            />
-                        </label>
-                        <label>
-                            English description
-                            <textarea
-                                value={form.en_description}
-                                onChange={(event) => setForm({...form, en_description: event.target.value})}
-                                required
-                            />
-                        </label>
-                        <label>
-                            Ukrainian description
-                            <textarea
-                                value={form.ukr_description}
-                                onChange={(event) => setForm({...form, ukr_description: event.target.value})}
-                                required
-                            />
-                        </label>
                         <label>
                             Price
                             <input
@@ -1103,9 +1318,13 @@ const SettingsPanel = () => {
     const [symbols, setSymbols] = useState<Record<string, string>>(
         currentCurrency.currency_symbols,
     );
+    const [languageInput, setLanguageInput] = useState(DEFAULT_PRODUCT_LANGUAGES.join(","));
+    const [autoTranslateProducts, setAutoTranslateProducts] = useState(true);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const [isSavingLanguages, setIsSavingLanguages] = useState(false);
+    const [isBackfillingTranslations, setIsBackfillingTranslations] = useState(false);
 
     const supportedCurrencies = useMemo(
         () =>
@@ -1114,6 +1333,11 @@ const SettingsPanel = () => {
                 .map((currencyCode) => currencyCode.trim().toUpperCase())
                 .filter(Boolean),
         [supportedInput],
+    );
+
+    const productLanguages = useMemo(
+        () => uniqueLanguageCodes(languageInput.split(",")),
+        [languageInput],
     );
 
     const loadSettings = useCallback(async () => {
@@ -1130,6 +1354,8 @@ const SettingsPanel = () => {
                 ),
             );
             setSymbols(settings.currency.currency_symbols);
+            setLanguageInput(settings.product_languages.product_languages.join(","));
+            setAutoTranslateProducts(settings.product_languages.auto_translate_products);
         } catch (requestError) {
             setError(getAdminErrorMessage(requestError, "Unable to load settings."));
         }
@@ -1176,78 +1402,171 @@ const SettingsPanel = () => {
         }
     };
 
+    const submitLanguageSettings = async () => {
+        setIsSavingLanguages(true);
+        setMessage("");
+        setError("");
+
+        try {
+            await updateProductLanguageSettings({
+                product_languages: productLanguages,
+                auto_translate_products: autoTranslateProducts,
+            });
+            setMessage("Product language settings updated.");
+        } catch (requestError) {
+            setError(
+                getAdminErrorMessage(
+                    requestError,
+                    "Unable to save product language settings.",
+                ),
+            );
+        } finally {
+            setIsSavingLanguages(false);
+        }
+    };
+
+    const runTranslationBackfill = async () => {
+        setIsBackfillingTranslations(true);
+        setMessage("");
+        setError("");
+
+        try {
+            const result = await backfillProductTranslations();
+            setMessage(
+                `Translation backfill complete: ${result.translations_created} created across ${result.products_scanned} products.`,
+            );
+        } catch (requestError) {
+            setError(
+                getAdminErrorMessage(
+                    requestError,
+                    "Unable to backfill product translations.",
+                ),
+            );
+        } finally {
+            setIsBackfillingTranslations(false);
+        }
+    };
+
     return (
         <section>
             <PanelHeader
                 title="Settings"
-                description="Manage display currency for the storefront and back office."
+                description="Manage currency, product language coverage, and catalog translation behavior."
                 actionLabel="Reload"
                 onAction={() => void loadSettings()}
             />
             {message && <InlineState tone="success">{message}</InlineState>}
             {error && <InlineState tone="error">{error}</InlineState>}
-            <form className={styles.settingsPanel} onSubmit={submitSettings}>
-                <div className={styles.formGrid}>
-                    <label>
-                        Base currency
-                        <input value={currentCurrency.base_currency} disabled />
-                    </label>
-                    <label>
-                        Default display currency
-                        <select
-                            value={defaultCurrency}
-                            onChange={(event) => setDefaultCurrency(event.target.value)}
+            <div className={styles.settingsSections}>
+                <form className={styles.settingsPanel} onSubmit={submitSettings}>
+                    <h3>Currency</h3>
+                    <div className={styles.formGrid}>
+                        <label>
+                            Base currency
+                            <input value={currentCurrency.base_currency} disabled />
+                        </label>
+                        <label>
+                            Default display currency
+                            <select
+                                value={defaultCurrency}
+                                onChange={(event) => setDefaultCurrency(event.target.value)}
+                            >
+                                {supportedCurrencies.map((currencyCode) => (
+                                    <option key={currencyCode} value={currencyCode}>
+                                        {currencyCode}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label>
+                            Supported currencies
+                            <input
+                                value={supportedInput}
+                                onChange={(event) => setSupportedInput(event.target.value)}
+                                placeholder="UAH,USD,EUR"
+                            />
+                        </label>
+                    </div>
+                    <div className={styles.currencyGrid}>
+                        {supportedCurrencies.map((currencyCode) => (
+                            <div key={currencyCode} className={styles.currencyRow}>
+                                <strong>{currencyCode}</strong>
+                                <label>
+                                    Rate from UAH
+                                    <input
+                                        type="number"
+                                        min="0.0001"
+                                        step="0.0001"
+                                        value={rates[currencyCode] ?? ""}
+                                        onChange={(event) =>
+                                            setRates({...rates, [currencyCode]: event.target.value})
+                                        }
+                                        required
+                                    />
+                                </label>
+                                <label>
+                                    Symbol
+                                    <input
+                                        value={symbols[currencyCode] ?? ""}
+                                        onChange={(event) =>
+                                            setSymbols({...symbols, [currencyCode]: event.target.value})
+                                        }
+                                        required
+                                    />
+                                </label>
+                            </div>
+                        ))}
+                    </div>
+                    <button type="submit" className={styles.primaryButton} disabled={isSaving}>
+                        {isSaving ? "Saving" : "Save currency"}
+                    </button>
+                </form>
+                <div className={styles.settingsPanel}>
+                    <h3>Product languages</h3>
+                    <div className={styles.formGrid}>
+                        <label>
+                            Language codes
+                            <input
+                                value={languageInput}
+                                onChange={(event) => setLanguageInput(event.target.value)}
+                                placeholder="en,ukr,de"
+                            />
+                        </label>
+                        <label className={styles.checkLine}>
+                            <input
+                                type="checkbox"
+                                checked={autoTranslateProducts}
+                                onChange={(event) =>
+                                    setAutoTranslateProducts(event.target.checked)
+                                }
+                            />
+                            Draft missing translations for new products
+                        </label>
+                    </div>
+                    <p className={styles.settingsHint}>
+                        New languages are added as editable draft translations. Existing
+                        products can be backfilled without deleting catalog data.
+                    </p>
+                    <div className={styles.formActions}>
+                        <button
+                            type="button"
+                            className={styles.primaryButton}
+                            disabled={isSavingLanguages || productLanguages.length === 0}
+                            onClick={() => void submitLanguageSettings()}
                         >
-                            {supportedCurrencies.map((currencyCode) => (
-                                <option key={currencyCode} value={currencyCode}>
-                                    {currencyCode}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        Supported currencies
-                        <input
-                            value={supportedInput}
-                            onChange={(event) => setSupportedInput(event.target.value)}
-                            placeholder="UAH,USD,EUR"
-                        />
-                    </label>
+                            {isSavingLanguages ? "Saving" : "Save languages"}
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.secondaryButton}
+                            disabled={isBackfillingTranslations}
+                            onClick={() => void runTranslationBackfill()}
+                        >
+                            {isBackfillingTranslations ? "Backfilling" : "Backfill products"}
+                        </button>
+                    </div>
                 </div>
-                <div className={styles.currencyGrid}>
-                    {supportedCurrencies.map((currencyCode) => (
-                        <div key={currencyCode} className={styles.currencyRow}>
-                            <strong>{currencyCode}</strong>
-                            <label>
-                                Rate from UAH
-                                <input
-                                    type="number"
-                                    min="0.0001"
-                                    step="0.0001"
-                                    value={rates[currencyCode] ?? ""}
-                                    onChange={(event) =>
-                                        setRates({...rates, [currencyCode]: event.target.value})
-                                    }
-                                    required
-                                />
-                            </label>
-                            <label>
-                                Symbol
-                                <input
-                                    value={symbols[currencyCode] ?? ""}
-                                    onChange={(event) =>
-                                        setSymbols({...symbols, [currencyCode]: event.target.value})
-                                    }
-                                    required
-                                />
-                            </label>
-                        </div>
-                    ))}
-                </div>
-                <button type="submit" className={styles.primaryButton} disabled={isSaving}>
-                    {isSaving ? "Saving" : "Save settings"}
-                </button>
-            </form>
+            </div>
         </section>
     );
 };

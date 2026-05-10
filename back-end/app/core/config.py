@@ -165,6 +165,20 @@ class CurrencyConfig(BaseModel):
         }
 
 
+class ProductLanguageConfig(BaseModel):
+    supported_languages: str = "en,ukr"
+    auto_translate_products: bool = True
+
+    @property
+    def language_codes(self) -> list[str]:
+        normalized = [
+            language.strip().lower()
+            for language in self.supported_languages.split(",")
+            if language.strip()
+        ]
+        return list(dict.fromkeys(normalized)) or ["en", "ukr"]
+
+
 class AccessToken(BaseModel):
     lifetime_seconds: int = 3600
     reset_password_token_secret: str
@@ -199,6 +213,7 @@ class Settings(BaseSettings):
     redis: RedisDatabaseConfig = RedisDatabaseConfig()
     media: MediaConfig
     currency: CurrencyConfig = CurrencyConfig()
+    product_languages: ProductLanguageConfig = ProductLanguageConfig()
     session: Session
 
 

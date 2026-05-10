@@ -29,6 +29,7 @@ from app.core.schemas.products import (
     Pagination,
     ProductPaginatedResponse,
 )
+from app.core.services.product_translations import complete_product_translations
 
 
 logger = logging.getLogger(__name__)
@@ -304,8 +305,11 @@ class ProductsService:
         cls, session: AsyncSession, product_in: ProductCreate
     ) -> Product:
         """Create a new product and ensure no duplicate names exist."""
+        completed_translations = await complete_product_translations(
+            product_in.translations
+        )
         translation_names = []
-        for translation in product_in.translations:
+        for translation in completed_translations:
             translation_names.append(translation.product_name)
 
         # Check for duplicates in the incoming request before querying the database
@@ -316,12 +320,12 @@ class ProductsService:
             ProductTranslation.product_name.in_(translation_names)
         )
         result = await session.execute(stmt)
-        if result.one_or_none():
+        if result.scalars().first():
             raise ProductNameDuplicationError(translation_names)
 
         translations = [
             ProductTranslation(**translation.model_dump())
-            for translation in product_in.translations
+            for translation in completed_translations
         ]
 
         product = Product(
@@ -346,6 +350,9 @@ class ProductsService:
 
         translation_names = []
         for product in products_in.products:
+            product.translations = await complete_product_translations(
+                product.translations
+            )
             for translation in product.translations:
                 translation_names.append(translation.product_name)
 
@@ -401,22 +408,48 @@ class ProductsService:
 
         """Update an existing product, raising an error if it doesn't exist."""
         product = await cls.get_product(session, product_id)
+        if product_update.translations and not partial:
+            product_update.translations = await complete_product_translations(
+                product_update.translations
+            )
         # Ensure all DB calls are awaited properly
         for name, value in product_update.model_dump(exclude_unset=partial).items():
             if name == "translations":
                 for translation in product_update.translations:
-                    stmt = (
-                        update(ProductTranslation)
-                        .where(
-                            and_(
-                                ProductTranslation.product_id == product_id,
-                                ProductTranslation.language_code
-                                == translation.language_code,
+                    existing_translation = next(
+                        (
+                            product_translation
+                            for product_translation in product.translations
+                            if product_translation.language_code
+                            == translation.language_code
+                        ),
+                        None,
+                    )
+                    if existing_translation is None:
+                        if partial and (
+                            not translation.product_name
+                            or not translation.product_description
+                        ):
+                            continue
+                        product.translations.append(
+                            ProductTranslation(
+                                product_id=product_id,
+                                **translation.model_dump(exclude_unset=partial),
                             )
                         )
-                        .values(**translation.model_dump(exclude_unset=partial))
-                    )
-                    await session.execute(stmt)
+                    else:
+                        stmt = (
+                            update(ProductTranslation)
+                            .where(
+                                and_(
+                                    ProductTranslation.product_id == product_id,
+                                    ProductTranslation.language_code
+                                    == translation.language_code,
+                                )
+                            )
+                            .values(**translation.model_dump(exclude_unset=partial))
+                        )
+                        await session.execute(stmt)
             else:
                 setattr(product, name, value)
         await session.commit()

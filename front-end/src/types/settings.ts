@@ -6,6 +6,12 @@ export interface CurrencySettings {
     currency_symbols: Record<string, string>;
 }
 
+export interface ProductLanguageSettings {
+    product_languages: string[];
+    auto_translate_products: boolean;
+}
+
 export interface PublicSettings {
     currency: CurrencySettings;
+    product_languages: ProductLanguageSettings;
 }

@@ -9,5 +9,6 @@ docker compose up -d postgres mongo redis minio
 docker compose build fastapi
 docker compose run --rm fastapi alembic upgrade head
 docker compose run --rm fastapi python -m app.actions.seed_products
+docker compose run --rm fastapi python -m app.actions.backfill_product_translations
 
-echo "Database migrations and product seed complete."
+echo "Database migrations, product seed, and translation backfill complete."

@@ -30,8 +30,15 @@ from app.core.schemas.settings import (
     CurrencySettings,
     CurrencySettingsUpdate,
     MediaUploadResponse,
+    ProductLanguageSettings,
+    ProductLanguageSettingsUpdate,
+    ProductTranslationBackfillResponse,
 )
-from app.core.services.store_settings import update_currency_settings
+from app.core.services.product_translations import backfill_product_translations
+from app.core.services.store_settings import (
+    update_currency_settings,
+    update_product_language_settings,
+)
 from app.core.storage import upload_product_image
 
 router = APIRouter(tags=["Admin"])
@@ -232,6 +239,33 @@ async def update_admin_currency_settings(
     superuser: Annotated[User, Security(current_active_superuser)],
 ):
     return await update_currency_settings(currency_settings)
+
+
+@router.patch(
+    "/settings/languages",
+    response_model=ProductLanguageSettings,
+    status_code=status.HTTP_200_OK,
+)
+async def update_admin_language_settings(
+    language_settings: ProductLanguageSettingsUpdate,
+    superuser: Annotated[User, Security(current_active_superuser)],
+):
+    return await update_product_language_settings(language_settings)
+
+
+@router.post(
+    "/translations/backfill",
+    response_model=ProductTranslationBackfillResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def backfill_admin_product_translations(
+    session: Annotated[
+        AsyncSession,
+        Depends(sql_db_helper.session_dependency),
+    ],
+    superuser: Annotated[User, Security(current_active_superuser)],
+):
+    return await backfill_product_translations(session=session)
 
 
 @router.post(

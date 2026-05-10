@@ -1,4 +1,4 @@
-import type {CurrencySettings} from "../types/settings.ts";
+import type {CurrencySettings, ProductLanguageSettings} from "../types/settings.ts";
 
 export type AdminView = "dashboard" | "products" | "orders" | "users" | "settings";
 
@@ -53,10 +53,7 @@ export interface ProductFormState {
     category: string;
     stock_quantity: string;
     image_src: string;
-    en_name: string;
-    en_description: string;
-    ukr_name: string;
-    ukr_description: string;
+    translations: ProductTranslation[];
 }
 
 export interface ProductSeedResponse {
@@ -118,6 +115,14 @@ export type CurrencySettingsUpdate = Pick<
     CurrencySettings,
     "default_currency" | "supported_currencies" | "currency_rates" | "currency_symbols"
 >;
+
+export type ProductLanguageSettingsUpdate = ProductLanguageSettings;
+
+export interface ProductTranslationBackfillResponse {
+    products_scanned: number;
+    translations_created: number;
+    product_languages: string[];
+}
 
 export interface AdminOrderProduct {
     product_id?: string | null;

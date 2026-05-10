@@ -2,7 +2,12 @@ from fastapi import HTTPException, status
 
 from app.core.config import settings
 from app.core.models import StoreSettings
-from app.core.schemas.settings import CurrencySettings, CurrencySettingsUpdate
+from app.core.schemas.settings import (
+    CurrencySettings,
+    CurrencySettingsUpdate,
+    ProductLanguageSettings,
+    ProductLanguageSettingsUpdate,
+)
 
 
 def _configured_currency_settings() -> CurrencySettings:
@@ -22,6 +27,13 @@ def _configured_currency_settings() -> CurrencySettings:
     )
 
 
+def _configured_product_language_settings() -> ProductLanguageSettings:
+    return ProductLanguageSettings(
+        product_languages=settings.product_languages.language_codes,
+        auto_translate_products=settings.product_languages.auto_translate_products,
+    )
+
+
 def _settings_to_schema(store_settings: StoreSettings) -> CurrencySettings:
     return CurrencySettings(
         base_currency=store_settings.base_currency,
@@ -29,6 +41,25 @@ def _settings_to_schema(store_settings: StoreSettings) -> CurrencySettings:
         supported_currencies=store_settings.supported_currencies,
         currency_rates=store_settings.currency_rates,
         currency_symbols=store_settings.currency_symbols,
+    )
+
+
+def _language_settings_to_schema(
+    store_settings: StoreSettings,
+) -> ProductLanguageSettings:
+    product_languages = list(
+        dict.fromkeys(
+            language.strip().lower()
+            for language in store_settings.product_languages
+            if language.strip()
+        )
+    )
+    if not product_languages:
+        product_languages = _configured_product_language_settings().product_languages
+
+    return ProductLanguageSettings(
+        product_languages=product_languages,
+        auto_translate_products=store_settings.auto_translate_products,
     )
 
 
@@ -40,6 +71,7 @@ async def get_store_settings() -> StoreSettings:
         return store_settings
 
     configured = _configured_currency_settings()
+    language_settings = _configured_product_language_settings()
     store_settings = StoreSettings(
         settings_key="default",
         base_currency=configured.base_currency,
@@ -47,6 +79,8 @@ async def get_store_settings() -> StoreSettings:
         supported_currencies=configured.supported_currencies,
         currency_rates=configured.currency_rates,
         currency_symbols=configured.currency_symbols,
+        product_languages=language_settings.product_languages,
+        auto_translate_products=language_settings.auto_translate_products,
     )
     await store_settings.insert()
     return store_settings
@@ -54,6 +88,10 @@ async def get_store_settings() -> StoreSettings:
 
 async def get_public_currency_settings() -> CurrencySettings:
     return _settings_to_schema(await get_store_settings())
+
+
+async def get_product_language_settings() -> ProductLanguageSettings:
+    return _language_settings_to_schema(await get_store_settings())
 
 
 def validate_currency_settings(
@@ -116,3 +154,27 @@ async def update_currency_settings(
     }
     await store_settings.save()
     return _settings_to_schema(store_settings)
+
+
+def validate_product_language_settings(update: ProductLanguageSettingsUpdate) -> None:
+    if not update.product_languages:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="At least one product language is required.",
+        )
+    if "en" not in update.product_languages:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="English must remain configured as the fallback product language.",
+        )
+
+
+async def update_product_language_settings(
+    update: ProductLanguageSettingsUpdate,
+) -> ProductLanguageSettings:
+    validate_product_language_settings(update)
+    store_settings = await get_store_settings()
+    store_settings.product_languages = update.product_languages
+    store_settings.auto_translate_products = update.auto_translate_products
+    await store_settings.save()
+    return _language_settings_to_schema(store_settings)

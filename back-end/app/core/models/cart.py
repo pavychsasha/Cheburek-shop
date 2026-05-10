@@ -19,7 +19,7 @@ class CartItem(Document):
 class Cart(Document):
     session_id: Optional[uuid.UUID] = None
     user_id: Optional[uuid.UUID] = None
-    items: List[Link[CartItem]] = []
+    items: List[Link[CartItem]] = Field(default_factory=list)
     total_count: int = Field(default=0, ge=0)
     total_price: float = Field(default=0, ge=0)
 
@@ -40,6 +40,8 @@ class StoreSettings(Document):
     currency_symbols: dict[str, str] = Field(
         default_factory=lambda: {"UAH": "\u20b4", "USD": "$", "EUR": "\u20ac"}
     )
+    product_languages: list[str] = Field(default_factory=lambda: ["en", "ukr"])
+    auto_translate_products: bool = Field(default=True)
 
     class Settings:
         name = "store_settings"

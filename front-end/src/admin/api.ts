@@ -10,11 +10,13 @@ import type {
     CurrencySettingsUpdate,
     MediaUploadResponse,
     OrderStatus,
+    ProductLanguageSettingsUpdate,
     ProductFormState,
     ProductListResponse,
     ProductSeedResponse,
+    ProductTranslationBackfillResponse,
 } from "./types.ts";
-import type {CurrencySettings, PublicSettings} from "../types/settings.ts";
+import type {CurrencySettings, ProductLanguageSettings, PublicSettings} from "../types/settings.ts";
 
 export const ADMIN_TOKEN_KEY = "cheburek_admin_token";
 
@@ -60,6 +62,14 @@ export const getAdminErrorMessage = (error: unknown, fallback: string) => {
             .map((item) => item?.msg)
             .filter(Boolean)
             .join(". ");
+    }
+
+    if (error.response?.status && error.response.status >= 500) {
+        return "The server returned an error. Check the backend logs and try again.";
+    }
+
+    if (error.code === "ERR_NETWORK") {
+        return "Unable to reach the API. Confirm the local stack is running and the hostnames are configured.";
     }
 
     return error.message || fallback;
@@ -118,6 +128,23 @@ export const updateCurrencySettings = async (payload: CurrencySettingsUpdate) =>
     return response.data;
 };
 
+export const updateProductLanguageSettings = async (
+    payload: ProductLanguageSettingsUpdate,
+) => {
+    const response = await adminApiClient.patch<ProductLanguageSettings>(
+        "/admin/settings/languages",
+        payload,
+    );
+    return response.data;
+};
+
+export const backfillProductTranslations = async () => {
+    const response = await adminApiClient.post<ProductTranslationBackfillResponse>(
+        "/admin/translations/backfill",
+    );
+    return response.data;
+};
+
 export const uploadProductImage = async (file: File) => {
     const formData = new FormData();
     formData.set("file", file);
@@ -150,18 +177,18 @@ const toProductPayload = (form: ProductFormState) => ({
     category: form.category,
     stock_quantity: Number(form.stock_quantity),
     image_src: form.image_src,
-    translations: [
-        {
-            language_code: "en",
-            product_name: form.en_name,
-            product_description: form.en_description,
-        },
-        {
-            language_code: "ukr",
-            product_name: form.ukr_name,
-            product_description: form.ukr_description,
-        },
-    ],
+    translations: form.translations
+        .map((translation) => ({
+            language_code: translation.language_code.trim().toLowerCase(),
+            product_name: translation.product_name.trim(),
+            product_description: translation.product_description.trim(),
+        }))
+        .filter(
+            (translation) =>
+                translation.language_code &&
+                translation.product_name &&
+                translation.product_description,
+        ),
 });
 
 export const createProduct = async (form: ProductFormState) => {

@@ -9,8 +9,14 @@ class CurrencySettings(BaseModel):
     currency_symbols: dict[str, str]
 
 
+class ProductLanguageSettings(BaseModel):
+    product_languages: list[str]
+    auto_translate_products: bool
+
+
 class PublicSettings(BaseModel):
     currency: CurrencySettings
+    product_languages: ProductLanguageSettings
 
 
 class CurrencySettingsUpdate(BaseModel):
@@ -31,6 +37,29 @@ class CurrencySettingsUpdate(BaseModel):
         if len(normalized) != len(set(normalized)):
             raise ValueError("Supported currencies must be unique.")
         return normalized
+
+
+class ProductLanguageSettingsUpdate(BaseModel):
+    product_languages: list[str] = Field(..., min_length=1)
+    auto_translate_products: bool = True
+
+    @field_validator("product_languages")
+    @classmethod
+    def normalize_product_languages(cls, value: list[str]) -> list[str]:
+        normalized = [
+            language.strip().lower()
+            for language in value
+            if language.strip()
+        ]
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("Product languages must be unique.")
+        return normalized
+
+
+class ProductTranslationBackfillResponse(BaseModel):
+    products_scanned: int
+    translations_created: int
+    product_languages: list[str]
 
 
 class MediaUploadResponse(BaseModel):

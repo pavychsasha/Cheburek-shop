@@ -55,6 +55,8 @@ services:
       APP_CONFIG__CURRENCY__SUPPORTED_CURRENCIES: ${SUPPORTED_CURRENCIES:-UAH,USD,EUR}
       APP_CONFIG__CURRENCY__CURRENCY_RATES: ${CURRENCY_RATES:-UAH:1,USD:0.024,EUR:0.022}
       APP_CONFIG__CURRENCY__CURRENCY_SYMBOLS: ${CURRENCY_SYMBOLS:-UAH:₴,USD:$$,EUR:€}
+      APP_CONFIG__PRODUCT_LANGUAGES__SUPPORTED_LANGUAGES: ${PRODUCT_LANGUAGES:-en,ukr}
+      APP_CONFIG__PRODUCT_LANGUAGES__AUTO_TRANSLATE_PRODUCTS: ${AUTO_TRANSLATE_PRODUCTS:-true}
       APP_CONFIG__SESSION__SECRET_KEY: ${SESSION_SECRET_KEY:?Run ./setup.sh to generate local secrets before starting Compose}
       APP_CONFIG__CORS__ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://app.local.cheburek-shop.com,http://admin.local.cheburek-shop.com,http://app.local.cheburek-shop.com:5178,http://admin.local.cheburek-shop.com:5178,http://localhost:5178,http://127.0.0.1:5178,http://react:5178}
       ADMIN_EMAIL: ${ADMIN_EMAIL:?Run ./setup.sh to generate local admin credentials before starting Compose}
