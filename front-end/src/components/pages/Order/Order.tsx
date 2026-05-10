@@ -8,6 +8,7 @@ import Button from "../../common/Button/Button.tsx";
 import {apiClient, getAuthHeaders} from "../../../api/api.ts";
 import {useAppSelector} from "../../../redux/hooks.ts";
 import {useCurrencyFormatter} from "../../../hooks/useCurrencyFormatter.ts";
+import SimilarItems from "../../common/SimilarItems/SimilarItems.tsx";
 
 // Define the type for the order form
 interface IFormOrder {
@@ -19,6 +20,7 @@ interface IFormOrder {
     city: string;
     state: string;
     country: string;
+    customer_notes?: string;
 }
 
 const Order = () => {
@@ -44,7 +46,7 @@ const Order = () => {
                 headers: getAuthHeaders(),
             });
 
-            if (response && response.status === 201) {
+            if (response && response.status === 204) {
                 navigate('/');
                 return;
             }
@@ -139,6 +141,21 @@ const Order = () => {
                             register={register('country', {required: t('order.country.required')})}
                             error={errors.country}
                         />
+                        <label className={styles.notesField}>
+                            {t('order.notes.label')}
+                            <textarea
+                                placeholder={t('order.notes.placeholder')}
+                                {...register('customer_notes', {
+                                    maxLength: {
+                                        value: 500,
+                                        message: t('order.notes.message'),
+                                    },
+                                })}
+                            />
+                            {errors.customer_notes && (
+                                <span>{errors.customer_notes.message}</span>
+                            )}
+                        </label>
                         <Button
                             label={isSubmitting ? t('order.button.loading') : t('order.button.submit')}
                             type="submit"
@@ -178,6 +195,7 @@ const Order = () => {
                     <h2>{t('order.total')}: </h2>
                     <span>{formatPrice(totalPrice + 35)}</span>
                 </div>
+                <SimilarItems productIds={items.map((item) => item.product_id)} />
             </aside>
         </div>
     );

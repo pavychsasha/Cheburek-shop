@@ -18,6 +18,7 @@ const Home = () => {
     const searchValue = useAppSelector((state) => state.filter.searchValue);
     const { items, status } = useAppSelector((state) => state.items);
     const isLanguageSet = useAppSelector((state) => state.lang.isLanguageSet);
+    const categoryMedia = useAppSelector((state) => state.settings.categoryMedia);
 
     const dispatch = useAppDispatch();
     const { i18n, t } = useTranslation('global');
@@ -77,6 +78,7 @@ const Home = () => {
                     onChangeCategory={(newValue) => onChangeCategory(newValue)}
                     categories={displayCategories}
                     categoriesEn={categoriesEn}
+                    categoryMedia={categoryMedia}
                 />
             </nav>
             <div className={styles.sort}>

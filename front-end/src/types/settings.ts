@@ -14,4 +14,5 @@ export interface ProductLanguageSettings {
 export interface PublicSettings {
     currency: CurrencySettings;
     product_languages: ProductLanguageSettings;
+    category_media: Record<string, string>;
 }

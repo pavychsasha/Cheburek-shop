@@ -11,6 +11,7 @@ export interface ICategoriesProps {
     onChangeCategory: (index: string) => void;
     categories: string[];
     categoriesEn: string[];
+    categoryMedia?: Record<string, string>;
 }
 
 export interface ISortProps {

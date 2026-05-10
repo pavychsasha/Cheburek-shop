@@ -1,6 +1,6 @@
 .header {
   display: grid;
-  grid-template-columns: minmax(0, 340px) minmax(220px, 1fr) max-content;
+  grid-template-columns: minmax(240px, 320px) minmax(200px, 1fr) max-content;
   grid-template-areas: "brand search actions";
   align-items: center;
   justify-content: stretch;
@@ -36,9 +36,10 @@
       }
 
       .logo {
-        width: 64px;
-        height: 64px;
-        margin-right: 12px;
+        flex: 0 0 58px;
+        width: 58px;
+        height: 58px;
+        margin-right: 10px;
         border-radius: 18px;
         object-fit: cover;
         box-shadow: 0 10px 24px rgba(200, 79, 63, 0.22);
@@ -50,18 +51,20 @@
         justify-content: space-evenly;
         flex-direction: column;
         min-width: 0;
-        max-width: 310px;
+        max-width: calc(100% - 68px);
 
         h1 {
-          font-size: 30px;
-          line-height: 1.05;
+          display: -webkit-box;
+          font-size: 26px;
+          line-height: 1;
           color: var(--color-ink);
           margin: 0;
           padding: 0;
           max-width: 100%;
           overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          overflow-wrap: anywhere;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
 
           @media (max-width: 768px) {
             display: none;
@@ -74,6 +77,10 @@
           margin: 0;
           padding: 0;
           overflow-wrap: anywhere;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          overflow: hidden;
 
           @media (max-width: 768px) {
             font-size: 14px;
@@ -177,7 +184,7 @@
     }
   }
 
-  @media (max-width: 1180px) {
+  @media (max-width: 1280px) {
     grid-template-columns: minmax(0, 1fr) max-content;
     grid-template-areas:
       "brand actions"
@@ -192,7 +199,7 @@
       max-width: none;
 
       h1 {
-        font-size: 26px;
+        font-size: 24px;
       }
     }
 

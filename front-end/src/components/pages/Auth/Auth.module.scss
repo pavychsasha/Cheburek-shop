@@ -27,6 +27,21 @@ $font-size-small: 14px;
       color: var(--color-ink);
     }
 
+    .backLink {
+      display: inline-flex;
+      margin-bottom: 18px;
+      color: var(--color-primary);
+      font-size: $font-size-small;
+      font-weight: 800;
+
+      &:hover,
+      &:focus-visible {
+        color: var(--color-primary-dark);
+        outline: none;
+        text-decoration: underline;
+      }
+    }
+
     .submit__button {
       width: 100%;
       min-height: 46px;

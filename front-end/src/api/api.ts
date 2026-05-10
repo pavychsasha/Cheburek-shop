@@ -1,4 +1,5 @@
 import axios from "axios";
+import type {IItem} from "../types/items.ts";
 
 const defaultApiHost =
     window.location.hostname === "app.local.cheburek-shop.com" ||
@@ -41,4 +42,21 @@ export const apiClient = axios.create({
 export const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     return token ? {Authorization: `Bearer ${token}`} : undefined;
+};
+
+export const trackVisit = async (path: string) => {
+    await apiClient.post("/analytics/visit", {path});
+};
+
+export const fetchSimilarProducts = async (productIds: string[], limit = 4) => {
+    if (productIds.length === 0) {
+        return [];
+    }
+
+    const params = new URLSearchParams();
+    productIds.forEach((productId) => params.append("product_ids", productId));
+    params.set("limit", String(limit));
+
+    const response = await apiClient.get<IItem[]>(`/products/similar?${params.toString()}`);
+    return response.data;
 };

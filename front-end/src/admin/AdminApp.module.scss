@@ -144,7 +144,7 @@
 
 .metricGrid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
   gap: 14px;
 }
 
@@ -173,6 +173,67 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-top: 18px;
+}
+
+.preferencePanel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid #dbe3df;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.preferenceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.preferenceItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 104px max-content;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #edf1ef;
+  border-radius: 8px;
+  background: #f7f9f8;
+
+  label {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  input[type="checkbox"] {
+    width: 18px;
+    min-height: 18px;
+  }
+
+  select {
+    min-height: 36px;
+    padding: 7px 9px;
+  }
+}
+
+.preferenceActions {
+  display: flex;
+  gap: 6px;
+
+  button {
+    padding: 7px 8px;
+    border-radius: 8px;
+    background: #eef2f0;
+    color: #132620;
+    font-weight: 800;
+    cursor: pointer;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+  }
 }
 
 .chartPanel {
@@ -245,6 +306,10 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
 }
 
 .translationPanel {
@@ -502,6 +567,14 @@ textarea {
   }
 }
 
+.tagList {
+  display: inline-flex;
+  min-width: 0;
+  color: #65746f;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
 .mediaPreview {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
@@ -648,6 +721,11 @@ textarea {
 
   .metricGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .preferenceGrid,
+  .preferenceItem {
+    grid-template-columns: 1fr;
   }
 
   .dashboardGrid {

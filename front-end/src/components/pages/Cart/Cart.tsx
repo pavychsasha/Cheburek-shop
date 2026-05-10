@@ -8,6 +8,7 @@ import Button from "../../common/Button/Button.tsx";
 import {useNavigate} from "react-router-dom";
 import {useAppDispatch, useAppSelector} from "../../../redux/hooks.ts";
 import {useCurrencyFormatter} from "../../../hooks/useCurrencyFormatter.ts";
+import SimilarItems from "../../common/SimilarItems/SimilarItems.tsx";
 
 const Cart = () => {
     //Getting variables from state
@@ -74,6 +75,7 @@ const Cart = () => {
                     />
                 </div>
             </div>
+            <SimilarItems productIds={items.map((item) => item.product_id)} />
         </main>
     )
 }

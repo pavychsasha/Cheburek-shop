@@ -22,6 +22,28 @@ $border-order: 1px solid rgba(143, 143, 143, 0.2);
       border-radius: 8px;
       box-shadow: 0 14px 30px rgba(55, 36, 19, 0.06);
     }
+
+    .notesField {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 14px;
+      color: var(--color-ink);
+      font-size: 14px;
+      font-weight: 800;
+
+      textarea {
+        min-height: 96px;
+        padding: 12px;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        resize: vertical;
+      }
+
+      span {
+        color: #b42318;
+        font-size: 12px;
+      }
+    }
   }
 
   aside {

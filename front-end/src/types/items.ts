@@ -6,4 +6,5 @@ export interface IItem {
     category?: string;
     stock_quantity?: number;
     image_src: string;
+    tags?: string[];
 }

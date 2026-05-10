@@ -6,6 +6,7 @@ import {fallbackCurrencySettings} from "../../utils/currency.ts";
 
 interface SettingsState {
     currency: CurrencySettings;
+    categoryMedia: Record<string, string>;
     selectedCurrency: string;
     status: "idle" | "loading" | "success" | "error";
     error: string;
@@ -20,6 +21,7 @@ const getStoredCurrency = () => {
 
 const initialState: SettingsState = {
     currency: fallbackCurrencySettings,
+    categoryMedia: {},
     selectedCurrency: getStoredCurrency(),
     status: "idle",
     error: "",
@@ -54,6 +56,7 @@ const settingsSlice = createSlice({
             })
             .addCase(fetchPublicSettings.fulfilled, (state, action) => {
                 state.currency = action.payload.currency;
+                state.categoryMedia = action.payload.category_media || {};
                 state.status = "success";
                 if (!state.currency.supported_currencies.includes(state.selectedCurrency)) {
                     state.selectedCurrency = state.currency.default_currency;

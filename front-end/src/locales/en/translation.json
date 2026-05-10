@@ -61,6 +61,7 @@
     },
     "haveAccount": "Already have an account?",
     "forgotPassword": "Forgot a password?",
+    "backToMenu": "Back to menu",
     "passwordMatch": "Passwords must match",
     "registrationFailed": "Failed to login after registration",
     "userExist": "A user with such data already exists",
@@ -136,10 +137,20 @@
       "placeholder": "Enter your country",
       "required": "This field is required"
     },
+    "notes": {
+      "label": "Order notes",
+      "placeholder": "Delivery notes, allergies, or timing requests",
+      "message": "Notes must be 500 characters or less"
+    },
     "button": {
       "submit": "Submit Order",
       "loading": "Submitting..."
     },
     "error": "An error occurred while submitting the order"
+  },
+  "similar": {
+    "eyebrow": "You may also like",
+    "title": "Similar items",
+    "loading": "Finding similar items."
   }
 }

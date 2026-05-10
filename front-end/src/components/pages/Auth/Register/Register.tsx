@@ -89,6 +89,9 @@ const Register = () => {
     return (
         <main className={styles.container}>
             <div className={styles.login__box}>
+                <NavLink className={styles.backLink} to="/">
+                    {t('auth.backToMenu')}
+                </NavLink>
                 <h1>{t('auth.titleRegister')}</h1>
                 <form onSubmit={handleSubmit(onSubmit)}>
 

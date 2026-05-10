@@ -8,6 +8,7 @@ import type {
     AdminSummary,
     AdminUser,
     CurrencySettingsUpdate,
+    DashboardPreferences,
     MediaUploadResponse,
     OrderStatus,
     ProductLanguageSettingsUpdate,
@@ -115,6 +116,21 @@ export const fetchAdminAnalytics = async () => {
     return response.data;
 };
 
+export const fetchDashboardPreferences = async () => {
+    const response = await adminApiClient.get<DashboardPreferences>(
+        "/admin/dashboard/preferences",
+    );
+    return response.data;
+};
+
+export const updateDashboardPreferences = async (payload: DashboardPreferences) => {
+    const response = await adminApiClient.patch<DashboardPreferences>(
+        "/admin/dashboard/preferences",
+        payload,
+    );
+    return response.data;
+};
+
 export const fetchPublicSettings = async () => {
     const response = await adminApiClient.get<PublicSettings>("/settings/public");
     return response.data;
@@ -177,6 +193,10 @@ const toProductPayload = (form: ProductFormState) => ({
     category: form.category,
     stock_quantity: Number(form.stock_quantity),
     image_src: form.image_src,
+    tags: form.tags
+        .split(",")
+        .map((tag) => tag.trim().toLowerCase())
+        .filter(Boolean),
     translations: form.translations
         .map((translation) => ({
             language_code: translation.language_code.trim().toLowerCase(),
@@ -220,6 +240,12 @@ export const fetchOrders = async () => {
 
 export const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
     await adminApiClient.patch(`/orders/${orderId}/status`, {status});
+};
+
+export const updateOrderNotes = async (orderId: string, adminNotes: string) => {
+    await adminApiClient.patch(`/orders/${orderId}/notes`, {
+        admin_notes: adminNotes || null,
+    });
 };
 
 export const deleteOrder = async (orderId: string) => {

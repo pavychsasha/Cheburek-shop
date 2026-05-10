@@ -24,6 +24,8 @@ export interface AdminSummary {
     users_count: number;
     low_stock_products_count: number;
     pending_orders_count: number;
+    unique_visitors_today: number;
+    page_views_today: number;
 }
 
 export interface ProductTranslation {
@@ -41,6 +43,7 @@ export interface AdminProduct {
     stock_quantity: number;
     image_src: string;
     translations?: ProductTranslation[];
+    tags?: string[];
 }
 
 export interface ProductListResponse {
@@ -53,6 +56,7 @@ export interface ProductFormState {
     category: string;
     stock_quantity: string;
     image_src: string;
+    tags: string;
     translations: ProductTranslation[];
 }
 
@@ -99,6 +103,8 @@ export interface AdminAnalytics {
     orders_by_status: StatusCount[];
     orders_over_time: TimeSeriesPoint[];
     revenue_over_time: TimeSeriesPoint[];
+    visitors_over_time: TimeSeriesPoint[];
+    page_views_over_time: TimeSeriesPoint[];
     low_stock_products: LowStockProduct[];
     top_products: TopProduct[];
     recent_orders: RecentOrder[];
@@ -150,8 +156,23 @@ export interface AdminOrder {
     user_id?: string | null;
     status: OrderStatus;
     email: string;
+    customer_notes?: string | null;
+    admin_notes?: string | null;
     total_price?: number | null;
     total_count?: number | null;
     products: AdminOrderProduct[];
     address: AdminOrderAddress;
+}
+
+export type DashboardChartType = "line" | "bar" | "area" | "pie";
+
+export interface DashboardWidgetPreference {
+    id: string;
+    visible: boolean;
+    chart_type?: DashboardChartType | null;
+    position: number;
+}
+
+export interface DashboardPreferences {
+    widgets: DashboardWidgetPreference[];
 }

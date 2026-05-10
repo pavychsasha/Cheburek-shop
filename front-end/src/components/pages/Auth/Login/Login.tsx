@@ -3,7 +3,7 @@ import {SubmitHandler, useForm} from 'react-hook-form';
 import InputField from '../../../common/InputField/InputField.tsx';
 import useSubmitForm from '../../../../hooks/useSubmitForm.ts';
 import {setIsAuth} from "../../../../redux/slices/authSlice.ts";
-import {useNavigate} from 'react-router-dom';
+import {NavLink, useNavigate} from 'react-router-dom';
 import React from "react";
 import {useTranslation} from "react-i18next";
 import {useAppDispatch, useAppSelector} from "../../../../redux/hooks.ts";
@@ -69,6 +69,9 @@ const Login = () => {
     return (
         <main className={styles.container}>
             <div className={styles.login__box}>
+                <NavLink className={styles.backLink} to="/">
+                    {t('auth.backToMenu')}
+                </NavLink>
                 <h1>{t('auth.titleLogin')}</h1>
                 <form onSubmit={handleSubmit(onSubmit)}>
 

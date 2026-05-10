@@ -12,7 +12,7 @@ import {setIsAuth} from "./redux/slices/authSlice.ts";
 import {useTranslation} from "react-i18next";
 import {setIsLanguageSet} from "./redux/slices/langSlice.ts";
 import Order from "./components/pages/Order/Order.tsx";
-import {apiClient, getAuthHeaders} from "./api/api.ts";
+import {apiClient, getAuthHeaders, trackVisit} from "./api/api.ts";
 import {useAppDispatch, useAppSelector} from "./redux/hooks.ts";
 import {fetchPublicSettings} from "./redux/slices/settingsSlice.ts";
 import Seo from "./components/common/Seo/Seo.tsx";
@@ -78,6 +78,10 @@ const StorefrontApp = () => {
     }, [dispatch, isAuthorized, i18n.language, isLanguageSet]);
 
     const location = useLocation();
+
+    useEffect(() => {
+        void trackVisit(location.pathname).catch(() => undefined);
+    }, [location.pathname]);
 
     const shouldShowHeader = !['/login', '/register'].includes(location.pathname);
     const storefrontDescription =
